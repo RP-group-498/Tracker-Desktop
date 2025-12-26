@@ -1,0 +1,20 @@
+{
+  "name": "desktop-app",
+  "version": "1.0.0",
+  "description": "Desktop application for procrastination detection research - monorepo root",
+  "private": true,
+  "scripts": {
+    "dev": "powershell -ExecutionPolicy Bypass -File scripts/dev.ps1",
+    "dev:backend": "cd backend && .\\venv\\Scripts\\activate && uvicorn app.main:app --reload --port 8000",
+    "dev:electron": "cd electron && npm run dev",
+    "install:all": "cd electron && npm install",
+    "build:all": "cd electron && npm run build"
+  },
+  "keywords": [
+    "procrastination",
+    "detection",
+    "research",
+    "electron",
+    "fastapi"
+  ]
+}

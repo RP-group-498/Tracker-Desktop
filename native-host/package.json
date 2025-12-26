@@ -1,0 +1,12 @@
+{
+  "name": "focus-app-native-host",
+  "version": "1.0.0",
+  "description": "Native messaging host for Focus App browser extension",
+  "main": "native-host.js",
+  "scripts": {
+    "start": "node native-host.js",
+    "install-host": "node install.js",
+    "uninstall-host": "node uninstall.js"
+  },
+  "dependencies": {}
+}
