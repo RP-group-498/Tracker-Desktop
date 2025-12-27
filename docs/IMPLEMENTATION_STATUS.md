@@ -457,10 +457,10 @@ node install.js iplkgkopmfndpmekoncghfoldemndmlo
 
 When continuing development, reference these files:
 
-1. **Architecture:** `browser-extension/docs/DESKTOP_ARCHITECTURE.md`
-2. **Classification Guide:** `browser-extension/docs/classification_guide_md.md`
-3. **This Status Doc:** `desktop-app/docs/IMPLEMENTATION_STATUS.md`
-4. **Browser Extension Types:** `browser-extension/src/types/index.ts`
-5. **Native Messaging Protocol:** `browser-extension/src/services/nativeMessaging.ts`
+1. **Classification Guide:** `browser-extension/docs/classification_guide_md.md`
+2. **This Status Doc:** `desktop-app/docs/IMPLEMENTATION_STATUS.md`
+3. **Browser Extension Types:** `browser-extension/src/types/index.ts`
+4. **Native Messaging Protocol:** `browser-extension/src/services/nativeMessaging.ts`
+5. **Browser Extension CLAUDE.md:** `browser-extension/CLAUDE.md`
 
 The classification component stub at `backend/app/components/classification/component.py` is ready to be replaced with the actual ML implementation when you're ready to build the classification system.

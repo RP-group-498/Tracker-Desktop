@@ -1,16 +1,17 @@
 # Focus App Desktop
 
-Desktop application for procrastination detection research. Integrates with the browser extension to track and classify browsing activity.
+Desktop application for procrastination detection research. Integrates with the Focus App browser extension to track and classify browsing activity using a multi-component ML pipeline.
 
 ## Architecture
 
 ```
-Browser Extension <-> Native Messaging Host <-> Electron App <-> Python Backend <-> SQLite
+Browser Extension <--> Native Messaging Host <--> Electron App <--> Python Backend <--> SQLite
 ```
 
-- **Electron App**: System tray application with minimal UI
-- **Python Backend**: FastAPI server with component plugin system
+- **Browser Extension**: Captures browsing activity, sends via Native Messaging
 - **Native Messaging Host**: Node.js bridge for Chrome extension communication
+- **Electron App**: System tray application with minimal UI
+- **Python Backend**: FastAPI server with component plugin system for ML classification
 
 ## Prerequisites
 
@@ -158,3 +159,10 @@ npm run package
 
 1. Ensure backend is running on port 8000
 2. Check health endpoint: `http://localhost:8000/api/health`
+
+## Related Documentation
+
+- `docs/IMPLEMENTATION_STATUS.md` - Detailed implementation status and future improvements
+- `../browser-extension/docs/classification_guide_md.md` - Classification system design guide
+- `../browser-extension/README.md` - Browser extension documentation
+- `../browser-extension/CLAUDE.md` - Browser extension developer guide
