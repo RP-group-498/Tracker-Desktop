@@ -1,16 +1,41 @@
 # Focus App Desktop
 
-Desktop application for procrastination detection research. Integrates with the Focus App browser extension to track and classify browsing activity using a multi-component ML pipeline.
+Desktop application for procrastination detection research. Integrates with the Focus App browser extension to track and classify browsing activity, **plus native desktop application tracking** using a multi-component ML pipeline.
 
 ## Architecture
 
 ```
-Browser Extension <--> Native Messaging Host <--> Electron App <--> Python Backend <--> SQLite
+┌─────────────────────┐    ┌─────────────────────────────────────────────────────┐
+│  Browser Extension  │───>│                    Electron App                      │
+│  (Chrome/Edge)      │    │  ┌─────────────────┐  ┌────────────────────────┐    │
+└─────────────────────┘    │  │ Native Messaging │  │ Desktop Activity       │    │
+         Native Messaging  │  │ Server (:8765)   │  │ Tracker (active-win)   │    │
+                           │  └────────┬─────────┘  └───────────┬────────────┘    │
+                           │           │                        │                  │
+                           │           └────────────┬───────────┘                  │
+                           │                        │                              │
+                           │                        v                              │
+                           │              ┌─────────────────┐                      │
+                           │              │  Python Bridge  │                      │
+                           │              └────────┬────────┘                      │
+                           └───────────────────────┼──────────────────────────────┘
+                                                   │ HTTP (:8001)
+                                                   v
+                           ┌───────────────────────────────────────────────────────┐
+                           │                  Python Backend                        │
+                           │  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐  │
+                           │  │ Activity API │  │ Classification│  │   SQLite    │  │
+                           │  │   /batch     │  │  Component    │  │   Database  │  │
+                           │  └──────────────┘  └──────────────┘  └─────────────┘  │
+                           └───────────────────────────────────────────────────────┘
 ```
 
-- **Browser Extension**: Captures browsing activity, sends via Native Messaging
-- **Native Messaging Host**: Node.js bridge for Chrome extension communication
-- **Electron App**: System tray application with minimal UI
+### Data Sources
+
+- **Browser Extension**: Captures browsing activity (URLs, titles, active time), sends via Native Messaging
+- **Desktop Activity Tracker**: Captures active window info (app name, window title, duration) every 1 second
+- **Native Messaging Server**: HTTP bridge for Chrome extension communication on port 8765
+- **Electron App**: System tray application that coordinates all services
 - **Python Backend**: FastAPI server with component plugin system for ML classification
 
 ## Prerequisites
@@ -82,11 +107,52 @@ Or use the convenience script:
 | `/api/components` | GET | List components |
 | `/api/components/{name}/status` | GET | Get component status |
 
+## Desktop Activity Tracking
+
+The desktop activity tracker monitors which application window is currently active and tracks time spent in each application.
+
+### How It Works
+
+1. **Polling**: Every 1 second, uses `active-win` package to get the currently focused window
+2. **Change Detection**: When the active window changes (different app or window ID), records the previous window's duration
+3. **Event Submission**: Sends activity events to the Python backend via the same `/activity/batch` endpoint as browser events
+4. **Classification**: Backend classifies desktop apps using rule-based patterns (80+ apps configured)
+
+### Desktop Event Data Structure
+
+```typescript
+interface DesktopActivityEvent {
+    eventId: string;
+    sessionId: string | null;
+    source: 'desktop';           // Distinguishes from 'browser' events
+    activityType: 'application'; // vs 'webpage' for browser
+    timestamp: string;
+    startTime: string;
+    endTime: string;
+    appName: string;             // e.g., "Code", "chrome", "vlc"
+    appPath: string;             // Full executable path
+    windowTitle: string;         // Window title text
+    activeTime: number;          // Duration in milliseconds
+    // Compatibility fields for unified schema
+    domain: string;              // App name (lowercase, no .exe)
+    url: string;                 // app://appname/windowId
+}
+```
+
+### Desktop App Classification Rules
+
+| Category | Example Apps |
+|----------|--------------|
+| **productivity** | VS Code, PyCharm, Word, Excel, Figma, Terminal, Slack, Teams |
+| **academic** | Zotero, Mendeley, MATLAB, RStudio, Jupyter, LaTeX editors |
+| **non_academic** | Steam, VLC, Spotify, Netflix, Discord, Games |
+| **neutral** | Browsers (classified by content), File Explorer, Settings |
+
 ## Component System
 
 Components are pluggable ML modules. Currently implemented:
 
-- **Classification** (stub): Basic rule-based domain classification
+- **Classification** (stub): Rule-based classification for both browser domains AND desktop applications
 
 Future components:
 - Procrastination Detection
@@ -104,27 +170,39 @@ Future components:
 
 ```
 desktop-app/
-├── electron/           # Electron application
+├── electron/                    # Electron application
 │   ├── src/
-│   │   ├── main/       # Main process
-│   │   ├── renderer/   # React UI
-│   │   └── preload/    # IPC bridge
-│   └── package.json
+│   │   ├── main/
+│   │   │   ├── index.ts                    # Main entry, service coordination
+│   │   │   ├── python-bridge.ts            # HTTP client for Python backend
+│   │   │   ├── native-messaging.ts         # Server for browser extension
+│   │   │   ├── desktop-activity-tracker.ts # Desktop window tracking (NEW)
+│   │   │   ├── tray.ts                     # System tray management
+│   │   │   └── ipc-handlers.ts             # IPC communication
+│   │   ├── renderer/            # React UI
+│   │   └── preload/             # IPC bridge
+│   ├── package.json
+│   └── vite.config.ts           # Build config (active-win externalized)
 │
-├── backend/            # Python FastAPI
+├── backend/                     # Python FastAPI
 │   ├── app/
-│   │   ├── api/        # REST endpoints
-│   │   ├── components/ # ML components
-│   │   ├── core/       # Database, registry
-│   │   ├── models/     # SQLAlchemy models
-│   │   └── schemas/    # Pydantic schemas
+│   │   ├── api/
+│   │   │   └── activity.py      # Activity batch endpoint (handles both browser & desktop)
+│   │   ├── components/
+│   │   │   └── classification/
+│   │   │       └── component.py # Classification with desktop app rules
+│   │   ├── core/                # Database, registry
+│   │   ├── models/
+│   │   │   └── activity.py      # ActivityEvent model (source, app_name fields)
+│   │   └── schemas/
+│   │       └── activity.py      # Pydantic schemas (desktop fields)
 │   └── requirements.txt
 │
-├── native-host/        # Chrome Native Messaging
+├── native-host/                 # Chrome Native Messaging
 │   ├── native-host.js
 │   └── install.js
 │
-└── scripts/            # Development scripts
+└── scripts/                     # Development scripts
 ```
 
 ## Building for Production
@@ -162,7 +240,20 @@ npm run package
 
 ## Related Documentation
 
-- `docs/IMPLEMENTATION_STATUS.md` - Detailed implementation status and future improvements
+- `CLAUDE.md` - Developer guide for continuing development
 - `../browser-extension/docs/classification_guide_md.md` - Classification system design guide
 - `../browser-extension/README.md` - Browser extension documentation
 - `../browser-extension/CLAUDE.md` - Browser extension developer guide
+
+## Development Notes
+
+### Key Dependencies
+
+- **active-win** (^8.2.1): Native module for getting active window info. Must be marked as `external` in Vite config to avoid bundling issues.
+- **cross-env**: Required for setting NODE_ENV in npm scripts on Windows
+
+### Important Configuration
+
+1. **Vite Config** (`vite.config.ts`): `active-win` must be in `external` array to load from node_modules at runtime
+2. **Package.json**: `start` script uses `cross-env NODE_ENV=development` for correct path resolution
+3. **TypeScript Config**: `noUnusedLocals` and `noUnusedParameters` set to `false` to allow underscore-prefixed unused params
