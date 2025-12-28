@@ -50,4 +50,8 @@ export default defineConfig({
     outDir: resolve(electronRoot, 'dist/renderer'),
   },
   root: resolve(electronRoot, 'src/renderer'),
+  server: {
+    port: 3000,  // Use port outside Windows reserved ranges
+    host: '127.0.0.1',
+  },
 });

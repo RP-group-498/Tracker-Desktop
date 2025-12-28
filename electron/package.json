@@ -4,7 +4,7 @@
   "description": "Desktop application for procrastination detection research",
   "main": "dist/main/index.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "cross-env NODE_ENV=development vite",
     "dev:electron": "electron .",
     "build": "tsc && vite build",
     "start": "electron .",
@@ -19,6 +19,7 @@
     "@types/react-dom": "^18.2.18",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
+    "cross-env": "^10.1.0",
     "electron": "^28.1.0",
     "electron-builder": "^24.9.1",
     "postcss": "^8.4.32",

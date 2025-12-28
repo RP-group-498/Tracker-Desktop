@@ -9,7 +9,7 @@ import path from 'path';
 import { EventEmitter } from 'events';
 import http from 'http';
 
-const PYTHON_PORT = 8000;
+const PYTHON_PORT = 8001;
 const HEALTH_CHECK_INTERVAL = 10000; // 10 seconds
 const STARTUP_TIMEOUT = 30000; // 30 seconds
 const MAX_RESTART_ATTEMPTS = 3;

@@ -48,7 +48,7 @@ function createWindow(): void {
         height: 500,
         minWidth: 350,
         minHeight: 400,
-        show: false, // Start hidden, show from tray
+        show: process.env.NODE_ENV === 'development', // Show in dev, hidden in production (tray)
         frame: true,
         resizable: true,
         skipTaskbar: false,
@@ -62,7 +62,7 @@ function createWindow(): void {
 
     // Load the renderer
     if (process.env.NODE_ENV === 'development') {
-        mainWindow.loadURL('http://localhost:5173');
+        mainWindow.loadURL('http://localhost:3000');
         mainWindow.webContents.openDevTools({ mode: 'detach' });
     } else {
         mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
@@ -87,46 +87,44 @@ function createWindow(): void {
 async function initializeServices(): Promise<void> {
     console.log('[Main] Initializing services...');
 
-    // 1. Start Python backend
-    pythonBridge = new PythonBridge();
-    pythonBridge.on('started', () => {
+    // 1. Start Python backend (pythonBridge already created in app.on('ready'))
+    pythonBridge!.on('started', () => {
         appState.pythonRunning = true;
         updateTrayAndWindow();
         console.log('[Main] Python backend started');
     });
-    pythonBridge.on('stopped', () => {
+    pythonBridge!.on('stopped', () => {
         appState.pythonRunning = false;
         updateTrayAndWindow();
         console.log('[Main] Python backend stopped');
     });
-    pythonBridge.on('error', (error) => {
+    pythonBridge!.on('error', (error) => {
         console.error('[Main] Python backend error:', error);
     });
 
-    await pythonBridge.start();
+    await pythonBridge!.start();
 
-    // 2. Start Native Messaging server
-    nativeMessagingServer = new NativeMessagingServer(pythonBridge);
-    nativeMessagingServer.on('extensionConnected', () => {
+    // 2. Start Native Messaging server (nativeMessagingServer already created in app.on('ready'))
+    nativeMessagingServer!.on('extensionConnected', () => {
         appState.extensionConnected = true;
         updateTrayAndWindow();
         console.log('[Main] Browser extension connected');
     });
-    nativeMessagingServer.on('extensionDisconnected', () => {
+    nativeMessagingServer!.on('extensionDisconnected', () => {
         appState.extensionConnected = false;
         updateTrayAndWindow();
         console.log('[Main] Browser extension disconnected');
     });
-    nativeMessagingServer.on('sessionCreated', (sessionId: string) => {
+    nativeMessagingServer!.on('sessionCreated', (sessionId: string) => {
         appState.currentSessionId = sessionId;
         updateTrayAndWindow();
     });
-    nativeMessagingServer.on('eventsReceived', (count: number) => {
+    nativeMessagingServer!.on('eventsReceived', (count: number) => {
         appState.eventCount += count;
         updateTrayAndWindow();
     });
 
-    await nativeMessagingServer.start();
+    await nativeMessagingServer!.start();
 
     // 3. Initialize system tray
     trayManager = new TrayManager(mainWindow!, appState);
@@ -172,11 +170,19 @@ async function cleanup(): Promise<void> {
 
 // App lifecycle events
 app.on('ready', async () => {
+    // Initialize services first (creates pythonBridge and nativeMessagingServer)
+    // but don't wait for them to fully start yet
+    pythonBridge = new PythonBridge();
+    nativeMessagingServer = new NativeMessagingServer(pythonBridge);
+
+    // Set up IPC handlers BEFORE creating window so they're ready when renderer loads
+    setupIpcHandlers(ipcMain, () => appState, pythonBridge, nativeMessagingServer);
+
+    // Now create window
     createWindow();
+
+    // Start services in background
     await initializeServices();
-    // Set up IPC handlers after services are initialized
-    // so pythonBridge and nativeMessagingServer are available
-    setupIpcHandlers(ipcMain, () => appState, pythonBridge!, nativeMessagingServer!);
 });
 
 app.on('second-instance', () => {

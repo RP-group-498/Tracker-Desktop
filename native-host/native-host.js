@@ -31,6 +31,16 @@ function log(message) {
 }
 
 log('Native host started');
+log('Process ID: ' + process.pid);
+log('Working directory: ' + process.cwd());
+
+// Check if Electron is running on port 8765
+const testReq = http.get('http://127.0.0.1:8765/', (res) => {
+  log('Electron server check: ' + res.statusCode);
+}).on('error', (e) => {
+  log('Electron server NOT reachable: ' + e.message);
+});
+testReq.setTimeout(1000);
 
 /**
  * Send a message to Chrome extension via stdout.
