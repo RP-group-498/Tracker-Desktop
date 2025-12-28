@@ -25,7 +25,7 @@ export class NativeMessagingServer extends EventEmitter {
     private server: http.Server | null = null;
     private pythonBridge: PythonBridge;
     private currentSession: SessionInfo | null = null;
-    private lastHeartbeat: number = 0;
+    private _lastHeartbeat: number = 0;
     private extensionConnected = false;
     private connectionTimeout: NodeJS.Timeout | null = null;
 
@@ -130,7 +130,7 @@ export class NativeMessagingServer extends EventEmitter {
     /**
      * Handle connect message - create a new session
      */
-    private async handleConnect(message: ExtensionMessage): Promise<unknown> {
+    private async handleConnect(_message: ExtensionMessage): Promise<unknown> {
         console.log('[NativeMessaging] Extension connecting...');
 
         // Create a new session in the backend
@@ -201,7 +201,7 @@ export class NativeMessagingServer extends EventEmitter {
      * Handle heartbeat - just acknowledge
      */
     private async handleHeartbeat(_message: ExtensionMessage): Promise<unknown> {
-        this.lastHeartbeat = Date.now();
+        this._lastHeartbeat = Date.now();
 
         return {
             type: 'ack',

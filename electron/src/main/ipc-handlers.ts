@@ -39,9 +39,10 @@ export function setupIpcHandlers(
 
         try {
             const health = await pythonBridge.request('GET', '/health');
+            const healthData = typeof health.data === 'object' && health.data !== null ? health.data : {};
             return {
                 running: true,
-                ...health.data,
+                ...(healthData as Record<string, unknown>),
             };
         } catch (error) {
             return {

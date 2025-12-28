@@ -34,7 +34,7 @@ const StatusPanel: React.FC<Props> = ({
         ]);
 
         setStats(activityStats);
-        setComponentStatus(classificationStatus);
+        setComponentStatus(classificationStatus as unknown as Record<string, unknown>);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }

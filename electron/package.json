@@ -7,10 +7,11 @@
     "dev": "cross-env NODE_ENV=development vite",
     "dev:electron": "electron .",
     "build": "tsc && vite build",
-    "start": "electron .",
+    "start": "cross-env NODE_ENV=development electron .",
     "package": "electron-builder"
   },
   "dependencies": {
+    "active-win": "^8.2.1",
     "electron-store": "^8.1.0"
   },
   "devDependencies": {

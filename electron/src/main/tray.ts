@@ -18,13 +18,13 @@ interface AppState {
 
 export class TrayManager extends EventEmitter {
     private tray: Tray | null = null;
-    private window: BrowserWindow;
+    private _window: BrowserWindow;
     private state: AppState;
     private isPaused = false;
 
     constructor(window: BrowserWindow, initialState: AppState) {
         super();
-        this.window = window;
+        this._window = window;
         this.state = initialState;
         this.createTray();
     }
@@ -55,7 +55,7 @@ export class TrayManager extends EventEmitter {
     /**
      * Get icon path based on state
      */
-    private getIconPath(state: 'connected' | 'disconnected' | 'error'): string {
+    private getIconPath(_state: 'connected' | 'disconnected' | 'error'): string {
         const assetsDir = path.join(__dirname, '../../assets');
 
         // For now, use same icon with different tooltip
@@ -130,7 +130,7 @@ export class TrayManager extends EventEmitter {
     /**
      * Get status icon for menu (placeholder - returns undefined for now)
      */
-    private getStatusIcon(): nativeImage | undefined {
+    private getStatusIcon(): ReturnType<typeof nativeImage.createFromPath> | undefined {
         // TODO: Create small status indicator icons
         return undefined;
     }

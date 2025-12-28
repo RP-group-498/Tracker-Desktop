@@ -9,6 +9,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { PythonBridge } from './python-bridge';
 import { NativeMessagingServer } from './native-messaging';
+import { DesktopActivityTracker } from './desktop-activity-tracker';
 import { TrayManager } from './tray';
 import { setupIpcHandlers } from './ipc-handlers';
 
@@ -22,21 +23,26 @@ if (!gotTheLock) {
 let mainWindow: BrowserWindow | null = null;
 let pythonBridge: PythonBridge | null = null;
 let nativeMessagingServer: NativeMessagingServer | null = null;
+let desktopActivityTracker: DesktopActivityTracker | null = null;
 let trayManager: TrayManager | null = null;
 
 // App state
 interface AppState {
     pythonRunning: boolean;
     extensionConnected: boolean;
+    desktopTrackingActive: boolean;
     currentSessionId: string | null;
     eventCount: number;
+    desktopEventCount: number;
 }
 
 const appState: AppState = {
     pythonRunning: false,
     extensionConnected: false,
+    desktopTrackingActive: false,
     currentSessionId: null,
     eventCount: 0,
+    desktopEventCount: 0,
 };
 
 /**
@@ -117,6 +123,8 @@ async function initializeServices(): Promise<void> {
     });
     nativeMessagingServer!.on('sessionCreated', (sessionId: string) => {
         appState.currentSessionId = sessionId;
+        // Also update desktop tracker with session ID
+        desktopActivityTracker?.setSessionId(sessionId);
         updateTrayAndWindow();
     });
     nativeMessagingServer!.on('eventsReceived', (count: number) => {
@@ -126,7 +134,41 @@ async function initializeServices(): Promise<void> {
 
     await nativeMessagingServer!.start();
 
-    // 3. Initialize system tray
+    // 3. Start Desktop Activity Tracker
+    console.log('[Main] Initializing Desktop Activity Tracker...');
+    try {
+        desktopActivityTracker = new DesktopActivityTracker(pythonBridge!);
+        desktopActivityTracker.on('started', () => {
+            appState.desktopTrackingActive = true;
+            updateTrayAndWindow();
+            console.log('[Main] Desktop activity tracking started');
+        });
+        desktopActivityTracker.on('stopped', () => {
+            appState.desktopTrackingActive = false;
+            updateTrayAndWindow();
+            console.log('[Main] Desktop activity tracking stopped');
+        });
+        desktopActivityTracker.on('activityRecorded', () => {
+            appState.desktopEventCount++;
+            updateTrayAndWindow();
+        });
+        desktopActivityTracker.on('error', (error) => {
+            console.error('[Main] Desktop tracker error:', error);
+        });
+
+        // Update session ID when it changes
+        if (appState.currentSessionId) {
+            desktopActivityTracker.setSessionId(appState.currentSessionId);
+        }
+
+        await desktopActivityTracker.start();
+        console.log('[Main] Desktop Activity Tracker started successfully');
+    } catch (error) {
+        console.error('[Main] Failed to start Desktop Activity Tracker:', error);
+        // Don't throw - allow app to continue without desktop tracking
+    }
+
+    // 4. Initialize system tray
     trayManager = new TrayManager(mainWindow!, appState);
     trayManager.on('show', () => mainWindow?.show());
     trayManager.on('quit', () => {
@@ -156,6 +198,11 @@ function updateTrayAndWindow(): void {
  */
 async function cleanup(): Promise<void> {
     console.log('[Main] Cleaning up...');
+
+    // Stop desktop activity tracker first (before backend)
+    if (desktopActivityTracker) {
+        await desktopActivityTracker.stop();
+    }
 
     if (nativeMessagingServer) {
         await nativeMessagingServer.stop();
@@ -224,8 +271,10 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // Extend app type for isQuitting flag
-declare module 'electron' {
-    interface App {
-        isQuitting?: boolean;
+declare global {
+    namespace Electron {
+        interface App {
+            isQuitting?: boolean;
+        }
     }
 }

@@ -18,7 +18,11 @@ export default defineConfig({
           build: {
             outDir: resolve(electronRoot, 'dist/main'),
             rollupOptions: {
-              external: ['electron'],
+              external: [
+                'electron',
+                // Native module - load from node_modules at runtime
+                'active-win',
+              ],
             },
           },
         },

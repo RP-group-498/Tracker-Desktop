@@ -83,24 +83,35 @@ class SocialContext(BaseModel):
 
 
 class ActivityEventCreate(BaseModel):
-    """Schema for incoming activity events from browser extension."""
+    """Schema for incoming activity events from browser extension or desktop tracker."""
 
     event_id: str = Field(..., alias="eventId")
     session_id: Optional[str] = Field(None, alias="sessionId")
     timestamp: datetime
     start_time: datetime = Field(..., alias="startTime")
     end_time: Optional[datetime] = Field(None, alias="endTime")
+
+    # Source identification (browser or desktop)
+    source: str = Field("browser", description="Event source: 'browser' or 'desktop'")
+    activity_type: str = Field("webpage", alias="activityType", description="Activity type: 'webpage' or 'application'")
+
+    # Common fields
     url: str
     domain: str
     path: str = ""
     title: str = ""
     active_time: int = Field(0, alias="activeTime")
     idle_time: int = Field(0, alias="idleTime")
-    tab_id: int = Field(..., alias="tabId")
-    window_id: int = Field(..., alias="windowId")
+    tab_id: int = Field(0, alias="tabId")
+    window_id: int = Field(0, alias="windowId")
     is_incognito: bool = Field(False, alias="isIncognito")
 
-    # Optional enrichment data
+    # Desktop-specific fields
+    app_name: Optional[str] = Field(None, alias="appName", description="Application name (desktop only)")
+    app_path: Optional[str] = Field(None, alias="appPath", description="Application executable path (desktop only)")
+    window_title: Optional[str] = Field(None, alias="windowTitle", description="Window title (desktop only)")
+
+    # Optional enrichment data (browser only)
     url_components: Optional[UrlComponents] = Field(None, alias="urlComponents")
     title_hints: Optional[TitleHints] = Field(None, alias="titleHints")
     engagement: Optional[EngagementMetrics] = None

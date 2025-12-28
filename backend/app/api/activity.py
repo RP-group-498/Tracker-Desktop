@@ -61,6 +61,14 @@ async def receive_activity_batch(
                         "title": event_data.title,
                         "active_time": event_data.active_time,
                         "path": event_data.path,
+                        # Source identification
+                        "source": event_data.source,
+                        "activity_type": event_data.activity_type,
+                        # Desktop-specific fields
+                        "app_name": event_data.app_name,
+                        "app_path": event_data.app_path,
+                        "window_title": event_data.window_title,
+                        # Context (browser only)
                         "youtube_context": event_data.youtube_context.model_dump() if event_data.youtube_context else None,
                         "google_context": event_data.google_context.model_dump() if event_data.google_context else None,
                         "social_context": event_data.social_context.model_dump() if event_data.social_context else None,
@@ -91,18 +99,30 @@ async def receive_activity_batch(
             event = ActivityEvent(
                 event_id=event_data.event_id,
                 session_id=event_data.session_id,
+                # Source identification
+                source=event_data.source,
+                activity_type=event_data.activity_type,
+                # Timestamps
                 timestamp=event_data.timestamp,
                 start_time=event_data.start_time,
                 end_time=event_data.end_time,
+                # URL/Domain info
                 url=event_data.url,
                 domain=event_data.domain,
                 path=event_data.path,
                 title=event_data.title,
+                # Desktop-specific fields
+                app_name=event_data.app_name,
+                app_path=event_data.app_path,
+                window_title=event_data.window_title,
+                # Time tracking
                 active_time=event_data.active_time,
                 idle_time=event_data.idle_time,
+                # Tab info
                 tab_id=event_data.tab_id,
                 window_id=event_data.window_id,
                 is_incognito=event_data.is_incognito,
+                # Enrichment data
                 url_components=event_data.url_components.model_dump() if event_data.url_components else None,
                 title_hints=event_data.title_hints.model_dump() if event_data.title_hints else None,
                 engagement=event_data.engagement.model_dump() if event_data.engagement else None,

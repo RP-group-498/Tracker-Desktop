@@ -45,7 +45,7 @@ class Classification(Base):
 
 
 class ActivityEvent(Base):
-    """Browser activity event from the extension."""
+    """Activity event from browser extension or desktop tracker."""
 
     __tablename__ = "activity_events"
 
@@ -55,27 +55,36 @@ class ActivityEvent(Base):
     # Session reference
     session_id = Column(String(36), ForeignKey("browser_sessions.session_id"), nullable=True, index=True)
 
+    # Source identification
+    source = Column(String(20), default="browser", index=True)  # browser, desktop
+    activity_type = Column(String(20), default="webpage")  # webpage, application
+
     # Timestamps
     timestamp = Column(DateTime, nullable=False, index=True)
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=True)
 
-    # URL info
+    # URL/Domain info (for browser events)
     url = Column(Text, nullable=False)
     domain = Column(String(255), nullable=False, index=True)
     path = Column(String(1024), nullable=True)
     title = Column(String(512), nullable=True)
 
-    # Time tracking
-    active_time = Column(Integer, default=0)  # seconds
-    idle_time = Column(Integer, default=0)  # seconds
+    # Desktop-specific fields
+    app_name = Column(String(255), nullable=True, index=True)  # Application name (desktop only)
+    app_path = Column(Text, nullable=True)  # Application executable path (desktop only)
+    window_title = Column(String(512), nullable=True)  # Window title (desktop only)
 
-    # Tab info
+    # Time tracking
+    active_time = Column(Integer, default=0)  # milliseconds
+    idle_time = Column(Integer, default=0)  # milliseconds
+
+    # Tab info (for browser events)
     tab_id = Column(Integer, nullable=True)
     window_id = Column(Integer, nullable=True)
     is_incognito = Column(Boolean, default=False)
 
-    # Enrichment data (stored as JSON)
+    # Enrichment data (stored as JSON) - browser only
     url_components = Column(JSON, nullable=True)
     title_hints = Column(JSON, nullable=True)
     engagement = Column(JSON, nullable=True)
@@ -89,4 +98,6 @@ class ActivityEvent(Base):
     classification = relationship("Classification", back_populates="activities")
 
     def __repr__(self) -> str:
-        return f"<ActivityEvent {self.event_id} ({self.domain})>"
+        if self.source == "desktop":
+            return f"<ActivityEvent {self.event_id} (desktop: {self.app_name})>"
+        return f"<ActivityEvent {self.event_id} (browser: {self.domain})>"
