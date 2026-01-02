@@ -15,6 +15,32 @@ let activeWin: typeof import('active-win');
 const POLL_INTERVAL = 1000; // 1 second
 const MIN_ACTIVITY_DURATION = 1000; // Minimum 1 second to record
 
+// Browser apps to skip (browser extension handles these)
+const BROWSER_APPS = new Set([
+    'chrome',
+    'google chrome',
+    'firefox',
+    'mozilla firefox',
+    'edge',
+    'msedge',
+    'microsoft edge',
+    'brave',
+    'brave browser',
+    'opera',
+    'safari',
+    'vivaldi',
+    'arc',
+    'chromium',
+]);
+
+/**
+ * Check if an app is a browser (should be skipped when browser extension is active)
+ */
+function isBrowserApp(appName: string): boolean {
+    const normalized = appName.toLowerCase().replace(/\.exe$/i, '').trim();
+    return BROWSER_APPS.has(normalized);
+}
+
 interface ActiveWindowInfo {
     title: string;
     id: number;
@@ -101,17 +127,22 @@ export class DesktopActivityTracker extends EventEmitter {
             // Get initial active window
             const initialWindow = await activeWin();
             if (initialWindow) {
-                this.currentWindow = {
-                    title: initialWindow.title,
-                    id: initialWindow.id,
-                    owner: {
-                        name: initialWindow.owner.name,
-                        processId: initialWindow.owner.processId,
-                        path: initialWindow.owner.path,
-                    },
-                };
-                this.windowStartTime = new Date();
-                console.log(`[DesktopTracker] Initial window: ${this.currentWindow.owner.name} - ${this.currentWindow.title}`);
+                // Skip if initial window is a browser
+                if (isBrowserApp(initialWindow.owner.name)) {
+                    console.log(`[DesktopTracker] Initial window is browser (${initialWindow.owner.name}) - skipping (handled by extension)`);
+                } else {
+                    this.currentWindow = {
+                        title: initialWindow.title,
+                        id: initialWindow.id,
+                        owner: {
+                            name: initialWindow.owner.name,
+                            processId: initialWindow.owner.processId,
+                            path: initialWindow.owner.path,
+                        },
+                    };
+                    this.windowStartTime = new Date();
+                    console.log(`[DesktopTracker] Initial window: ${this.currentWindow.owner.name} - ${this.currentWindow.title}`);
+                }
             }
 
             // Start polling
@@ -167,6 +198,19 @@ export class DesktopActivityTracker extends EventEmitter {
                     await this.flushCurrentWindow();
                     this.currentWindow = null;
                     this.windowStartTime = null;
+                }
+                return;
+            }
+
+            // Skip browser apps - browser extension handles these
+            // This prevents duplicate data when both desktop tracker and browser extension are active
+            if (isBrowserApp(window.owner.name)) {
+                // Flush any previous non-browser window before switching to browser
+                if (this.currentWindow && this.windowStartTime) {
+                    await this.flushCurrentWindow();
+                    this.currentWindow = null;
+                    this.windowStartTime = null;
+                    console.log(`[DesktopTracker] Switched to browser (${window.owner.name}) - skipping (handled by extension)`);
                 }
                 return;
             }
