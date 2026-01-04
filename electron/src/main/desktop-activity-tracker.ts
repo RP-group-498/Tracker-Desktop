@@ -3,9 +3,11 @@
  *
  * Tracks active window/application usage on the desktop.
  * Polls every 1 second using the active-win package.
+ * Includes idle detection using Electron's powerMonitor API.
  */
 
 import { EventEmitter } from 'events';
+import { powerMonitor } from 'electron';
 import { PythonBridge } from './python-bridge';
 import { randomUUID } from 'crypto';
 
@@ -14,6 +16,7 @@ let activeWin: typeof import('active-win');
 
 const POLL_INTERVAL = 1000; // 1 second
 const MIN_ACTIVITY_DURATION = 1000; // Minimum 1 second to record
+const IDLE_THRESHOLD_SECONDS = 60; // Consider user idle after 60 seconds of inactivity
 
 // Browser apps to skip (browser extension handles these)
 const BROWSER_APPS = new Set([
@@ -99,12 +102,25 @@ export class DesktopActivityTracker extends EventEmitter {
     private windowStartTime: Date | null = null;
     private currentSessionId: string | null = null;
 
+    // Idle tracking
+    private isUserIdle = false;
+    private idleStartTime: Date | null = null;
+    private accumulatedIdleTime = 0; // Accumulated idle time in ms for current window
+
     // Statistics
     private totalEventsTracked = 0;
 
     constructor(pythonBridge: PythonBridge) {
         super();
         this.pythonBridge = pythonBridge;
+    }
+
+    /**
+     * Check if user is currently idle using Electron's powerMonitor
+     */
+    private checkIdleState(): boolean {
+        const idleTime = powerMonitor.getSystemIdleTime(); // Returns seconds
+        return idleTime >= IDLE_THRESHOLD_SECONDS;
     }
 
     /**
@@ -186,10 +202,31 @@ export class DesktopActivityTracker extends EventEmitter {
     }
 
     /**
-     * Poll for active window changes
+     * Poll for active window changes and idle state
      */
     private async poll(): Promise<void> {
         try {
+            // Check idle state first
+            const wasIdle = this.isUserIdle;
+            this.isUserIdle = this.checkIdleState();
+
+            // Handle idle state transitions
+            if (this.isUserIdle && !wasIdle) {
+                // User just became idle
+                this.idleStartTime = new Date();
+                console.log('[DesktopTracker] User became idle');
+                this.emit('idleStateChanged', true);
+            } else if (!this.isUserIdle && wasIdle) {
+                // User returned from idle
+                if (this.idleStartTime) {
+                    const idleDuration = Date.now() - this.idleStartTime.getTime();
+                    this.accumulatedIdleTime += idleDuration;
+                    console.log(`[DesktopTracker] User returned from idle (was idle for ${Math.round(idleDuration / 1000)}s)`);
+                }
+                this.idleStartTime = null;
+                this.emit('idleStateChanged', false);
+            }
+
             const window = await activeWin();
 
             if (!window) {
@@ -198,6 +235,7 @@ export class DesktopActivityTracker extends EventEmitter {
                     await this.flushCurrentWindow();
                     this.currentWindow = null;
                     this.windowStartTime = null;
+                    this.resetIdleTracking();
                 }
                 return;
             }
@@ -210,6 +248,7 @@ export class DesktopActivityTracker extends EventEmitter {
                     await this.flushCurrentWindow();
                     this.currentWindow = null;
                     this.windowStartTime = null;
+                    this.resetIdleTracking();
                     console.log(`[DesktopTracker] Switched to browser (${window.owner.name}) - skipping (handled by extension)`);
                 }
                 return;
@@ -236,9 +275,10 @@ export class DesktopActivityTracker extends EventEmitter {
                     await this.flushCurrentWindow();
                 }
 
-                // Start tracking new window
+                // Start tracking new window (reset idle accumulator)
                 this.currentWindow = newWindow;
                 this.windowStartTime = new Date();
+                this.resetIdleTracking();
                 console.log(`[DesktopTracker] Window changed: ${newWindow.owner.name} - ${newWindow.title}`);
             } else {
                 // Update title if it changed within same window
@@ -253,6 +293,15 @@ export class DesktopActivityTracker extends EventEmitter {
     }
 
     /**
+     * Reset idle tracking state (called when switching windows)
+     */
+    private resetIdleTracking(): void {
+        this.accumulatedIdleTime = 0;
+        this.idleStartTime = null;
+        // Don't reset isUserIdle - that reflects current system state
+    }
+
+    /**
      * Flush current window activity to backend
      */
     private async flushCurrentWindow(): Promise<void> {
@@ -261,19 +310,32 @@ export class DesktopActivityTracker extends EventEmitter {
         }
 
         const endTime = new Date();
-        const duration = endTime.getTime() - this.windowStartTime.getTime();
+        const totalDuration = endTime.getTime() - this.windowStartTime.getTime();
 
         // Only record if duration meets minimum threshold
-        if (duration < MIN_ACTIVITY_DURATION) {
+        if (totalDuration < MIN_ACTIVITY_DURATION) {
             return;
         }
+
+        // Calculate final idle time (including any ongoing idle period)
+        let totalIdleTime = this.accumulatedIdleTime;
+        if (this.isUserIdle && this.idleStartTime) {
+            // User is currently idle - add the ongoing idle period
+            totalIdleTime += endTime.getTime() - this.idleStartTime.getTime();
+        }
+
+        // Active time is total duration minus idle time
+        const activeTime = Math.max(0, totalDuration - totalIdleTime);
 
         const event = this.createActivityEvent(
             this.currentWindow,
             this.windowStartTime,
             endTime,
-            duration
+            activeTime,
+            totalIdleTime
         );
+
+        console.log(`[DesktopTracker] Flushing: ${this.currentWindow.owner.name}, total=${Math.round(totalDuration/1000)}s, active=${Math.round(activeTime/1000)}s, idle=${Math.round(totalIdleTime/1000)}s`);
 
         await this.sendActivity(event);
     }
@@ -285,7 +347,8 @@ export class DesktopActivityTracker extends EventEmitter {
         window: ActiveWindowInfo,
         startTime: Date,
         endTime: Date,
-        duration: number
+        activeTime: number,
+        idleTime: number
     ): DesktopActivityEvent {
         const appName = window.owner.name;
         const appPath = window.owner.path;
@@ -307,9 +370,9 @@ export class DesktopActivityTracker extends EventEmitter {
             url: `app://${appName.toLowerCase().replace(/\.exe$/i, '')}/${window.id}`,
             path: '',
             title: window.title,
-            // Timing
-            activeTime: duration,
-            idleTime: 0,
+            // Timing (now properly calculated with idle detection)
+            activeTime: activeTime,
+            idleTime: idleTime,
             tabId: 0,
             windowId: window.id,
             isIncognito: false,
@@ -340,11 +403,19 @@ export class DesktopActivityTracker extends EventEmitter {
     /**
      * Get tracker status
      */
-    getStatus(): { running: boolean; eventsTracked: number; currentApp: string | null } {
+    getStatus(): {
+        running: boolean;
+        eventsTracked: number;
+        currentApp: string | null;
+        isUserIdle: boolean;
+        idleThresholdSeconds: number;
+    } {
         return {
             running: this.isRunning,
             eventsTracked: this.totalEventsTracked,
             currentApp: this.currentWindow?.owner.name || null,
+            isUserIdle: this.isUserIdle,
+            idleThresholdSeconds: IDLE_THRESHOLD_SECONDS,
         };
     }
 
@@ -353,5 +424,12 @@ export class DesktopActivityTracker extends EventEmitter {
      */
     getIsRunning(): boolean {
         return this.isRunning;
+    }
+
+    /**
+     * Check if user is currently idle
+     */
+    getIsUserIdle(): boolean {
+        return this.isUserIdle;
     }
 }
