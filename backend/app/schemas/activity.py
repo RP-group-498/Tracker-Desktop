@@ -86,6 +86,7 @@ class ActivityEventCreate(BaseModel):
     """Schema for incoming activity events from browser extension or desktop tracker."""
 
     event_id: str = Field(..., alias="eventId")
+    user_id: Optional[str] = Field(None, alias="userId")
     session_id: Optional[str] = Field(None, alias="sessionId")
     timestamp: datetime
     start_time: datetime = Field(..., alias="startTime")
