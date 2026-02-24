@@ -51,6 +51,7 @@ class ActivityEvent(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     event_id = Column(String(36), unique=True, index=True, nullable=False)
+    user_id = Column(String(36), nullable=True, index=True)  # User identifier
 
     # Session reference
     session_id = Column(String(36), ForeignKey("browser_sessions.session_id"), nullable=True, index=True)

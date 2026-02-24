@@ -1,5 +1,6 @@
 """Activity event endpoints."""
 
+import asyncio
 from datetime import datetime
 from typing import List, Optional
 
@@ -7,6 +8,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
+from app.services.user_manager import get_user_manager
+from app.services.mongodb_sync import get_mongodb_sync, MongoDBSyncService
 
 from app.core.database import get_db
 from app.core.component_registry import ComponentRegistry
@@ -35,9 +39,14 @@ async def receive_activity_batch(
     """
     received_ids: List[str] = []
     errors: List[str] = []
+    mongo_documents: List[dict] = []  # Collect docs for MongoDB sync
 
     registry = ComponentRegistry.get_instance()
     classifier = registry.get("classification")
+
+    # Get user ID from the user manager
+    user_manager = get_user_manager()
+    user_id = user_manager.get_user_id() if user_manager else None
 
     for event_data in batch.events:
         try:
@@ -98,6 +107,7 @@ async def receive_activity_batch(
             # Create activity event
             event = ActivityEvent(
                 event_id=event_data.event_id,
+                user_id=user_id,
                 session_id=event_data.session_id,
                 # Source identification
                 source=event_data.source,
@@ -133,10 +143,52 @@ async def receive_activity_batch(
             db.add(event)
             received_ids.append(event_data.event_id)
 
+            # Build MongoDB document for sync
+            class_dict = None
+            if classification:
+                class_dict = {
+                    "category": classification.category,
+                    "confidence": classification.confidence,
+                    "source": classification.source,
+                }
+
+            mongo_doc = MongoDBSyncService.build_document(
+                event_data={
+                    "event_id": event_data.event_id,
+                    "session_id": event_data.session_id,
+                    "source": event_data.source,
+                    "activity_type": event_data.activity_type,
+                    "timestamp": event_data.timestamp,
+                    "start_time": event_data.start_time,
+                    "end_time": event_data.end_time,
+                    "url": event_data.url,
+                    "domain": event_data.domain,
+                    "path": event_data.path,
+                    "title": event_data.title,
+                    "app_name": event_data.app_name,
+                    "app_path": event_data.app_path,
+                    "window_title": event_data.window_title,
+                    "active_time": event_data.active_time,
+                    "idle_time": event_data.idle_time,
+                    "url_components": event_data.url_components.model_dump() if event_data.url_components else None,
+                    "title_hints": event_data.title_hints.model_dump() if event_data.title_hints else None,
+                    "engagement": event_data.engagement.model_dump() if event_data.engagement else None,
+                    "context_data": context_data if context_data else None,
+                },
+                classification=class_dict,
+                user_id=user_id or "",
+            )
+            mongo_documents.append(mongo_doc)
+
         except Exception as e:
             errors.append(f"Error processing {event_data.event_id}: {str(e)}")
 
     await db.commit()
+
+    # Sync to MongoDB in the background (fire-and-forget)
+    mongo_sync = get_mongodb_sync()
+    if mongo_sync and mongo_documents:
+        asyncio.create_task(mongo_sync.sync_batch(mongo_documents))
 
     return ActivityBatchResponse(
         success=len(errors) == 0,
@@ -225,6 +277,15 @@ async def get_activity_stats(
         "total_idle_time": row.total_idle_time or 0,
         "by_category": categories,
     }
+
+
+@router.get("/user-id")
+async def get_current_user_id():
+    """Get the current user ID for this machine."""
+    user_manager = get_user_manager()
+    if not user_manager:
+        raise HTTPException(status_code=500, detail="User manager not initialized")
+    return {"user_id": user_manager.get_user_id()}
 
 
 @router.get("/{event_id}", response_model=ActivityEventResponse)
