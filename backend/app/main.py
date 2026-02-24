@@ -14,6 +14,8 @@ from app.config import settings
 from app.core.database import init_db, close_db
 from app.components import load_all_components
 from app.api import api_router
+from app.services.user_manager import init_user_manager
+from app.services.mongodb_sync import init_mongodb_sync
 
 
 @asynccontextmanager
@@ -23,12 +25,28 @@ async def lifespan(app: FastAPI):
     print(f"[Backend] Starting {settings.app_name} v{settings.app_version}")
     await init_db()
     load_all_components(settings.component_config)
+
+    # Initialize user manager
+    user_manager = init_user_manager(settings.data_dir)
+    print(f"[Backend] User ID: {user_manager.get_user_id()}")
+
+    # Initialize MongoDB sync if configured
+    mongo_sync = None
+    if settings.mongodb_uri and settings.mongodb_sync_enabled:
+        mongo_sync = init_mongodb_sync()
+        await mongo_sync.initialize(settings.mongodb_uri, settings.mongodb_database)
+        print("[Backend] MongoDB sync enabled")
+    else:
+        print("[Backend] MongoDB sync disabled (no URI configured or sync not enabled)")
+
     print("[Backend] Ready to accept connections")
 
     yield
 
     # Shutdown
     print("[Backend] Shutting down...")
+    if mongo_sync:
+        await mongo_sync.close()
     await close_db()
     print("[Backend] Goodbye!")
 

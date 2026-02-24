@@ -16,6 +16,14 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite+aiosqlite:///./data/focusapp.db"
 
+    # MongoDB (for research team sync)
+    mongodb_uri: str = ""  # e.g. "mongodb+srv://user:pass@cluster.mongodb.net/"
+    mongodb_database: str = "focus_app_research"
+    mongodb_sync_enabled: bool = False  # Enable when URI is configured
+
+    # User identification
+    user_id: str = ""  # Auto-generated on first run if empty
+
     # API
     api_prefix: str = "/api"
     cors_origins: list[str] = ["http://localhost:*", "http://127.0.0.1:*"]
