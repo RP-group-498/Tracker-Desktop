@@ -1,8 +1,10 @@
 """
-Classification Component - Stub Implementation
+Classification Component - Enhanced with ML
 
-This is a placeholder component that provides basic rule-based classification.
-It will be replaced with the full ML-based classification system.
+Provides three-layer classification architecture:
+1. Rule-based classification (fast, high confidence)
+2. ML-based classification (medium confidence, for uncertain cases)
+3. Fallback to neutral (low confidence)
 
 Classification Categories:
 - academic: Related to studies, research, learning
@@ -11,8 +13,9 @@ Classification Categories:
 - non_academic: Entertainment, social media, gaming
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import random
+import logging
 
 from app.components.base import ComponentBase
 from .schemas import ClassificationInput, ClassificationOutput
@@ -124,27 +127,43 @@ DESKTOP_NEUTRAL_APPS = {
 
 class ClassificationComponent(ComponentBase):
     """
-    Classification Component Stub.
+    Enhanced Classification Component with ML Integration.
 
-    Provides basic rule-based classification for development and testing.
-    Returns classifications based on domain matching.
+    Provides three-layer classification:
+    1. Rule-based (domain/app matching) - high confidence (≥0.80)
+    2. ML model (zero-shot) - medium confidence (≥0.60)
+    3. Fallback (neutral) - low confidence (0.50)
 
-    Future versions will implement:
-    - ML model inference (Homepage2Vec, DistilBERT)
-    - Local LLM classification (Ollama)
-    - User feedback learning
+    The ML layer uses facebook/bart-large-mnli for zero-shot classification,
+    requiring no training data - a valid research approach for establishing
+    baselines that can be improved through fine-tuning.
     """
 
     def __init__(self):
         self._initialized = False
         self._config: Dict[str, Any] = {}
+        self._ml_classifier: Optional[Any] = None
+        self._ml_enabled = False
+
+        # Enhanced statistics tracking
         self._stats = {
             "total_classified": 0,
+            "by_layer": {
+                "rules": 0,
+                "model": 0,
+                "fallback": 0,
+            },
             "by_category": {
                 "academic": 0,
                 "productivity": 0,
                 "neutral": 0,
                 "non_academic": 0,
+            },
+            "ml_stats": {
+                "calls": 0,
+                "successes": 0,
+                "failures": 0,
+                "avg_confidence": 0.0,
             },
         }
 
@@ -154,26 +173,66 @@ class ClassificationComponent(ComponentBase):
 
     @property
     def version(self) -> str:
-        return "0.1.0-stub"
+        return "0.2.0-ml" if self._ml_enabled else "0.1.0-rules"
 
     @property
     def dependencies(self) -> List[str]:
         return []  # No dependencies - this is the first component
 
     def initialize(self, config: Dict[str, Any]) -> None:
-        """Initialize the stub classifier."""
+        """
+        Initialize the classification component with optional ML support.
+
+        Args:
+            config: Configuration dictionary, can include:
+                - ml: ML configuration (enabled, model_type, etc.)
+        """
         self._config = config
+
+        # Initialize ML classifier if enabled
+        ml_config = config.get("ml", {})
+        self._ml_enabled = ml_config.get("enabled", False)
+
+        if self._ml_enabled:
+            try:
+                from .ml_classifier import MLClassifier
+                from .config import get_ml_config
+
+                ml_settings = get_ml_config(ml_config)
+                model_config = ml_settings.get(ml_settings.get("model_type", "zero_shot"), {})
+                self._ml_classifier = MLClassifier(model_config)
+
+                # Lazy loading: don't initialize model here
+                if not ml_settings.get("lazy_loading", True):
+                    self._ml_classifier.initialize()
+                    logging.info("[Classification] ML model loaded (eager)")
+                else:
+                    logging.info("[Classification] ML model configured (lazy loading)")
+
+            except Exception as e:
+                logging.error(f"[Classification] Failed to initialize ML: {e}")
+                self._ml_enabled = False
+
         self._initialized = True
-        print(f"[Classification] Stub initialized (v{self.version})")
-        print(f"[Classification] Rules: {len(ACADEMIC_DOMAINS)} academic, "
-              f"{len(PRODUCTIVITY_DOMAINS)} productivity, "
-              f"{len(NON_ACADEMIC_DOMAINS)} non-academic domains")
+        logging.info(f"[Classification] Component initialized (v{self.version})")
+        logging.info(f"[Classification] ML Layer: {'Enabled' if self._ml_enabled else 'Disabled'}")
+        logging.info(f"[Classification] Rules: {len(ACADEMIC_DOMAINS)} academic, "
+                    f"{len(PRODUCTIVITY_DOMAINS)} productivity, "
+                    f"{len(NON_ACADEMIC_DOMAINS)} non-academic domains")
 
     def process(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Classify a browsing or desktop activity.
+        Classify a browsing or desktop activity using three-layer approach.
 
-        Uses simple rule matching for the stub implementation.
+        Layer 1: Rule-based classification (fast, high confidence ≥0.80)
+        Layer 2: ML classification (medium confidence ≥0.60, for uncertain cases)
+        Layer 3: Fallback to neutral (low confidence = 0.50)
+
+        Args:
+            data: Activity data dictionary
+
+        Returns:
+            ClassificationOutput as dict with category, confidence, source, etc.
         """
         if not self._initialized:
             raise RuntimeError("Component not initialized")
@@ -183,15 +242,11 @@ class ClassificationComponent(ComponentBase):
             input_data = ClassificationInput(**data)
         except Exception as e:
             # Fallback for malformed input
-            return ClassificationOutput(
-                category="neutral",
-                confidence=0.5,
-                source="stub",
-                explanation=f"Parse error: {str(e)}"
-            ).model_dump()
+            return self._create_fallback_output(f"Parse error: {str(e)}")
 
-        # Check if this is a desktop event
         source = data.get("source", "browser")
+
+        # LAYER 1: Rule-based classification
         if source == "desktop":
             # Desktop app classification
             app_name = data.get("app_name", "").lower()
@@ -203,15 +258,61 @@ class ClassificationComponent(ComponentBase):
             url = input_data.url.lower()
             title = input_data.title.lower()
 
-            # Check rules in priority order
+            # Apply rule-based classification
             category, confidence, matched_rule = self._classify_by_rules(domain, url, title)
 
-            # Handle special contexts
+            # Handle special contexts (YouTube, Google)
             if input_data.youtube_context:
                 category, confidence = self._classify_youtube(input_data.youtube_context, category)
 
             if input_data.google_context:
                 category, confidence = self._classify_google(input_data.google_context, category)
+
+        # Determine which layer to use based on rule confidence
+        if confidence >= 0.80:
+            # LAYER 1: High confidence from rules - use directly
+            source_type = "rules"
+            self._stats["by_layer"]["rules"] += 1
+
+        elif self._should_use_ml(confidence):
+            # LAYER 2: Try ML classification for uncertain cases
+            ml_result = self._classify_with_ml(
+                url=data.get("url", ""),
+                title=data.get("title", "") or data.get("window_title", ""),
+                domain=data.get("domain", "")
+            )
+
+            if ml_result and ml_result["confidence"] >= 0.60:
+                # ML provided good classification
+                category = ml_result["category"]
+                confidence = ml_result["confidence"]
+                matched_rule = ml_result.get("explanation", "ml_classification")
+                source_type = "model"
+                self._stats["by_layer"]["model"] += 1
+            else:
+                # ML failed or low confidence - use rule result or fallback
+                if confidence >= 0.50:
+                    source_type = "rules"
+                    self._stats["by_layer"]["rules"] += 1
+                else:
+                    # LAYER 3: Fallback to neutral
+                    category = "neutral"
+                    confidence = 0.50
+                    matched_rule = "fallback"
+                    source_type = "fallback"
+                    self._stats["by_layer"]["fallback"] += 1
+        else:
+            # No ML available, use rule result or fallback
+            if confidence >= 0.50:
+                source_type = "rules"
+                self._stats["by_layer"]["rules"] += 1
+            else:
+                # LAYER 3: Fallback
+                category = "neutral"
+                confidence = 0.50
+                matched_rule = "fallback"
+                source_type = "fallback"
+                self._stats["by_layer"]["fallback"] += 1
 
         # Update stats
         self._stats["total_classified"] += 1
@@ -220,7 +321,7 @@ class ClassificationComponent(ComponentBase):
         output = ClassificationOutput(
             category=category,
             confidence=confidence,
-            source="stub",
+            source=source_type,
             matched_rule=matched_rule,
         )
 
@@ -338,14 +439,99 @@ class ClassificationComponent(ComponentBase):
 
         return current_category, 0.6
 
+    def _should_use_ml(self, rule_confidence: float) -> bool:
+        """
+        Determine if ML layer should be invoked.
+
+        Args:
+            rule_confidence: Confidence from rule-based layer
+
+        Returns:
+            True if ML should be tried
+        """
+        if not self._ml_enabled or not self._ml_classifier:
+            return False
+
+        # Use ML for uncertain rule-based results
+        return rule_confidence < 0.80
+
+    def _classify_with_ml(self, url: str, title: str, domain: str) -> Optional[Dict]:
+        """
+        Classify using ML model.
+
+        Args:
+            url: Full URL
+            title: Page or window title
+            domain: Domain name
+
+        Returns:
+            ML classification result or None if failed
+        """
+        if not self._ml_classifier:
+            return None
+
+        # Lazy initialization
+        if not self._ml_classifier._initialized:
+            try:
+                logging.info("[Classification] Loading ML model (first use)...")
+                self._ml_classifier.initialize()
+            except Exception as e:
+                logging.error(f"[Classification] ML init failed: {e}")
+                self._ml_enabled = False
+                return None
+
+        try:
+            self._stats["ml_stats"]["calls"] += 1
+
+            result = self._ml_classifier.classify(url, title, domain)
+
+            if result:
+                self._stats["ml_stats"]["successes"] += 1
+                # Update rolling average confidence
+                total = self._stats["ml_stats"]["successes"]
+                current_avg = self._stats["ml_stats"]["avg_confidence"]
+                new_avg = (current_avg * (total - 1) + result["confidence"]) / total
+                self._stats["ml_stats"]["avg_confidence"] = new_avg
+            else:
+                self._stats["ml_stats"]["failures"] += 1
+
+            return result
+
+        except Exception as e:
+            logging.error(f"[Classification] ML classification error: {e}")
+            self._stats["ml_stats"]["failures"] += 1
+            return None
+
+    def _create_fallback_output(self, reason: str) -> Dict[str, Any]:
+        """
+        Create fallback classification output.
+
+        Args:
+            reason: Reason for fallback
+
+        Returns:
+            ClassificationOutput dict
+        """
+        return ClassificationOutput(
+            category="neutral",
+            confidence=0.5,
+            source="fallback",
+            explanation=reason
+        ).model_dump()
+
     def get_status(self) -> Dict[str, Any]:
-        """Return component status."""
-        return {
+        """
+        Return component status with ML statistics.
+
+        Returns:
+            Dict with component status, stats, and ML information
+        """
+        status = {
             "name": self.name,
             "version": self.version,
             "initialized": self._initialized,
-            "type": "stub",
-            "model_loaded": False,
+            "type": "enhanced_ml" if self._ml_enabled else "rules_only",
+            "model_loaded": self._ml_classifier._initialized if self._ml_classifier else False,
             "stats": self._stats,
             "rules": {
                 # Browser domain rules
@@ -359,3 +545,9 @@ class ClassificationComponent(ComponentBase):
                 "desktop_neutral_apps": len(DESKTOP_NEUTRAL_APPS),
             },
         }
+
+        # Add ML-specific status if enabled
+        if self._ml_enabled and self._ml_classifier:
+            status["ml_status"] = self._ml_classifier.get_stats()
+
+        return status
