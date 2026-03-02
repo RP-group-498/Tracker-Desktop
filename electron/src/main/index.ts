@@ -68,7 +68,7 @@ function createWindow(): void {
 
     // Load the renderer
     if (process.env.NODE_ENV === 'development') {
-        mainWindow.loadURL('http://localhost:3000');
+        mainWindow.loadURL('http://localhost:5173');
         mainWindow.webContents.openDevTools({ mode: 'detach' });
     } else {
         mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
