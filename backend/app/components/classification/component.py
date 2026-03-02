@@ -28,25 +28,39 @@ ACADEMIC_DOMAINS = {
     # Research
     "scholar.google", "researchgate.net", "academia.edu",
     "arxiv.org", "pubmed.ncbi", "jstor.org", "ieee.org",
+    "semanticscholar.org", "paperswithcode.com", "connectedpapers.com",
     # Learning platforms
     "coursera.org", "edx.org", "khanacademy.org", "udemy.com",
     "udacity.com", "brilliant.org", "duolingo.com",
+    "freecodecamp.org", "codecademy.com", "pluralsight.com",
+    "datacamp.com", "kaggle.com", "skillshare.com",
     # Reference
     "wikipedia.org", "wikimedia.org", "britannica.com",
-    # University
+    "wolframalpha.com", "mathway.com", "symbolab.com",
+    # University/LMS
     "canvas", "blackboard", "moodle",
+    # Research Tools
+    "zotero.org", "mendeley.com", "overleaf.com",
 }
 
 PRODUCTIVITY_DOMAINS = {
     # Development
     "github.com", "gitlab.com", "bitbucket.org",
     "stackoverflow.com", "stackexchange.com",
+    # Developer Communities & Blogs
+    "dev.to", "medium.com", "hashnode.dev", "hashnode.com",
+    "developer.mozilla.org", "css-tricks.com",
     # Documentation
     "docs.google.com", "notion.so", "confluence",
+    "readthedocs.io", "readthedocs.org",
     # Cloud/Office
     "drive.google.com", "office.com", "dropbox.com",
     # IDEs online
-    "replit.com", "codepen.io", "codesandbox.io",
+    "replit.com", "codepen.io", "codesandbox.io", "stackblitz.com",
+    # Hosting/Deployment
+    "vercel.com", "netlify.com", "heroku.com",
+    # Package Managers
+    "npmjs.com", "pypi.org", "packagist.org",
 }
 
 NON_ACADEMIC_DOMAINS = {
@@ -131,7 +145,7 @@ class ClassificationComponent(ComponentBase):
 
     Provides three-layer classification:
     1. Rule-based (domain/app matching) - high confidence (≥0.80)
-    2. ML model (zero-shot) - medium confidence (≥0.60)
+    2. ML model (zero-shot) - medium confidence (≥0.55)
     3. Fallback (neutral) - low confidence (0.50)
 
     The ML layer uses facebook/bart-large-mnli for zero-shot classification,
@@ -225,7 +239,7 @@ class ClassificationComponent(ComponentBase):
         Classify a browsing or desktop activity using three-layer approach.
 
         Layer 1: Rule-based classification (fast, high confidence ≥0.80)
-        Layer 2: ML classification (medium confidence ≥0.60, for uncertain cases)
+        Layer 2: ML classification (medium confidence ≥0.55, for uncertain cases)
         Layer 3: Fallback to neutral (low confidence = 0.50)
 
         Args:
@@ -282,7 +296,7 @@ class ClassificationComponent(ComponentBase):
                 domain=data.get("domain", "")
             )
 
-            if ml_result and ml_result["confidence"] >= 0.60:
+            if ml_result and ml_result["confidence"] >= 0.55:
                 # ML provided good classification
                 category = ml_result["category"]
                 confidence = ml_result["confidence"]
@@ -434,7 +448,35 @@ class ClassificationComponent(ComponentBase):
             return "productivity", 0.75
 
         if context.get("isSearch"):
-            # Could be anything
+            # Analyze search query for academic/productivity keywords
+            query = context.get("query", "").lower()
+
+            # Academic keywords
+            academic_keywords = [
+                "research", "paper", "study", "learn", "learning", "course", "tutorial",
+                "education", "university", "scholar", "academic", "thesis", "journal",
+                "lecture", "homework", "assignment", "exam", "textbook", "chapter",
+                "definition", "explain", "theory", "formula", "equation", "solve",
+                "science", "math", "physics", "chemistry", "biology", "history"
+            ]
+
+            # Productivity/work keywords
+            productivity_keywords = [
+                "code", "coding", "programming", "developer", "development",
+                "documentation", "api", "github", "stackoverflow", "debug",
+                "error", "function", "class", "method", "algorithm", "data structure",
+                "software", "framework", "library", "package", "install", "deploy"
+            ]
+
+            # Check for academic keywords
+            if query and any(keyword in query for keyword in academic_keywords):
+                return "academic", 0.70
+
+            # Check for productivity keywords
+            if query and any(keyword in query for keyword in productivity_keywords):
+                return "productivity", 0.70
+
+            # Default to neutral for generic searches
             return "neutral", 0.55
 
         return current_category, 0.6

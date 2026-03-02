@@ -16,7 +16,7 @@ DEFAULT_ML_CONFIG: Dict[str, Any] = {
     "zero_shot": {
         "model_name": "facebook/bart-large-mnli",
         "device": "cpu",  # "cpu" or "cuda" (if GPU available)
-        "confidence_threshold": 0.60,  # Minimum confidence to accept ML result
+        "confidence_threshold": 0.55,  # Minimum confidence to accept ML result (lowered from 0.60 to reduce neutral classifications)
         "batch_size": 1,  # Batch size for inference (1 for real-time)
     },
 
