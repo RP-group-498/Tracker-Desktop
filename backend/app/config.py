@@ -29,7 +29,20 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:*", "http://127.0.0.1:*"]
 
     # Component configuration
-    component_config: dict = {}
+    component_config: dict = {
+        "classification": {
+            "ml": {
+                "enabled": True,  # Enable ML classification layer
+                "model_type": "zero_shot",  # "zero_shot" or "embeddings"
+                "lazy_loading": True,  # Load model on first use (faster startup)
+                "zero_shot": {
+                    "model_name": "facebook/bart-large-mnli",
+                    "device": "cpu",  # "cpu" or "cuda" (if GPU available)
+                    "confidence_threshold": 0.60,  # Minimum confidence for ML
+                },
+            }
+        }
+    }
 
     # Paths
     data_dir: Path = Path("./data")
