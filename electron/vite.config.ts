@@ -55,7 +55,7 @@ export default defineConfig({
   },
   root: resolve(electronRoot, 'src/renderer'),
   server: {
-    port: 3000,  // Use port outside Windows reserved ranges
+    port: 5173,  // Vite default - avoids Windows reserved port ranges
     host: '127.0.0.1',
   },
 });
