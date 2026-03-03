@@ -111,7 +111,18 @@ export function setupIpcHandlers(
         weight: number;
         userId?: string;
     }) => {
-        const result = await pythonBridge.request('POST', '/tasks/analyze', data);
+        // Map camelCase (frontend) → snake_case (FastAPI Pydantic model)
+        const payload: Record<string, unknown> = {
+            deadline: data.deadline,
+            credits: data.credits,
+            weight: data.weight,
+        };
+        if (data.pdfPath) payload.pdf_path = data.pdfPath;
+        if (data.textContent) payload.text_content = data.textContent;
+        if (data.userId) payload.user_id = data.userId;
+
+        // Use a longer timeout (120s) — Gemini PDF analysis can take 15-30+ seconds
+        const result = await pythonBridge.request('POST', '/tasks/analyze', payload, 120000);
         return result.data;
     });
 }
