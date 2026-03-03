@@ -256,6 +256,20 @@ app.on('ready', async () => {
         createTaskWindow();
     });
 
+    // Navigate between task-prioritization pages (pdf-analysis ↔ time-estimator)
+    ipcMain.on('navigate', (_event, page: string) => {
+        const senderWindow = BrowserWindow.fromWebContents(_event.sender);
+        if (!senderWindow) return;
+
+        const isDev = process.env.NODE_ENV === 'development';
+        const basePath = isDev
+            ? path.join(__dirname, '../../src/renderer/public/pages')
+            : path.join(__dirname, '../renderer/pages');
+
+        const htmlFile = `${page}.html`;
+        senderWindow.loadFile(path.join(basePath, htmlFile));
+    });
+
     // Now create window
     createWindow();
 
