@@ -5,6 +5,15 @@ This is the main entry point for the Python backend.
 It initializes the database, loads components, and serves the REST API.
 """
 
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env file BEFORE any other imports so all modules see the env vars.
+# Resolve relative to this file → backend/.env
+_env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(_env_path)
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI

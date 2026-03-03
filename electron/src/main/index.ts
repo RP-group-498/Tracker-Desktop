@@ -88,6 +88,32 @@ function createWindow(): void {
 }
 
 /**
+ * Create the task prioritizer window (vanilla HTML pages with nodeIntegration enabled)
+ */
+function createTaskWindow(): BrowserWindow {
+    const taskWindow = new BrowserWindow({
+        width: 1200,
+        height: 800,
+        title: 'Task Prioritizer',
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+        },
+    });
+
+    // In dev, Vite doesn't write files to disk — load straight from source.
+    // In production, Vite copies public/ → dist/renderer/ verbatim.
+    const isDev = process.env.NODE_ENV === 'development';
+    const htmlPath = isDev
+        ? path.join(__dirname, '../../src/renderer/public/pages/pdf-analysis.html')
+        : path.join(__dirname, '../renderer/pages/pdf-analysis.html');
+
+    taskWindow.loadFile(htmlPath);
+
+    return taskWindow;
+}
+
+/**
  * Initialize all services
  */
 async function initializeServices(): Promise<void> {
@@ -224,6 +250,11 @@ app.on('ready', async () => {
 
     // Set up IPC handlers BEFORE creating window so they're ready when renderer loads
     setupIpcHandlers(ipcMain, () => appState, pythonBridge, nativeMessagingServer);
+
+    // Open task prioritizer window
+    ipcMain.handle('open-task-prioritizer', () => {
+        createTaskWindow();
+    });
 
     // Now create window
     createWindow();

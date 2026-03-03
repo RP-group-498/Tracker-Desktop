@@ -1,0 +1,9 @@
+{
+  "training_date": "2025-12-28T09:05:14.852000",
+  "mae": 0.6666666666666666,
+  "accuracy_within_3min": 100.0,
+  "accuracy_within_5min": 100.0,
+  "accuracy_within_10min": 100.0,
+  "training_size": 26,
+  "test_size": 6
+}

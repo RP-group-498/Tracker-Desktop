@@ -1,0 +1,23 @@
+{
+  "model_version": "1.0",
+  "created_date": "2025-12-28T09:16:14.837881",
+  "sbert_model": "all-MiniLM-L6-v2",
+  "vector_dimensions": 384,
+  "similarity_threshold": 0.65,
+  "top_k_neighbors": 5,
+  "difficulty_mapping": {
+    "1": 10,
+    "2": 15,
+    "3": 20,
+    "4": 30,
+    "5": 45
+  },
+  "mongodb": {
+    "database": "adaptive_time_estimation",
+    "collections": {
+      "tasks": "completed_tasks",
+      "patterns": "user_patterns",
+      "logs": "training_logs"
+    }
+  }
+}

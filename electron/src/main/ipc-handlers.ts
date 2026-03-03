@@ -101,4 +101,17 @@ export function setupIpcHandlers(
             return { success: false, error: String(error) };
         }
     });
+
+    // Analyze PDF or text content via task prioritization component
+    ipcMain.handle('analyze-pdf', async (_event, data: {
+        pdfPath?: string;
+        textContent?: string;
+        deadline: string;
+        credits: number;
+        weight: number;
+        userId?: string;
+    }) => {
+        const result = await pythonBridge.request('POST', '/tasks/analyze', data);
+        return result.data;
+    });
 }

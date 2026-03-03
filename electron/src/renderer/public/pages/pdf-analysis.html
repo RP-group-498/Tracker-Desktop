@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Analysis - MCDM Task Priority System</title>
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="../assets/css/pdf-analysis.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <!-- <h1>MCDM Task Priority System</h1> -->
+            </div>
+            <div class="nav-links">
+                <a href="#" class="nav-link active" data-page="pdf-analysis">PDF Analysis</a>
+                <a href="#" class="nav-link" data-page="time-estimator">Time Estimator</a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="page-header">
+                <h2>Task Analysis</h2>
+                <p>Upload a PDF or paste text to calculate task priority</p>
+            </div>
+
+            <!-- Input Method Tabs -->
+            <div class="tabs">
+                <button class="tab-link active" data-tab="pdfTab">PDF Upload</button>
+                <button class="tab-link" data-tab="textTab">Direct Text</button>
+            </div>
+
+            <!-- Input Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Step 1: Provide Task Content</h3>
+                </div>
+                <div class="card-body">
+                    <!-- PDF Tab Content -->
+                    <div id="pdfTab" class="tab-content active">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">📄</div>
+                            <p class="upload-text">Drag and drop your PDF here or click to browse</p>
+                            <input type="file" id="pdfInput" accept=".pdf" hidden>
+                            <button class="btn btn-primary" id="browseBtn">Browse Files</button>
+                        </div>
+                        <div class="file-info" id="fileInfo" style="display: none;">
+                            <div class="file-name" id="fileName"></div>
+                            <button class="btn btn-secondary btn-sm" id="removeFileBtn">Remove</button>
+                        </div>
+                    </div>
+
+                    <!-- Text Tab Content -->
+                    <div id="textTab" class="tab-content">
+                        <div class="text-input-area">
+                            <textarea id="textContent" class="form-control" rows="8" placeholder="Paste your assignment instructions, email content, or task description here..."></textarea>
+                            <small class="form-text">Paste the full text of your task for Gemini to analyze.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Details Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Step 2: Enter Task Details</h3>
+                </div>
+                <div class="card-body">
+                    <form id="taskDetailsForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="deadline">Deadline Date</label>
+                                <input type="date" id="deadline" class="form-control" required>
+                                <small class="form-text">Select the assignment due date</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="credits">Module Credits</label>
+                                <input type="number" id="credits" class="form-control" min="1" max="4" required>
+                                <small class="form-text">Enter credits (1-4)</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="weight">Assignment Weight (%)</label>
+                                <input type="number" id="weight" class="form-control" min="0" max="100" required>
+                                <small class="form-text">Percentage of final grade</small>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-success btn-lg" id="analyzeBtn">
+                                <span id="analyzeText">Analyze Task</span>
+                                <span id="analyzeSpinner" class="spinner" style="display: none;"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="card" id="resultsCard" style="display: none;">
+                <div class="card-header">
+                    <h3>Analysis Results</h3>
+                </div>
+                <div class="card-body">
+                    <div class="results-container">
+                        <!-- Task Info -->
+                        <div class="result-section">
+                            <h4>Task Information</h4>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">Task Name:</span>
+                                    <span class="info-value" id="resultTaskName">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Priority:</span>
+                                    <span class="info-value priority-badge" id="resultPriority">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Days Left:</span>
+                                    <span class="info-value" id="resultDaysLeft">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Difficulty Rating:</span>
+                                    <span class="info-value" id="resultDifficulty">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MCDM Scores -->
+                        <div class="result-section">
+                            <h4>MCDM Scores</h4>
+                            <div class="scores-container">
+                                <div class="score-item">
+                                    <div class="score-label">Urgency (50%)</div>
+                                    <div class="score-bar">
+                                        <div class="score-fill urgency" id="urgencyBar"></div>
+                                    </div>
+                                    <div class="score-value" id="urgencyScore">0</div>
+                                </div>
+                                <div class="score-item">
+                                    <div class="score-label">Impact (30%)</div>
+                                    <div class="score-bar">
+                                        <div class="score-fill impact" id="impactBar"></div>
+                                    </div>
+                                    <div class="score-value" id="impactScore">0</div>
+                                </div>
+                                <div class="score-item">
+                                    <div class="score-label">Difficulty (20%)</div>
+                                    <div class="score-bar">
+                                        <div class="score-fill difficulty" id="difficultyBar"></div>
+                                    </div>
+                                    <div class="score-value" id="difficultyScore">0</div>
+                                </div>
+                                <div class="score-item final-score">
+                                    <div class="score-label">Final MCDM Score</div>
+                                    <div class="score-value large" id="finalScore">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subtasks -->
+                        <div class="result-section">
+                            <h4>Subtasks</h4>
+                            <ul class="subtasks-list" id="subtasksList"></ul>
+                            <div class="subtasks-actions" id="subtasksActions" style="display: none;">
+                                <button class="btn btn-primary" id="adjustTimesBtn">Adjust Times</button>
+                                <button class="btn btn-success" id="saveAllTasksBtn" style="display: none;">Save All Tasks</button>
+                                <button class="btn btn-secondary" id="cancelEditBtn" style="display: none;">Cancel</button>
+                            </div>
+                        </div>
+
+                        <!-- Task Description -->
+                        <div class="result-section">
+                            <h4>Task Description</h4>
+                            <p class="task-description" id="taskDescription">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/pdf-analysis.js"></script>
+</body>
+</html>

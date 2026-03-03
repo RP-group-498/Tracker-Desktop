@@ -31,6 +31,9 @@ interface ElectronAPI {
 
     // Commands
     sendCommand: (command: 'pause' | 'resume' | 'clear_local') => Promise<{ success: boolean }>;
+
+    // Task Prioritizer
+    openTaskPrioritizer: () => Promise<void>;
 }
 
 interface AppState {
@@ -118,6 +121,9 @@ const electronAPI: ElectronAPI = {
 
     // Commands
     sendCommand: (command) => ipcRenderer.invoke('send-command', command),
+
+    // Task Prioritizer
+    openTaskPrioritizer: () => ipcRenderer.invoke('open-task-prioritizer'),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);
