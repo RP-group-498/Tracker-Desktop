@@ -1,4 +1,5 @@
 /**
+ * /electron/src/preload/index.ts
  * Preload Script
  *
  * Exposes a secure API to the renderer process via contextBridge.
@@ -43,6 +44,15 @@ interface ElectronAPI {
         credits: number;
         weight: number;
     }) => Promise<{ tasks: unknown[] }>;
+
+    // Procrastination
+    getProcrastinationReport: () => Promise<unknown>;
+    getProcrastinationHistory: (days?: number) => Promise<unknown>;
+    saveProcrastinationCalibration: (data: unknown) => Promise<unknown>;
+    getProcrastinationCalibration: () => Promise<unknown>;
+    addTask: (data: unknown) => Promise<unknown>;
+    getTasks: () => Promise<unknown>;
+    deleteTask: (taskId: number) => Promise<unknown>;
 }
 
 interface AppState {
@@ -136,6 +146,15 @@ const electronAPI: ElectronAPI = {
 
     // PDF / Task Analysis
     analyzePdf: (data) => ipcRenderer.invoke('analyze-pdf', data),
+
+    // Procrastination
+    getProcrastinationReport: () => ipcRenderer.invoke('procrastination:get-report'),
+    getProcrastinationHistory: (days = 7) => ipcRenderer.invoke('procrastination:get-history', days),
+    saveProcrastinationCalibration: (data) => ipcRenderer.invoke('procrastination:save-calibration', data),
+    getProcrastinationCalibration: () => ipcRenderer.invoke('procrastination:get-calibration'),
+    addTask: (data) => ipcRenderer.invoke('procrastination:add-task', data),
+    getTasks: () => ipcRenderer.invoke('procrastination:get-tasks'),
+    deleteTask: (taskId) => ipcRenderer.invoke('procrastination:delete-task', taskId),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

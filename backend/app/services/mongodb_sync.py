@@ -1,4 +1,6 @@
-"""MongoDB sync service for uploading activity data to Atlas.
+"""
+/services/mongodb_sync.py
+MongoDB sync service for uploading activity data to Atlas.
 
 This service mirrors every activity event written to SQLite into a
 shared MongoDB Atlas instance so the research team can access the data
@@ -47,9 +49,11 @@ class MongoDBSyncService:
             collection = self._db[self.COLLECTION_NAME]
             await collection.create_index("event_id", unique=True)
             await collection.create_index("user_id")
+            await collection.create_index("start_time")          # pipeline primary sort
             await collection.create_index("timestamp")
             await collection.create_index("domain")
             await collection.create_index("source")
+            await collection.create_index([("user_id", 1), ("start_time", 1)])   # compound — pipeline
             await collection.create_index([("user_id", 1), ("timestamp", -1)])
 
             self._connected = True
@@ -240,12 +244,46 @@ class MongoDBSyncService:
 
 
 def init_mongodb_sync() -> MongoDBSyncService:
-    """Create and return a new MongoDBSyncService instance."""
+    """Create (once) and return the global MongoDBSyncService instance."""
     global _mongodb_sync
-    _mongodb_sync = MongoDBSyncService()
+    if _mongodb_sync is None:
+        _mongodb_sync = MongoDBSyncService()
     return _mongodb_sync
 
 
 def get_mongodb_sync() -> "MongoDBSyncService | None":
     """Get the global MongoDB sync service instance."""
     return _mongodb_sync
+
+
+async def ensure_pipeline_indexes(db: AsyncIOMotorDatabase) -> None:
+    """Create all MongoDB indexes required by the analysis pipeline.
+
+    Safe to call on every startup — ``create_index`` is idempotent.
+
+    Indexes created:
+      activity_events  : user_id, start_time, timestamp, (user_id, start_time)
+      active_time      : unique (userId, date)
+      procrastination_results   : unique (userId, date)
+      predicted_active_time     : unique (userId, date)
+      user_calibration : user_id
+      Task             : userId
+    """
+    events = db["activity_events"]
+    await events.create_index("user_id")
+    await events.create_index("start_time")
+    await events.create_index("timestamp")
+    await events.create_index([("user_id", 1), ("start_time", 1)])  # fast day-range queries
+    await events.create_index([("user_id", 1), ("timestamp", -1)])  # fallback sort
+
+    # Output collections — unique compound key mirrors upsert filter
+    for coll_name in ("active_time", "procrastination_results", "predicted_active_time"):
+        await db[coll_name].create_index(
+            [("userId", 1), ("date", 1)],
+            unique=True,
+            name=f"{coll_name}_userId_date_unique",
+        )
+
+    await db["user_calibration"].create_index("user_id")
+    await db["Task"].create_index("userId")
+

@@ -1,5 +1,8 @@
 """Application configuration settings."""
 
+from dotenv import load_dotenv
+load_dotenv()  # Ensure .env is in os.environ before pydantic reads it
+
 from pydantic_settings import BaseSettings
 from pathlib import Path
 from typing import Optional

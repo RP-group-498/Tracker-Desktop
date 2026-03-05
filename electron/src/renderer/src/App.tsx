@@ -4,6 +4,8 @@ import StatusPanel from './components/StatusPanel';
 import ConnectionIndicator from './components/ConnectionIndicator';
 import PDFAnalysis from './pages/PDFAnalysis';
 import TimeEstimator from './pages/TimeEstimator';
+import ProcrastinationPage from './pages/ProcrastinationPage';
+import CalibrationPage from './pages/CalibrationPage';
 
 interface AppState {
   pythonRunning: boolean;
@@ -11,6 +13,14 @@ interface AppState {
   currentSessionId: string | null;
   eventCount: number;
 }
+
+type Tab = 'dashboard' | 'procrastination' | 'calibration';
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'dashboard',       label: 'Dashboard' },
+  { id: 'procrastination', label: 'Analysis' },
+  { id: 'calibration',     label: 'Settings' },
+];
 
 const Dashboard: React.FC = () => {
   const [state, setState] = useState<AppState>({
@@ -20,6 +30,7 @@ const Dashboard: React.FC = () => {
     eventCount: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
 
   useEffect(() => {
     const fetchState = async () => {
@@ -49,25 +60,53 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <header className="mb-6">
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Header */}
+      <header className="px-4 pt-4 pb-2">
         <h1 className="text-xl font-bold text-gray-800">Focus App</h1>
         <p className="text-sm text-gray-500">Procrastination Detection System</p>
       </header>
 
-      <ConnectionIndicator
-        pythonRunning={state.pythonRunning}
-        extensionConnected={state.extensionConnected}
-      />
+      {/* Tab Bar */}
+      <nav className="flex border-b border-gray-200 px-4 bg-white">
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors ${
+              activeTab === tab.id
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
 
-      <StatusPanel
-        sessionId={state.currentSessionId}
-        eventCount={state.eventCount}
-        pythonRunning={state.pythonRunning}
-        extensionConnected={state.extensionConnected}
-      />
+      {/* Tab Content */}
+      <main className="flex-1 overflow-y-auto">
+        {activeTab === 'dashboard' && (
+          <div className="p-4 space-y-4">
+            <ConnectionIndicator
+              pythonRunning={state.pythonRunning}
+              extensionConnected={state.extensionConnected}
+            />
+            <StatusPanel
+              sessionId={state.currentSessionId}
+              eventCount={state.eventCount}
+              pythonRunning={state.pythonRunning}
+              extensionConnected={state.extensionConnected}
+            />
+          </div>
+        )}
 
-      <footer className="mt-6 text-center text-xs text-gray-400">
+        {activeTab === 'procrastination' && <ProcrastinationPage />}
+        {activeTab === 'calibration' && <CalibrationPage />}
+      </main>
+
+      {/* Footer */}
+      <footer className="px-4 py-2 text-center text-xs text-gray-400">
         Focus App v1.0.0 | Research Project
       </footer>
     </div>
