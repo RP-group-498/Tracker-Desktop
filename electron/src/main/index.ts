@@ -12,6 +12,7 @@ import { NativeMessagingServer } from './native-messaging';
 import { DesktopActivityTracker } from './desktop-activity-tracker';
 import { TrayManager } from './tray';
 import { setupIpcHandlers } from './ipc-handlers';
+import { registerProcrastinationHandlers } from './ipc-procrastination';
 
 // Prevent multiple instances
 const gotTheLock = app.requestSingleInstanceLock();
@@ -224,6 +225,7 @@ app.on('ready', async () => {
 
     // Set up IPC handlers BEFORE creating window so they're ready when renderer loads
     setupIpcHandlers(ipcMain, () => appState, pythonBridge, nativeMessagingServer);
+    registerProcrastinationHandlers(pythonBridge);
 
     // Now create window
     createWindow();

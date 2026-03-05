@@ -1,10 +1,13 @@
 """
+
+/main.py
 Focus App Backend - FastAPI Entry Point
 
 This is the main entry point for the Python backend.
 It initializes the database, loads components, and serves the REST API.
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -34,8 +37,15 @@ async def lifespan(app: FastAPI):
     mongo_sync = None
     if settings.mongodb_uri and settings.mongodb_sync_enabled:
         mongo_sync = init_mongodb_sync()
-        await mongo_sync.initialize(settings.mongodb_uri, settings.mongodb_database)
-        print("[Backend] MongoDB sync enabled")
+
+        async def init_mongo():
+            try:
+                await mongo_sync.initialize(settings.mongodb_uri, settings.mongodb_database)
+                print("[Backend] MongoDB sync enabled")
+            except Exception as e:
+                print("[MongoSync] Initialization failed:", e)
+
+        asyncio.create_task(init_mongo())
     else:
         print("[Backend] MongoDB sync disabled (no URI configured or sync not enabled)")
 

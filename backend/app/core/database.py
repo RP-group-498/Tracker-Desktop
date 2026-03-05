@@ -1,4 +1,6 @@
-"""SQLite database connection and session management."""
+"""
+/core/database.py
+SQLite database connection and session management."""
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
