@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import StatusPanel from './components/StatusPanel';
 import ConnectionIndicator from './components/ConnectionIndicator';
+import PDFAnalysis from './pages/PDFAnalysis';
+import TimeEstimator from './pages/TimeEstimator';
 
 interface AppState {
   pythonRunning: boolean;
@@ -9,7 +12,7 @@ interface AppState {
   eventCount: number;
 }
 
-const App: React.FC = () => {
+const Dashboard: React.FC = () => {
   const [state, setState] = useState<AppState>({
     pythonRunning: false,
     extensionConnected: false,
@@ -19,7 +22,6 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial state
     const fetchState = async () => {
       try {
         const currentState = await window.electronAPI.getState();
@@ -33,7 +35,6 @@ const App: React.FC = () => {
 
     fetchState();
 
-    // Listen for state changes
     window.electronAPI.onStateChange((newState) => {
       setState(newState);
     });
@@ -49,19 +50,16 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
-      {/* Header */}
       <header className="mb-6">
         <h1 className="text-xl font-bold text-gray-800">Focus App</h1>
         <p className="text-sm text-gray-500">Procrastination Detection System</p>
       </header>
 
-      {/* Connection Status */}
       <ConnectionIndicator
         pythonRunning={state.pythonRunning}
         extensionConnected={state.extensionConnected}
       />
 
-      {/* Main Status Panel */}
       <StatusPanel
         sessionId={state.currentSessionId}
         eventCount={state.eventCount}
@@ -69,11 +67,22 @@ const App: React.FC = () => {
         extensionConnected={state.extensionConnected}
       />
 
-      {/* Footer */}
       <footer className="mt-6 text-center text-xs text-gray-400">
         Focus App v1.0.0 | Research Project
       </footer>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/pdf-analysis" element={<PDFAnalysis />} />
+        <Route path="/time-estimator" element={<TimeEstimator />} />
+      </Routes>
+    </HashRouter>
   );
 };
 

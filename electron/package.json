@@ -11,8 +11,10 @@
     "package": "electron-builder"
   },
   "dependencies": {
+    "@types/react-router-dom": "^5.3.3",
     "active-win": "^8.2.1",
-    "electron-store": "^8.1.0"
+    "electron-store": "^8.1.0",
+    "react-router-dom": "^7.13.1"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
