@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import StatusPanel from './components/StatusPanel';
 import ConnectionIndicator from './components/ConnectionIndicator';
+import PDFAnalysis from './pages/PDFAnalysis';
+import TimeEstimator from './pages/TimeEstimator';
 import ProcrastinationPage from './pages/ProcrastinationPage';
 import CalibrationPage from './pages/CalibrationPage';
 
@@ -19,7 +22,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'calibration',     label: 'Settings' },
 ];
 
-const App: React.FC = () => {
+const Dashboard: React.FC = () => {
   const [state, setState] = useState<AppState>({
     pythonRunning: false,
     extensionConnected: false,
@@ -107,6 +110,18 @@ const App: React.FC = () => {
         Focus App v1.0.0 | Research Project
       </footer>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/pdf-analysis" element={<PDFAnalysis />} />
+        <Route path="/time-estimator" element={<TimeEstimator />} />
+      </Routes>
+    </HashRouter>
   );
 };
 

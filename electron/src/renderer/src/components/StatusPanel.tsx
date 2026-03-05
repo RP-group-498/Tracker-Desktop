@@ -165,6 +165,12 @@ const StatusPanel: React.FC<Props> = ({
             Restart Backend
           </button>
         </div>
+        <button
+          onClick={() => window.electronAPI.openTaskPrioritizer()}
+          className="w-full mt-2 px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded"
+        >
+          Open Task Prioritizer
+        </button>
       </div>
     </div>
   );

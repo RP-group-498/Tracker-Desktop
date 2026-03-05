@@ -33,6 +33,18 @@ interface ElectronAPI {
     // Commands
     sendCommand: (command: 'pause' | 'resume' | 'clear_local') => Promise<{ success: boolean }>;
 
+    // Task Prioritizer
+    openTaskPrioritizer: () => Promise<void>;
+
+    // PDF / Task Analysis
+    analyzePdf: (data: {
+        pdfPath?: string;
+        textContent?: string;
+        deadline: string;
+        credits: number;
+        weight: number;
+    }) => Promise<{ tasks: unknown[] }>;
+
     // Procrastination
     getProcrastinationReport: () => Promise<unknown>;
     getProcrastinationHistory: (days?: number) => Promise<unknown>;
@@ -128,6 +140,12 @@ const electronAPI: ElectronAPI = {
 
     // Commands
     sendCommand: (command) => ipcRenderer.invoke('send-command', command),
+
+    // Task Prioritizer
+    openTaskPrioritizer: () => ipcRenderer.invoke('open-task-prioritizer'),
+
+    // PDF / Task Analysis
+    analyzePdf: (data) => ipcRenderer.invoke('analyze-pdf', data),
 
     // Procrastination
     getProcrastinationReport: () => ipcRenderer.invoke('procrastination:get-report'),

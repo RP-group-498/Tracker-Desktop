@@ -231,7 +231,7 @@ export class PythonBridge extends EventEmitter {
     /**
      * Make an API request to the backend
      */
-    async request<T>(method: string, path: string, body?: unknown): Promise<ApiResponse<T>> {
+    async request<T>(method: string, path: string, body?: unknown, timeout: number = 10000): Promise<ApiResponse<T>> {
         return new Promise((resolve) => {
             const postData = body ? JSON.stringify(body) : '';
 
@@ -244,7 +244,7 @@ export class PythonBridge extends EventEmitter {
                     'Content-Type': 'application/json',
                     'Content-Length': Buffer.byteLength(postData),
                 },
-                timeout: 10000,
+                timeout,
             };
 
             const req = http.request(options, (res) => {
