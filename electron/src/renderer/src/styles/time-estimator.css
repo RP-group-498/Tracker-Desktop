@@ -1,0 +1,681 @@
+/* Time Estimator Page Specific Styles */
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 450px 1fr;
+    gap: 1.5rem;
+}
+
+.left-column,
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Calendar Styles */
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+#currentMonth {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 150px;
+    text-align: center;
+}
+
+.calendar {
+    width: 100%;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.weekday {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.5rem 0;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    background: var(--dark-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.calendar-day:hover {
+    background: rgba(111, 66, 193, 0.1);
+    border-color: var(--primary-color);
+}
+
+.calendar-day.today {
+    background: rgba(111, 66, 193, 0.2);
+    border-color: var(--primary-color);
+    font-weight: bold;
+}
+
+.calendar-day.has-task::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    width: 6px;
+    height: 6px;
+    background: var(--primary-color);
+    border-radius: 50%;
+}
+
+.calendar-day.other-month {
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+.day-number {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+/* Failed task indicator */
+.calendar-day.has-failed-task {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.calendar-day.has-failed-task::after {
+    background: #ef4444;
+}
+
+/* Completed task indicator */
+.calendar-day.has-completed-task {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.calendar-day.has-completed-task::after {
+    background: #10b981;
+}
+
+/* Task count badge */
+.task-count {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--primary-color);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Statistics Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.stat-card {
+    padding: 1.5rem;
+    background: var(--dark-bg);
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.high {
+    border-color: var(--high-priority);
+}
+
+.stat-card.medium {
+    border-color: var(--medium-priority);
+}
+
+.stat-card.low {
+    border-color: var(--low-priority);
+}
+
+.stat-card.total {
+    border-color: var(--primary-color);
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-card.high .stat-value {
+    color: var(--high-priority);
+}
+
+.stat-card.medium .stat-value {
+    color: var(--medium-priority);
+}
+
+.stat-card.low .stat-value {
+    color: var(--low-priority);
+}
+
+.stat-card.total .stat-value {
+    color: var(--primary-color);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Filter Buttons */
+.filter-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+    background: rgba(111, 66, 193, 0.1);
+    color: var(--text-primary);
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Todo List */
+.todo-list {
+    max-height: 600px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.todo-item {
+    padding: 1.25rem;
+    background: var(--dark-bg);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.todo-item:hover {
+    background: rgba(111, 66, 193, 0.05);
+    transform: translateX(5px);
+}
+
+.todo-item.High {
+    border-left-color: var(--high-priority);
+}
+
+.todo-item.Medium {
+    border-left-color: var(--medium-priority);
+}
+
+.todo-item.Low {
+    border-left-color: var(--low-priority);
+}
+
+/* Failed task styling */
+.todo-item.failed {
+    border-left-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+    opacity: 0.8;
+}
+
+.todo-item.failed:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.todo-title.failed-title {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+
+.status-badge.failed {
+    background-color: #ef4444;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+}
+
+.todo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 0.75rem;
+}
+
+.todo-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.todo-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.todo-action-btn {
+    padding: 0.25rem 0.5rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.todo-action-btn:hover {
+    background: var(--danger-color);
+    border-color: var(--danger-color);
+    color: white;
+}
+
+.todo-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.todo-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.todo-description {
+    margin-top: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+}
+
+/* Time Estimation */
+.time-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.time-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--dark-bg);
+    border-radius: 5px;
+}
+
+.time-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.time-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.workload-bar {
+    height: 30px;
+    background: var(--dark-bg);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    margin: 1rem 0 0.5rem 0;
+}
+
+.workload-fill {
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 15px;
+    transition: width 0.5s ease;
+}
+
+.workload-text {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Task count indicator on calendar */
+.task-count {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--primary-color);
+    color: white;
+    font-size: 0.7rem;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    overflow: auto;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    margin: 5% auto;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 700px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.modal-task-item {
+    padding: 1.25rem;
+    background: var(--dark-bg);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.modal-task-item:last-child {
+    margin-bottom: 0;
+}
+
+.modal-task-item:hover {
+    background: rgba(76, 175, 80, 0.05);
+    transform: translateX(3px);
+}
+
+.modal-task-item.High {
+    border-left-color: var(--high-priority);
+}
+
+.modal-task-item.Medium {
+    border-left-color: var(--medium-priority);
+}
+
+.modal-task-item.Low {
+    border-left-color: var(--low-priority);
+}
+
+.modal-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 0.75rem;
+}
+
+.modal-task-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.modal-task-description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-task-meta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    font-size: 0.875rem;
+}
+
+.modal-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.meta-label {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.meta-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.scheduled {
+    background: rgba(108, 117, 125, 0.2);
+    color: var(--secondary-color);
+}
+
+.status-badge.in-progress {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--warning-color);
+}
+
+.status-badge.completed {
+    background: rgba(40, 167, 69, 0.2);
+    color: var(--success-color);
+}
+
+/* Confidence Badges */
+.confidence-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.confidence-HIGH,
+.meta-value.confidence-HIGH {
+    color: var(--success-color);
+}
+
+.confidence-MEDIUM,
+.meta-value.confidence-MEDIUM {
+    color: var(--warning-color);
+}
+
+.confidence-LOW,
+.meta-value.confidence-LOW {
+    color: var(--medium-priority);
+}
+
+.confidence-UNKNOWN,
+.meta-value.confidence-UNKNOWN {
+    color: var(--text-secondary);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-day {
+        font-size: 0.75rem;
+        padding: 0.25rem;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+
+    .modal-task-meta {
+        grid-template-columns: 1fr;
+    }
+}

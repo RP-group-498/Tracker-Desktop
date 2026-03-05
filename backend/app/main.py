@@ -5,6 +5,15 @@ This is the main entry point for the Python backend.
 It initializes the database, loads components, and serves the REST API.
 """
 
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env file BEFORE any other imports so all modules see the env vars.
+# Resolve relative to this file → backend/.env
+_env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(_env_path)
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -16,6 +25,7 @@ from app.components import load_all_components
 from app.api import api_router
 from app.services.user_manager import init_user_manager
 from app.services.mongodb_sync import init_mongodb_sync
+from services.scheduler.active_time_sync import start_scheduler, stop_scheduler
 
 
 @asynccontextmanager
@@ -39,12 +49,16 @@ async def lifespan(app: FastAPI):
     else:
         print("[Backend] MongoDB sync disabled (no URI configured or sync not enabled)")
 
+    # Start background scheduler (daily active time sync + task allocation)
+    start_scheduler()
+
     print("[Backend] Ready to accept connections")
 
     yield
 
     # Shutdown
     print("[Backend] Shutting down...")
+    stop_scheduler()
     if mongo_sync:
         await mongo_sync.close()
     await close_db()
