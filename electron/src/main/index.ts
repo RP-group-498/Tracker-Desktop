@@ -14,6 +14,7 @@ import { IdleActivityPrompt } from './idle-prompt';
 import { TrayManager } from './tray';
 import { setupIpcHandlers } from './ipc-handlers';
 import { registerProcrastinationHandlers } from './ipc-procrastination';
+import { registerInterventionHandlers } from './ipc-intervention';
 
 // Prevent multiple instances
 const gotTheLock = app.requestSingleInstanceLock();
@@ -267,6 +268,11 @@ app.on('ready', async () => {
     // Set up IPC handlers BEFORE creating window so they're ready when renderer loads
     setupIpcHandlers(ipcMain, () => appState, pythonBridge, nativeMessagingServer);
     registerProcrastinationHandlers(pythonBridge);
+    registerInterventionHandlers(
+        pythonBridge,
+        () => mainWindow,
+        () => trayManager ? (trayManager as any)['tray'] : null,
+    );
 
     // Open task prioritizer window
     ipcMain.handle('open-task-prioritizer', () => {

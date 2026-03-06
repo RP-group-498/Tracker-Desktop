@@ -250,3 +250,515 @@
 2026-03-05 21:36:05,127 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
 2026-03-05 21:40:10,607 - INFO - [Scheduler] Stopped.
 2026-03-05 21:40:10,608 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 10:52:30,707 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 10:52:30,707 - INFO - [MLClassifier] Device: cpu
+2026-03-06 10:52:30,707 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 10:52:30,707 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 10:52:30,707 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 10:52:30,707 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 10:52:30,707 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 10:52:33,887 - INFO - Use pytorch device_name: mps
+2026-03-06 10:52:33,887 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 10:52:33,888 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:13:50,529 - INFO - [Scheduler] Stopped.
+2026-03-06 11:13:50,531 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 11:13:51,353 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:13:51,353 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:13:51,353 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:13:51,353 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:13:51,353 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:13:51,353 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:13:51,353 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:13:54,311 - INFO - Use pytorch device_name: mps
+2026-03-06 11:13:54,311 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:13:54,312 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:14:09,668 - INFO - [Scheduler] Stopped.
+2026-03-06 11:14:09,668 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 11:14:10,406 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:14:10,406 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:14:10,406 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:14:10,406 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:14:10,406 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:14:10,406 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:14:10,406 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:14:12,984 - INFO - Use pytorch device_name: mps
+2026-03-06 11:14:12,984 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:14:12,985 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:14:14,606 - INFO - [Scheduler] Stopped.
+2026-03-06 11:14:14,606 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 11:14:15,116 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:14:15,116 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:14:15,116 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:14:15,116 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:14:15,116 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:14:15,117 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:14:15,117 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:14:17,273 - INFO - Use pytorch device_name: mps
+2026-03-06 11:14:17,273 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:14:17,273 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:14:18,386 - INFO - [Scheduler] Stopped.
+2026-03-06 11:14:18,387 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 11:14:18,817 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:14:18,817 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:14:18,817 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:14:18,817 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:14:18,817 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:14:18,817 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:14:18,817 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:14:21,001 - INFO - Use pytorch device_name: mps
+2026-03-06 11:14:21,001 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:14:21,001 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:14:41,715 - INFO - [Scheduler] Stopped.
+2026-03-06 11:14:41,716 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 11:14:42,371 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:14:42,371 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:14:42,371 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:14:42,371 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:14:42,371 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:14:42,371 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:14:42,371 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:14:45,239 - INFO - Use pytorch device_name: mps
+2026-03-06 11:14:45,239 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:14:45,240 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:14:46,958 - INFO - [Scheduler] Stopped.
+2026-03-06 11:14:46,958 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 11:14:47,491 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:14:47,491 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:14:47,491 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:14:47,491 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:14:47,491 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:14:47,491 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:14:47,491 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:14:50,270 - INFO - Use pytorch device_name: mps
+2026-03-06 11:14:50,270 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:14:50,271 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:14:50,373 - INFO - [Scheduler] Stopped.
+2026-03-06 11:14:50,373 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 11:14:50,912 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:14:50,912 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:14:50,912 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:14:50,912 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:14:50,912 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:14:50,913 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:14:50,913 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:14:54,041 - INFO - Use pytorch device_name: mps
+2026-03-06 11:14:54,041 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:14:54,042 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:14:54,651 - INFO - [Scheduler] Stopped.
+2026-03-06 11:14:54,651 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 11:14:55,205 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:14:55,205 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:14:55,205 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:14:55,205 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:14:55,205 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:14:55,205 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:14:55,205 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:14:57,888 - INFO - Use pytorch device_name: mps
+2026-03-06 11:14:57,888 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:14:57,888 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:21:23,464 - INFO - [Scheduler] Stopped.
+2026-03-06 11:21:23,465 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 11:21:36,364 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:21:36,364 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:21:36,364 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:21:36,364 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:21:36,364 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:21:36,364 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:21:36,364 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:21:39,488 - INFO - Use pytorch device_name: mps
+2026-03-06 11:21:39,488 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:21:39,489 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:24:15,554 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:24:15,554 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:24:15,554 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:24:15,554 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:24:15,554 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:24:15,554 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:24:15,554 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:24:18,630 - INFO - Use pytorch device_name: mps
+2026-03-06 11:24:18,630 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:24:18,631 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:26:36,227 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:26:36,227 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:26:36,227 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:26:36,227 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:26:36,227 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:26:36,227 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:26:36,227 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:26:39,286 - INFO - Use pytorch device_name: mps
+2026-03-06 11:26:39,286 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:26:39,287 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:30:04,035 - INFO - [Scheduler] Stopped.
+2026-03-06 11:30:04,036 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 11:30:06,571 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:30:06,571 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:30:06,571 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:30:06,571 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:30:06,571 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:30:06,571 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:30:06,571 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:30:09,585 - INFO - Use pytorch device_name: mps
+2026-03-06 11:30:09,585 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:30:09,586 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:35:48,089 - INFO - [Scheduler] Stopped.
+2026-03-06 11:35:48,089 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 11:35:50,950 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:35:50,950 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:35:50,950 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:35:50,950 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:35:50,950 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:35:50,950 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:35:50,950 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:35:53,988 - INFO - Use pytorch device_name: mps
+2026-03-06 11:35:53,988 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:35:53,989 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:36:09,352 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:36:09,352 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:36:09,352 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:36:09,352 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:36:09,352 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:36:09,352 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:36:09,352 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:36:12,287 - INFO - Use pytorch device_name: mps
+2026-03-06 11:36:12,287 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:36:12,288 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:36:48,331 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:36:48,331 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:36:48,331 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:36:48,331 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:36:48,331 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:36:48,331 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:36:48,331 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:36:51,203 - INFO - Use pytorch device_name: mps
+2026-03-06 11:36:51,203 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:36:51,204 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:37:48,532 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 11:37:48,532 - INFO - [MLClassifier] Device: cpu
+2026-03-06 11:37:48,532 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 11:37:48,532 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 11:37:48,532 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 11:37:48,532 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 11:37:48,532 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 11:37:51,521 - INFO - Use pytorch device_name: mps
+2026-03-06 11:37:51,521 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 11:37:51,522 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 11:44:56,766 - INFO - [Classification] Loading ML model (first use)...
+2026-03-06 11:44:56,766 - INFO - [MLClassifier] Loading model: facebook/bart-large-mnli
+2026-03-06 11:44:56,766 - INFO - [MLClassifier] This may take 15-30 seconds on first load...
+2026-03-06 11:44:57,777 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-03-06 11:44:57,823 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/config.json "HTTP/1.1 200 OK"
+2026-03-06 11:44:57,869 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/config.json "HTTP/1.1 200 OK"
+2026-03-06 11:44:58,226 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/model.safetensors "HTTP/1.1 302 Found"
+2026-03-06 11:44:58,715 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/xet-read-token/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce "HTTP/1.1 200 OK"
+2026-03-06 11:46:42,388 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-03-06 11:46:42,462 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-03-06 11:46:42,535 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-03-06 11:46:42,840 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-03-06 11:46:43,142 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-03-06 11:46:43,439 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/vocab.json "HTTP/1.1 307 Temporary Redirect"
+2026-03-06 11:46:43,510 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/vocab.json "HTTP/1.1 200 OK"
+2026-03-06 11:46:43,583 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/vocab.json "HTTP/1.1 200 OK"
+2026-03-06 11:46:44,127 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/merges.txt "HTTP/1.1 307 Temporary Redirect"
+2026-03-06 11:46:44,196 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/merges.txt "HTTP/1.1 200 OK"
+2026-03-06 11:46:44,267 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/merges.txt "HTTP/1.1 200 OK"
+2026-03-06 11:46:44,587 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/tokenizer.json "HTTP/1.1 307 Temporary Redirect"
+2026-03-06 11:46:44,658 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/tokenizer.json "HTTP/1.1 200 OK"
+2026-03-06 11:46:44,733 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/tokenizer.json "HTTP/1.1 200 OK"
+2026-03-06 11:46:45,114 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/added_tokens.json "HTTP/1.1 404 Not Found"
+2026-03-06 11:46:45,414 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/special_tokens_map.json "HTTP/1.1 404 Not Found"
+2026-03-06 11:46:45,709 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/chat_template.jinja "HTTP/1.1 404 Not Found"
+2026-03-06 11:46:45,846 - INFO - [MLClassifier] Model loaded successfully
+2026-03-06 12:21:40,778 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 12:21:40,778 - INFO - [MLClassifier] Device: cpu
+2026-03-06 12:21:40,778 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 12:21:40,778 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 12:21:40,778 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 12:21:40,778 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 12:21:40,778 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 12:21:44,607 - INFO - Use pytorch device_name: mps
+2026-03-06 12:21:44,607 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 12:21:44,608 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 12:25:21,760 - INFO - AFC is enabled with max remote calls: 10.
+2026-03-06 12:25:40,425 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+2026-03-06 12:30:01,416 - INFO - [Scheduler] Stopped.
+2026-03-06 12:30:01,417 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 12:30:03,324 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 12:30:03,324 - INFO - [MLClassifier] Device: cpu
+2026-03-06 12:30:03,324 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 12:30:03,324 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 12:30:03,324 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 12:30:03,324 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 12:30:03,324 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 12:30:08,415 - INFO - Use pytorch device_name: mps
+2026-03-06 12:30:08,416 - INFO - Load pretrained SentenceTransformer: app/models/sbert_model
+2026-03-06 12:30:08,416 - WARNING - No sentence-transformers model found with name app/models/sbert_model. Creating a new one with mean pooling.
+2026-03-06 12:30:08,418 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 12:30:26,892 - INFO - [Scheduler] Stopped.
+2026-03-06 12:30:26,892 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 12:30:27,707 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 12:30:27,707 - INFO - [MLClassifier] Device: cpu
+2026-03-06 12:30:27,707 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 12:30:27,707 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 12:30:27,707 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 12:30:27,707 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 12:30:27,707 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 12:30:30,603 - INFO - Use pytorch device_name: mps
+2026-03-06 12:30:30,603 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 12:30:30,604 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 12:36:52,691 - ERROR - Task exception was never retrieved
+future: <Task finished name='Task-348' coro=<MongoDBSyncService.sync_batch() done, defined at /Users/nipun/Downloads/Migration/Tracker-Desktop/backend/app/services/mongodb_sync.py:106> exception=BrokenPipeError(32, 'Broken pipe')>
+Traceback (most recent call last):
+  File "/Users/nipun/Downloads/Migration/Tracker-Desktop/backend/app/services/mongodb_sync.py", line 141, in sync_batch
+    print(f"[MongoSync] Batch synced: {synced} succeeded, {failed} failed")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/nipun/Downloads/Migration/Tracker-Desktop/backend/app/services/mongodb_sync.py", line 144, in sync_batch
+    print(f"[MongoSync] Batch sync error: {e}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+2026-03-06 12:38:39,712 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 12:38:39,713 - INFO - [MLClassifier] Device: cpu
+2026-03-06 12:38:39,713 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 12:38:39,713 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 12:38:39,713 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 12:38:39,713 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 12:38:39,713 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 12:38:42,631 - INFO - Use pytorch device_name: mps
+2026-03-06 12:38:42,631 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 12:38:42,632 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 12:39:03,460 - INFO - [Scheduler] Stopped.
+2026-03-06 12:39:03,462 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 12:40:33,467 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 12:40:33,467 - INFO - [MLClassifier] Device: cpu
+2026-03-06 12:40:33,467 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 12:40:33,467 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 12:40:33,467 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 12:40:33,467 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 12:40:33,467 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 12:40:36,485 - INFO - Use pytorch device_name: mps
+2026-03-06 12:40:36,486 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 12:40:36,486 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 12:41:11,828 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 12:41:11,829 - INFO - [MLClassifier] Device: cpu
+2026-03-06 12:41:11,829 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 12:41:11,829 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 12:41:11,829 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 12:41:11,829 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 12:41:11,829 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 12:41:15,043 - INFO - Use pytorch device_name: mps
+2026-03-06 12:41:15,043 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 12:41:15,044 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 12:41:56,175 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 12:41:56,176 - INFO - [MLClassifier] Device: cpu
+2026-03-06 12:41:56,176 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 12:41:56,176 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 12:41:56,176 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 12:41:56,177 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 12:41:56,177 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 12:41:59,041 - INFO - Use pytorch device_name: mps
+2026-03-06 12:41:59,041 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 12:41:59,042 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 13:47:09,111 - INFO - [Classification] Loading ML model (first use)...
+2026-03-06 13:47:09,113 - INFO - [MLClassifier] Loading model: facebook/bart-large-mnli
+2026-03-06 13:47:09,113 - INFO - [MLClassifier] This may take 15-30 seconds on first load...
+2026-03-06 13:47:09,668 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-03-06 13:47:09,734 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/config.json "HTTP/1.1 200 OK"
+2026-03-06 13:47:10,356 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-03-06 13:47:10,646 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-03-06 13:47:10,772 - INFO - [MLClassifier] Model loaded successfully
+2026-03-06 16:37:44,535 - INFO - [Scheduler] Stopped.
+2026-03-06 16:37:44,537 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 16:37:45,691 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 16:37:45,691 - INFO - [MLClassifier] Device: cpu
+2026-03-06 16:37:45,691 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 16:37:45,691 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 16:37:45,691 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 16:37:45,691 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 16:37:45,691 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 16:37:49,687 - INFO - Use pytorch device_name: mps
+2026-03-06 16:37:49,687 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 16:37:49,687 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 16:38:34,413 - INFO - [Scheduler] Stopped.
+2026-03-06 16:38:34,414 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 16:38:35,326 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 16:38:35,326 - INFO - [MLClassifier] Device: cpu
+2026-03-06 16:38:35,326 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 16:38:35,326 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 16:38:35,326 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 16:38:35,326 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 16:38:35,326 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 16:38:38,157 - INFO - Use pytorch device_name: mps
+2026-03-06 16:38:38,157 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 16:38:38,158 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 16:38:55,199 - INFO - [Scheduler] Stopped.
+2026-03-06 16:38:55,200 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 16:38:56,969 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 16:38:56,969 - INFO - [MLClassifier] Device: cpu
+2026-03-06 16:38:56,969 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 16:38:56,969 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 16:38:56,969 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 16:38:56,969 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 16:38:56,969 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 16:39:00,514 - INFO - Use pytorch device_name: mps
+2026-03-06 16:39:00,514 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 16:39:00,515 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 16:45:28,687 - INFO - [Scheduler] Stopped.
+2026-03-06 16:45:28,688 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 16:45:42,862 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 16:45:42,862 - INFO - [MLClassifier] Device: cpu
+2026-03-06 16:45:42,862 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 16:45:42,862 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 16:45:42,863 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 16:45:42,863 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 16:45:42,863 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 16:45:45,825 - INFO - Use pytorch device_name: mps
+2026-03-06 16:45:45,825 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 16:45:45,825 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 16:45:53,822 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 16:45:53,822 - INFO - [MLClassifier] Device: cpu
+2026-03-06 16:45:53,822 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 16:45:53,822 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 16:45:53,822 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 16:45:53,822 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 16:45:53,822 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 16:45:56,748 - INFO - Use pytorch device_name: mps
+2026-03-06 16:45:56,749 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 16:45:56,749 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 16:58:53,818 - INFO - [Scheduler] Stopped.
+2026-03-06 16:58:53,819 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 16:58:55,549 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 16:58:55,549 - INFO - [MLClassifier] Device: cpu
+2026-03-06 16:58:55,549 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 16:58:55,549 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 16:58:55,550 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 16:58:55,550 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 16:58:55,550 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 16:58:58,821 - INFO - Use pytorch device_name: mps
+2026-03-06 16:58:58,821 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 16:58:58,822 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 16:59:48,006 - INFO - [Scheduler] Stopped.
+2026-03-06 16:59:48,006 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 16:59:49,016 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 16:59:49,016 - INFO - [MLClassifier] Device: cpu
+2026-03-06 16:59:49,016 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 16:59:49,016 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 16:59:49,016 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 16:59:49,016 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 16:59:49,016 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 16:59:52,143 - INFO - Use pytorch device_name: mps
+2026-03-06 16:59:52,143 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 16:59:52,143 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 17:00:01,331 - INFO - [Scheduler] Stopped.
+2026-03-06 17:00:01,333 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 17:00:02,144 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 17:00:02,144 - INFO - [MLClassifier] Device: cpu
+2026-03-06 17:00:02,144 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 17:00:02,144 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 17:00:02,144 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 17:00:02,144 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 17:00:02,144 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 17:00:04,782 - INFO - Use pytorch device_name: mps
+2026-03-06 17:00:04,782 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 17:00:04,783 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 17:04:42,214 - INFO - [Scheduler] Stopped.
+2026-03-06 17:04:42,215 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 17:04:43,287 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 17:04:43,287 - INFO - [MLClassifier] Device: cpu
+2026-03-06 17:04:43,287 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 17:04:43,287 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 17:04:43,287 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 17:04:43,287 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 17:04:43,287 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 17:04:46,318 - INFO - Use pytorch device_name: mps
+2026-03-06 17:04:46,318 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 17:04:46,318 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 19:00:21,996 - INFO - [Classification] Loading ML model (first use)...
+2026-03-06 19:00:21,996 - INFO - [MLClassifier] Loading model: facebook/bart-large-mnli
+2026-03-06 19:00:21,996 - INFO - [MLClassifier] This may take 15-30 seconds on first load...
+2026-03-06 19:00:22,490 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-03-06 19:00:22,534 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/config.json "HTTP/1.1 200 OK"
+2026-03-06 19:00:23,103 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-03-06 19:00:23,381 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-03-06 19:00:23,726 - INFO - [MLClassifier] Model loaded successfully
+2026-03-06 22:39:19,785 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 22:39:19,785 - INFO - [MLClassifier] Device: cpu
+2026-03-06 22:39:19,785 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 22:39:19,785 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 22:39:19,785 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 22:39:19,786 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 22:39:19,786 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 22:39:23,535 - INFO - Use pytorch device_name: mps
+2026-03-06 22:39:23,535 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 22:39:23,536 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 22:39:35,744 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 22:39:35,744 - INFO - [MLClassifier] Device: cpu
+2026-03-06 22:39:35,744 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 22:39:35,744 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 22:39:35,744 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 22:39:35,745 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 22:39:35,745 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 22:39:38,592 - INFO - Use pytorch device_name: mps
+2026-03-06 22:39:38,593 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 22:39:38,593 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 22:54:03,433 - INFO - [Classification] Loading ML model (first use)...
+2026-03-06 22:54:03,434 - INFO - [MLClassifier] Loading model: facebook/bart-large-mnli
+2026-03-06 22:54:03,434 - INFO - [MLClassifier] This may take 15-30 seconds on first load...
+2026-03-06 22:54:04,040 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-03-06 22:54:04,104 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/config.json "HTTP/1.1 200 OK"
+2026-03-06 22:54:04,581 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-03-06 22:54:04,884 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-03-06 22:54:05,038 - INFO - [MLClassifier] Model loaded successfully
+2026-03-06 23:04:17,450 - INFO - [Scheduler] Stopped.
+2026-03-06 23:04:17,451 - INFO - [Scheduler] Background scheduler stopped.
+2026-03-06 23:04:23,977 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 23:04:23,977 - INFO - [MLClassifier] Device: cpu
+2026-03-06 23:04:23,977 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 23:04:23,977 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 23:04:23,977 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 23:04:23,977 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 23:04:23,977 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 23:04:27,495 - INFO - Use pytorch device_name: mps
+2026-03-06 23:04:27,495 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 23:04:27,495 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 23:07:22,550 - INFO - [Classification] Loading ML model (first use)...
+2026-03-06 23:07:22,550 - INFO - [MLClassifier] Loading model: facebook/bart-large-mnli
+2026-03-06 23:07:22,551 - INFO - [MLClassifier] This may take 15-30 seconds on first load...
+2026-03-06 23:07:23,407 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-03-06 23:07:23,472 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/config.json "HTTP/1.1 200 OK"
+2026-03-06 23:07:23,907 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-03-06 23:07:24,199 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-03-06 23:07:24,343 - INFO - [MLClassifier] Model loaded successfully
+2026-03-06 23:19:03,237 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 23:19:03,237 - INFO - [MLClassifier] Device: cpu
+2026-03-06 23:19:03,237 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 23:19:03,237 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 23:19:03,237 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 23:19:03,237 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 23:19:03,237 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 23:19:06,462 - INFO - Use pytorch device_name: mps
+2026-03-06 23:19:06,463 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 23:19:06,463 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 23:20:06,090 - INFO - [MLClassifier] Initialized with model: facebook/bart-large-mnli
+2026-03-06 23:20:06,090 - INFO - [MLClassifier] Device: cpu
+2026-03-06 23:20:06,090 - INFO - [MLClassifier] Confidence threshold: 0.6
+2026-03-06 23:20:06,090 - INFO - [Classification] ML model configured (lazy loading)
+2026-03-06 23:20:06,090 - INFO - [Classification] Component initialized (v0.2.0-ml)
+2026-03-06 23:20:06,090 - INFO - [Classification] ML Layer: Enabled
+2026-03-06 23:20:06,090 - INFO - [Classification] Rules: 40 academic, 29 productivity, 18 non-academic domains
+2026-03-06 23:20:08,928 - INFO - Use pytorch device_name: mps
+2026-03-06 23:20:08,928 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
+2026-03-06 23:20:08,928 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 23:22:48,515 - INFO - AFC is enabled with max remote calls: 10.
+2026-03-06 23:23:06,003 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+2026-03-06 23:24:56,288 - INFO - [Classification] Loading ML model (first use)...
+2026-03-06 23:24:56,289 - INFO - [MLClassifier] Loading model: facebook/bart-large-mnli
+2026-03-06 23:24:56,289 - INFO - [MLClassifier] This may take 15-30 seconds on first load...
+2026-03-06 23:24:57,862 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-03-06 23:24:57,909 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/config.json "HTTP/1.1 200 OK"
+2026-03-06 23:24:58,365 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-03-06 23:24:58,650 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-03-06 23:24:58,805 - INFO - [MLClassifier] Model loaded successfully

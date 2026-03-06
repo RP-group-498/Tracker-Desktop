@@ -1,0 +1,543 @@
+/* ===== Intervention Page Variables ===== */
+.sie-page {
+  --sie-primary: #667eea;
+  --sie-primary-dark: #5568d3;
+  --sie-accent: #f093fb;
+  --sie-text-primary: #1f2937;
+  --sie-text-secondary: #6b7280;
+  --sie-text-light: #9ca3af;
+  --sie-radius-md: 12px;
+  --sie-radius-lg: 16px;
+  --sie-radius-xl: 20px;
+  --sie-glass-bg: rgba(0, 0, 0, 0.02);
+  --sie-glass-border: rgba(0, 0, 0, 0.08);
+  --sie-glass-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* ===== Demo Buttons ===== */
+.sie-demo-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.sie-demo-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px;
+  background: rgba(102, 126, 234, 0.05);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: var(--sie-radius-md);
+  color: var(--sie-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sie-demo-btn:hover {
+  background: rgba(102, 126, 234, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+/* ===== Intervention Button ===== */
+.sie-intervention-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--sie-primary);
+  color: white;
+  border: none;
+  border-radius: var(--sie-radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sie-intervention-btn:hover:not(:disabled) {
+  background: var(--sie-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.sie-intervention-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== Scenario select ===== */
+.sie-scenario-select {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--sie-glass-border);
+  background: white;
+  color: var(--sie-text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+}
+
+.sie-scenario-select:focus {
+  border-color: var(--sie-primary);
+}
+
+/* ===== Time filter bar ===== */
+.sie-time-filter-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.sie-time-filter-btn {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  background: transparent;
+  color: var(--sie-text-secondary);
+  transition: all 0.2s ease;
+}
+
+.sie-time-filter-btn:hover {
+  background: rgba(102, 126, 234, 0.08);
+  border-color: var(--sie-primary);
+  color: var(--sie-primary);
+}
+
+.sie-time-filter-btn.active {
+  background: var(--sie-primary);
+  border-color: var(--sie-primary);
+  color: #ffffff;
+}
+
+/* ===== Chart container ===== */
+.sie-chart-container {
+  position: relative;
+  margin-top: 16px;
+  height: 220px;
+}
+
+.sie-chart-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sie-text-light);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px;
+}
+
+/* ===== Motivation legend ===== */
+.sie-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--sie-text-secondary);
+}
+
+.sie-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sie-legend-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ===== Life goal input ===== */
+.sie-goal-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.sie-goal-input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--sie-glass-border);
+  background: white;
+  color: var(--sie-text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.sie-goal-input:focus {
+  border-color: var(--sie-primary);
+}
+
+.sie-save-btn {
+  padding: 10px 18px;
+  background: var(--sie-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+
+.sie-save-btn:hover {
+  background: var(--sie-primary-dark);
+}
+
+/* ===== Breathing Modal ===== */
+.sie-breathing-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: sie-fadeIn 0.3s ease;
+}
+
+.sie-breathing-container {
+  text-align: center;
+  color: #ffffff;
+}
+
+.sie-breathing-circle {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.6));
+  box-shadow: 0 0 60px rgba(102, 126, 234, 0.6);
+  animation: sie-breathe 8s ease-in-out infinite;
+}
+
+@keyframes sie-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.5); opacity: 1; }
+}
+
+.sie-breathing-text {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  animation: sie-pulse 8s ease-in-out infinite;
+}
+
+@keyframes sie-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.sie-breathing-instruction {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 32px;
+}
+
+.sie-breathing-counter {
+  font-size: 40px;
+  font-weight: 700;
+  color: #f093fb;
+  margin-bottom: 20px;
+}
+
+.sie-modal-btn {
+  margin-top: 16px;
+  padding: 10px 28px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--sie-radius-md);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 8px;
+}
+
+.sie-modal-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.03);
+}
+
+/* ===== Visualization Modal ===== */
+.sie-viz-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #050510;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  color: white;
+  text-align: center;
+  overflow: hidden;
+}
+
+.sie-viz-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  perspective: 1000px;
+  z-index: 0;
+}
+
+.sie-viz-particle {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: sie-move-particle 5s linear infinite;
+}
+
+@keyframes sie-move-particle {
+  from { transform: translateZ(-1000px); opacity: 0; }
+  to { transform: translateZ(500px); opacity: 0.8; }
+}
+
+.sie-viz-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.sie-viz-portal {
+  width: 180px;
+  height: 180px;
+  border: 2px solid rgba(77, 150, 255, 0.3);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  box-shadow: 0 0 100px rgba(77, 150, 255, 0.2);
+  animation: sie-rotate-portal 20s linear infinite;
+}
+
+.sie-viz-portal::after {
+  content: '';
+  position: absolute;
+  width: 110%;
+  height: 110%;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  animation: sie-rotate-portal-reverse 15s linear infinite;
+}
+
+@keyframes sie-rotate-portal {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes sie-rotate-portal-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.sie-viz-text {
+  font-size: 1.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  position: absolute;
+  width: 100%;
+  text-align: center;
+}
+
+.sie-viz-instruction {
+  max-width: 360px;
+  font-size: 1rem;
+  color: #a0a0c0;
+  line-height: 1.5;
+}
+
+.sie-viz-counter {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.sie-viz-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* ===== Intervention Modal (generic) ===== */
+.sie-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: sie-fadeIn 0.3s ease;
+}
+
+@keyframes sie-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sie-modal {
+  background: white;
+  border-radius: var(--sie-radius-xl);
+  padding: 28px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: sie-popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes sie-popIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.sie-modal h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--sie-text-primary);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.sie-modal p {
+  font-size: 14px;
+  color: var(--sie-text-secondary);
+  line-height: 1.6;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.sie-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.sie-modal-cancel {
+  padding: 10px 20px;
+  border-radius: var(--sie-radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--sie-text-secondary);
+  transition: all 0.2s ease;
+}
+
+.sie-modal-cancel:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.sie-modal-confirm {
+  padding: 10px 20px;
+  border-radius: var(--sie-radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: var(--sie-primary);
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.sie-modal-confirm:hover {
+  background: var(--sie-primary-dark);
+}
+
+/* ===== Auto-Monitor Toggle ===== */
+.sie-monitor-toggle {
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border: 2px solid rgba(156, 163, 175, 0.4);
+  background: rgba(156, 163, 175, 0.08);
+  color: #9ca3af;
+  transition: all 0.3s ease;
+  min-width: 60px;
+}
+
+.sie-monitor-toggle:hover {
+  border-color: var(--sie-primary);
+  color: var(--sie-primary);
+  background: rgba(102, 126, 234, 0.08);
+}
+
+.sie-monitor-toggle.active {
+  background: linear-gradient(135deg, #34d399, #10b981);
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+}
+
+.sie-monitor-toggle.active:hover {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #059669;
+}
+
+/* ===== Monitor Status ===== */
+.sie-monitor-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 0;
+}
+
+.sie-monitor-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d1d5db;
+  flex-shrink: 0;
+  transition: background 0.3s ease;
+}
+
+.sie-monitor-dot.active {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+  animation: sie-pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes sie-pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(16, 185, 129, 0.6); }
+  50% { opacity: 0.5; box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); }
+}

@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     tasks_collection_patterns: str = "patterns"
     tasks_collection_training_logs: str = "training_logs"
 
+    # Smart Intervention Engine DB
+    intervention_mongodb_uri: str = ""
+    intervention_mongodb_database: str = "intervention_db"
+
     # APDIS MongoDB (active time predictions)
     apdis_mongodb_uri: str = ""
     apdis_database_name: str = ""

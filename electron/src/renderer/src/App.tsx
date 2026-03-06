@@ -6,6 +6,7 @@ import PDFAnalysis from './pages/PDFAnalysis';
 import TimeEstimator from './pages/TimeEstimator';
 import ProcrastinationPage from './pages/ProcrastinationPage';
 import CalibrationPage from './pages/CalibrationPage';
+import SmartInterventionPage from './pages/SmartInterventionPage';
 
 interface AppState {
   pythonRunning: boolean;
@@ -14,12 +15,13 @@ interface AppState {
   eventCount: number;
 }
 
-type Tab = 'dashboard' | 'procrastination' | 'calibration';
+type Tab = 'dashboard' | 'procrastination' | 'calibration' | 'intervention';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'dashboard',       label: 'Dashboard' },
   { id: 'procrastination', label: 'Analysis' },
   { id: 'calibration',     label: 'Settings' },
+  { id: 'intervention',    label: 'Interventions' },
 ];
 
 const Dashboard: React.FC = () => {
@@ -103,6 +105,7 @@ const Dashboard: React.FC = () => {
 
         {activeTab === 'procrastination' && <ProcrastinationPage />}
         {activeTab === 'calibration' && <CalibrationPage />}
+        {activeTab === 'intervention' && <SmartInterventionPage />}
       </main>
 
       {/* Footer */}
