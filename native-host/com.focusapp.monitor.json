@@ -1,9 +1,9 @@
 {
   "name": "com.focusapp.monitor",
   "description": "Focus App Native Messaging Host - Bridges browser extension to desktop app",
-  "path": "C:\\Users\\amara\\OneDrive\\Documents\\Projects\\Research\\desktop-app\\native-host\\native-host.bat",
+  "path": "/Users/nipun/Downloads/Migration/Tracker-Desktop/native-host/native-host.bat",
   "type": "stdio",
   "allowed_origins": [
-    "chrome-extension://iplkgkopmfndpmekoncghfoldemndmlo/"
+    "chrome-extension://bchljpgnfgomebiicobgkmhplmkigllh/"
   ]
 }

@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Chart, registerables } from 'chart.js';
 import './SmartInterventionPage.css';
 import { getContext } from '../../../utils/contextBuilder';
+import { MonitoringLoop } from '../utils/monitoringLoop';
+import { CooldownManager } from '../utils/cooldownManager';
 
 Chart.register(...registerables);
 
@@ -23,11 +25,20 @@ const ACTION_NOTIFICATIONS: Record<string, { title: string; body: string | null 
     REFRAME: { title: 'Reframe Your Perspective', body: null },
 };
 
-const SCENARIO_POINT_COLORS: Record<string, string> = {
-    A: '#4ade80',
-    B: '#fb923c',
-    C: '#f87171',
-    live: '#667eea',
+const INTERVENTION_COLORS: Record<string, string> = {
+    FIVE_SECOND_RULE: '#f59e0b',
+    POMODORO: '#ef4444',
+    BREATHING: '#10b981',
+    VISUALIZATION: '#8b5cf6',
+    REFRAME: '#3b82f6',
+};
+
+const INTERVENTION_LABELS: Record<string, string> = {
+    FIVE_SECOND_RULE: '5-Second Rule',
+    POMODORO: 'Pomodoro',
+    BREATHING: 'Breathing',
+    VISUALIZATION: 'Visualization',
+    REFRAME: 'Reframe',
 };
 
 const TIME_FILTERS = [
@@ -188,9 +199,17 @@ const SmartInterventionPage: React.FC = () => {
     const [showBreathing, setShowBreathing] = useState(false);
     const [showVisualization, setShowVisualization] = useState(false);
 
+    // ── Monitoring Loop State ─────────────────────────────────────────────
+    const [monitorEnabled, setMonitorEnabled] = useState(false);
+    const [monitorStatus, setMonitorStatus] = useState('Monitoring stopped');
+
     const chartCanvasRef = useRef<HTMLCanvasElement>(null);
     const chartInstanceRef = useRef<Chart | null>(null);
     const pendingBanditRef = useRef<{ action: string; vector: number[] } | null>(null);
+
+    // Monitoring refs (persist across renders)
+    const cooldownRef = useRef<CooldownManager>(new CooldownManager());
+    const monitorRef = useRef<MonitoringLoop | null>(null);
 
     // Pomodoro / 5-second timer refs
     const pomodoroIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -199,12 +218,12 @@ const SmartInterventionPage: React.FC = () => {
 
     // ── API helpers ───────────────────────────────────────────────────────
 
-    const logMotivation = useCallback(async (vector: number[]) => {
+    const logMotivation = useCallback(async (vector: number[], scenario: string = 'live') => {
         try {
             await window.electronAPI.intervention.logMotivation({
                 user_id: BANDIT_USER_ID,
                 motivation: vector[6],
-                scenario: 'live',
+                scenario,
             });
         } catch (e) {
             console.warn('[Motivation] Log failed:', e);
@@ -231,7 +250,11 @@ const SmartInterventionPage: React.FC = () => {
 
             const labels = data.map(d => formatTick(d.timestamp, seconds));
             const values = data.map(d => d.motivation);
-            const pointColors = data.map(d => SCENARIO_POINT_COLORS[d.scenario] ?? '#667eea');
+            const pointColors = data.map(d =>
+                d.scenario !== 'live' ? (INTERVENTION_COLORS[d.scenario] ?? '#667eea') : 'transparent'
+            );
+            const pointRadii = data.map(d => d.scenario !== 'live' ? 6 : 0);
+            const pointHoverRadii = data.map(d => d.scenario !== 'live' ? 8 : 4);
 
             if (chartInstanceRef.current) {
                 const chart = chartInstanceRef.current;
@@ -239,9 +262,13 @@ const SmartInterventionPage: React.FC = () => {
                 chart.data.datasets[0].data = values;
                 (chart.data.datasets[0] as any).pointBackgroundColor = pointColors;
                 (chart.data.datasets[0] as any).pointBorderColor = pointColors;
+                (chart.data.datasets[0] as any).pointRadius = pointRadii;
+                (chart.data.datasets[0] as any).pointHoverRadius = pointHoverRadii;
                 (chart.options.plugins!.tooltip as any).callbacks.label = (ctx: any) => {
                     const d = data[ctx.dataIndex];
-                    return `Motivation: ${d.motivation.toFixed(3)}   Scenario ${d.scenario}`;
+                    if (d.scenario === 'live') return `Motivation: ${d.motivation.toFixed(3)}`;
+                    const label = INTERVENTION_LABELS[d.scenario] ?? d.scenario;
+                    return `Motivation: ${d.motivation.toFixed(3)}  ▸ ${label}`;
                 };
                 chart.update();
                 return;
@@ -258,8 +285,8 @@ const SmartInterventionPage: React.FC = () => {
                         backgroundColor: 'rgba(102, 126, 234, 0.07)',
                         pointBackgroundColor: pointColors,
                         pointBorderColor: pointColors,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
+                        pointRadius: pointRadii,
+                        pointHoverRadius: pointHoverRadii,
                         fill: true,
                         tension: 0.35,
                         borderWidth: 2,
@@ -268,13 +295,19 @@ const SmartInterventionPage: React.FC = () => {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'nearest',
+                        intersect: false,
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: (ctx: any) => {
                                     const d = data[ctx.dataIndex];
-                                    return `Motivation: ${d.motivation.toFixed(3)}   Scenario ${d.scenario}`;
+                                    if (d.scenario === 'live') return `Motivation: ${d.motivation.toFixed(3)}`;
+                                    const label = INTERVENTION_LABELS[d.scenario] ?? d.scenario;
+                                    return `Motivation: ${d.motivation.toFixed(3)}  ▸ ${label}`;
                                 },
                             },
                         },
@@ -412,9 +445,8 @@ const SmartInterventionPage: React.FC = () => {
         try {
             const vector = await getContext(BANDIT_USER_ID);
 
-            // Log the motivation & refresh chart immediately
+            // Log the motivation (as live — will be re-logged with intervention below)
             await logMotivation(vector);
-            fetchAndRenderChart(filterSeconds);
 
             setSuggestStatus('Asking the model...');
             const result = await window.electronAPI.intervention.banditSelect({
@@ -424,6 +456,11 @@ const SmartInterventionPage: React.FC = () => {
             });
             const { action, allowed_actions } = result as { action: string; allowed_actions: string[] };
             setSuggestStatus(`Model chose: ${action} (from ${allowed_actions.join(', ')})`);
+
+            // Log a second motivation point tagged with the intervention type
+            await logMotivation(vector, action);
+            fetchAndRenderChart(filterSeconds);
+
             await triggerBanditNotification(action, vector);
         } catch (err: any) {
             setSuggestStatus(`Error: ${err?.message ?? 'unknown error'}`);
@@ -431,6 +468,58 @@ const SmartInterventionPage: React.FC = () => {
             setSuggestDisabled(false);
         }
     }, [triggerBanditNotification, logMotivation, fetchAndRenderChart, filterSeconds]);
+
+    // ── Monitoring loop: auto-suggest callback ────────────────────────────
+
+    const onSuggestIntervention = useCallback(async (vector: number[], _allowedActions: string[]) => {
+        try {
+            // Mark the cooldown manager as having an active intervention
+            cooldownRef.current.setActiveIntervention('pending');
+
+            const result = await window.electronAPI.intervention.banditSelect({
+                user_id: BANDIT_USER_ID,
+                x: vector,
+                alpha: 1.0,
+            });
+            const { action } = result as { action: string; allowed_actions: string[] };
+            console.log(`[MonitoringLoop] Bandit selected: ${action}`);
+            setMonitorStatus(`Triggered → ${action}`);
+
+            // Log motivation tagged with the intervention type
+            await logMotivation(vector, action);
+            fetchAndRenderChart(filterSeconds);
+
+            cooldownRef.current.setActiveIntervention(action);
+            await triggerBanditNotification(action, vector);
+        } catch (err) {
+            console.warn('[MonitoringLoop] Bandit select error:', err);
+            cooldownRef.current.setActiveIntervention(null);
+            setMonitorStatus(`Error: ${(err as Error)?.message ?? 'unknown'}`);
+        }
+    }, [triggerBanditNotification, logMotivation, fetchAndRenderChart, filterSeconds]);
+
+    // ── Toggle monitoring loop on/off ─────────────────────────────────────
+
+    const handleToggleMonitor = useCallback(() => {
+        if (monitorRef.current?.isRunning()) {
+            monitorRef.current.stop();
+            monitorRef.current = null;
+            setMonitorEnabled(false);
+            setMonitorStatus('Monitoring stopped');
+        } else {
+            const loop = new MonitoringLoop(cooldownRef.current, {
+                onSuggestIntervention,
+                onLogMotivation: (vector) => {
+                    logMotivation(vector);
+                    fetchAndRenderChart(filterSeconds);
+                },
+                onStatusUpdate: (status) => setMonitorStatus(status),
+            });
+            monitorRef.current = loop;
+            loop.start();
+            setMonitorEnabled(true);
+        }
+    }, [onSuggestIntervention, logMotivation, fetchAndRenderChart, filterSeconds]);
 
     // ── Demo button handlers ──────────────────────────────────────────────
 
@@ -489,6 +578,14 @@ const SmartInterventionPage: React.FC = () => {
                     reward,
                     logAction,
                 );
+
+                // Apply cooldown from the monitoring loop
+                const banditAction = pendingBanditRef.current.action;
+                cooldownRef.current.applyCooldown(
+                    banditAction,
+                    logAction as 'start' | 'skip' | 'not_now',
+                );
+
                 pendingBanditRef.current = null;
                 fetchAndRenderChart(filterSeconds);
             }
@@ -530,7 +627,7 @@ const SmartInterventionPage: React.FC = () => {
         return () => clearInterval(intervalId);
     }, [filterSeconds, fetchAndRenderChart]);
 
-    // ── Cleanup timers on unmount ─────────────────────────────────────────
+    // ── Cleanup timers + monitoring loop on unmount ─────────────────────────
 
     useEffect(() => {
         return () => {
@@ -538,6 +635,7 @@ const SmartInterventionPage: React.FC = () => {
             if (breakIntervalRef.current) clearInterval(breakIntervalRef.current);
             if (fiveSecIntervalRef.current) clearInterval(fiveSecIntervalRef.current);
             if (chartInstanceRef.current) { chartInstanceRef.current.destroy(); chartInstanceRef.current = null; }
+            if (monitorRef.current?.isRunning()) monitorRef.current.stop();
         };
     }, []);
 
@@ -601,6 +699,28 @@ const SmartInterventionPage: React.FC = () => {
                 )}
             </div>
 
+            {/* Auto-Monitor — Trigger & Cooldown */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div>
+                        <h3 className="text-sm font-semibold text-gray-800" style={{ margin: 0 }}>Auto-Monitor</h3>
+                        <p className="text-xs text-gray-500" style={{ margin: 0 }}>
+                            Checks every 60s and triggers interventions automatically
+                        </p>
+                    </div>
+                    <button
+                        className={`sie-monitor-toggle ${monitorEnabled ? 'active' : ''}`}
+                        onClick={handleToggleMonitor}
+                    >
+                        {monitorEnabled ? 'ON' : 'OFF'}
+                    </button>
+                </div>
+                <div className="sie-monitor-status">
+                    <span className={`sie-monitor-dot ${monitorEnabled ? 'active' : ''}`} />
+                    <span className="text-xs text-gray-500">{monitorStatus}</span>
+                </div>
+            </div>
+
             {/* Motivation Over Time */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                 <h3 className="text-sm font-semibold text-gray-800 mb-1">Motivation Over Time</h3>
@@ -623,7 +743,12 @@ const SmartInterventionPage: React.FC = () => {
                 </div>
 
                 <div className="sie-legend">
-                    <span><span className="sie-legend-dot" style={{ background: '#667eea' }} />Live</span>
+                    {Object.entries(INTERVENTION_COLORS).map(([key, color]) => (
+                        <span key={key}>
+                            <span className="sie-legend-dot" style={{ background: color }} />
+                            {INTERVENTION_LABELS[key]}
+                        </span>
+                    ))}
                 </div>
             </div>
 

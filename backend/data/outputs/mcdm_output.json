@@ -1,67 +1,75 @@
 {
   "tasks": [
     {
-      "task_name": "Microservices Lab",
-      "task_description": "How to build and deploy a complete microservices system from scratch using Docker and an API Gateway?",
+      "task_name": "MICROSERVICES Lab",
+      "task_description": "How to build a complete microservices system from scratch using Docker and an API Gateway?",
       "sub_tasks": [
         {
-          "name": "Initialize project structure and select technology stacks for all services",
-          "estimated_minutes": 60
-        },
-        {
-          "name": "Implement Item Service API (GET and POST endpoints)",
-          "estimated_minutes": 120
-        },
-        {
-          "name": "Implement Order Service API (GET and POST endpoints)",
-          "estimated_minutes": 120
-        },
-        {
-          "name": "Implement Payment Service API (GET and POST endpoints)",
-          "estimated_minutes": 120
-        },
-        {
-          "name": "Configure and implement API Gateway with routing rules",
-          "estimated_minutes": 90
-        },
-        {
-          "name": "Create Dockerfiles for all microservices and API Gateway",
-          "estimated_minutes": 60
-        },
-        {
-          "name": "Develop docker-compose.yml for multi-service container orchestration",
-          "estimated_minutes": 90
-        },
-        {
-          "name": "Build and run the complete microservices system using Docker Compose",
+          "name": "Understand Lab Objectives & Architecture",
           "estimated_minutes": 30
         },
         {
-          "name": "Test all API endpoints using Postman and gather evidence",
+          "name": "Choose Technology Stack for Each Service",
+          "estimated_minutes": 20
+        },
+        {
+          "name": "Implement Item Service (GET & POST endpoints)",
           "estimated_minutes": 120
         },
         {
-          "name": "Create a public GitHub repository with the complete working system and submission document",
-          "estimated_minutes": 30
+          "name": "Implement Order Service (GET & POST endpoints)",
+          "estimated_minutes": 120
+        },
+        {
+          "name": "Implement Payment Service (GET & POST endpoints)",
+          "estimated_minutes": 120
+        },
+        {
+          "name": "Implement and Configure API Gateway",
+          "estimated_minutes": 120
+        },
+        {
+          "name": "Create Dockerfiles for All Services",
+          "estimated_minutes": 60
+        },
+        {
+          "name": "Create Docker Compose Configuration",
+          "estimated_minutes": 90
+        },
+        {
+          "name": "Build and Run Microservices with Docker Compose",
+          "estimated_minutes": 60
+        },
+        {
+          "name": "Test All API Endpoints with Postman",
+          "estimated_minutes": 90
+        },
+        {
+          "name": "Prepare GitHub Repository and Submission Document",
+          "estimated_minutes": 60
+        },
+        {
+          "name": "Debugging and Troubleshooting",
+          "estimated_minutes": 180
         }
       ],
-      "context": "In this 2-hour practical lab you will build a complete Microservices system from scratch. You are free to choose any supported technology stack for each service the only requirement is that each service runs in Docker and can be reached through the API Gateway. You are NOT required to use Spring Boot for every service. See Section 2 for supported technology options per service. If you are unsure, use Spring Boot for all services it is the safest choice and well-documented examples are provided throughout this lab sheet. Services do NOT call each other directly; the API Gateway is the single entry point. Minimum requirement is the GET endpoints; POST endpoints are required for bonus marks. All services are on the same Docker network (microservices-net). Use the service name (e.g., item-service) as the hostname inside your gateway config — NOT localhost. Submission requires a public GitHub repository including Docker setup and API testing evidence.",
+      "context": "This is a 2-hour practical lab to build a complete microservices system from scratch. Students are free to choose any supported technology stack for each service. The only requirement is that each service runs in Docker and can be reached through the API Gateway. The API Gateway is the single entry point and routes every request to the correct microservice; services do NOT call each other directly. The system consists of Item Service (Port 8081), Order Service (Port 8082), Payment Service (Port 8083), and API Gateway (Port 8080). Technology stack options include Spring Boot (Java), Node.js + Express, FastAPI (Python), Gin (Go), Django REST, Flask (Python), .NET Core, Kong/NGINX, and Express Gateway. Quick Start Templates and code examples for Spring Boot are provided. The API Gateway must route requests based on URL path prefixes (e.g., /items/** to Item Service). All services must be on the same Docker network (`microservices-net`), and the service name (e.g., `item-service`) should be used as the hostname inside the gateway config, NOT `localhost`. Minimum requirement is to implement GET endpoints; POST endpoints are required for bonus marks. Testing should be done using Postman. The final submission requires a public GitHub repository with the complete working microservices system, including Docker setup and API testing evidence, and this repo link must be included in a word document.",
       "ai_suggestions": {
-        "ai_suggested_difficulty": 3,
-        "ai_suggested_time": 14.0
+        "ai_suggested_difficulty": 5,
+        "ai_suggested_time": 20.0
       },
       "metrics": {
         "deadline": "2026-03-10",
         "days_left": 4,
         "credits": 4,
         "percentage": 10,
-        "difficulty_rating": 3
+        "difficulty_rating": 5
       },
       "mcdm_calculation": {
         "urgency_score": 60.0,
         "impact_score": 20.0,
-        "difficulty_score": 60.0,
-        "final_weighted_score": 48.0
+        "difficulty_score": 100.0,
+        "final_weighted_score": 56.0
       },
       "priority": "Medium"
     }

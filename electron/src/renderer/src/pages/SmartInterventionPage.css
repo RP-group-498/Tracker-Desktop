@@ -478,3 +478,66 @@
 .sie-modal-confirm:hover {
   background: var(--sie-primary-dark);
 }
+
+/* ===== Auto-Monitor Toggle ===== */
+.sie-monitor-toggle {
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border: 2px solid rgba(156, 163, 175, 0.4);
+  background: rgba(156, 163, 175, 0.08);
+  color: #9ca3af;
+  transition: all 0.3s ease;
+  min-width: 60px;
+}
+
+.sie-monitor-toggle:hover {
+  border-color: var(--sie-primary);
+  color: var(--sie-primary);
+  background: rgba(102, 126, 234, 0.08);
+}
+
+.sie-monitor-toggle.active {
+  background: linear-gradient(135deg, #34d399, #10b981);
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+}
+
+.sie-monitor-toggle.active:hover {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #059669;
+}
+
+/* ===== Monitor Status ===== */
+.sie-monitor-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 0;
+}
+
+.sie-monitor-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d1d5db;
+  flex-shrink: 0;
+  transition: background 0.3s ease;
+}
+
+.sie-monitor-dot.active {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+  animation: sie-pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes sie-pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(16, 185, 129, 0.6); }
+  50% { opacity: 0.5; box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); }
+}

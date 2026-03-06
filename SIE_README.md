@@ -90,7 +90,7 @@ Endpoints:
 3. ~~Intervention suggestion flow in Electron~~ — Done
 4. ~~Evaluation logging (bandit_events)~~ — Done
 5. `idle_ratio` signal (pending confirmation from Component 1)
-6. Step 7 — Trigger-and-Cooldown Algorithm
+6. ~~Step 7 — Trigger-and-Cooldown Algorithm~~ — Done
 
 ---
 
@@ -511,6 +511,57 @@ FastAPI Backend
 - model update
 - MongoDB persistence
 - event logging
+
+---
+
+# Step 7 — Implementation Details (Done)
+
+## New Files Created
+
+### `electron/src/renderer/src/utils/triggerDetector.ts`
+
+Exports:
+- `shouldTrigger(vector)` — evaluates 5 trigger conditions (idle_ratio skipped)
+- `filterByUrgency(vector)` — urgency-based action filtering
+
+### `electron/src/renderer/src/utils/cooldownManager.ts`
+
+Exports `CooldownManager` class:
+- `hasActiveIntervention()` / `setActiveIntervention()`
+- `isGlobalCooldownActive()`
+- `getAvailableActions(allowed)` — removes per-action cooled-down actions
+- `applyCooldown(action, response)` — applies Start/Skip/Not Now rules
+- `reset()` / `getStatus()`
+
+### `electron/src/renderer/src/utils/contextHasher.ts`
+
+Exports:
+- `hashContext(vector)` — rounds to 2 decimals, joins as string
+- `isDuplicateContext(hash)` / `updateHash(hash)` / `resetHash()`
+
+### `electron/src/renderer/src/utils/monitoringLoop.ts`
+
+Exports `MonitoringLoop` class:
+- `start()` — begins 60-second interval
+- `stop()` — clears interval, resets cooldowns and hash
+- `isRunning()`
+- Takes callback hooks: `onSuggestIntervention`, `onLogMotivation`, `onStatusUpdate`
+
+## Modified Files
+
+### `SmartInterventionPage.tsx`
+
+- Added Auto-Monitor toggle (ON/OFF) with real-time status indicator
+- Wired notification responses to apply cooldowns via `CooldownManager`
+- Cleans up monitoring loop on unmount
+
+### `SmartInterventionPage.css`
+
+- Added styles for `.sie-monitor-toggle`, `.sie-monitor-status`, `.sie-monitor-dot`
+
+## Pending
+
+- `idle_ratio` trigger condition is commented out (not yet confirmed)
 
 
 

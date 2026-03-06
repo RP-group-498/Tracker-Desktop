@@ -76,13 +76,12 @@ export function registerInterventionHandlers(
             actions: [
                 { type: 'button', text: 'Start' },
                 { type: 'button', text: 'Skip' },
-                { type: 'button', text: 'Not Now' },
             ],
             closeButtonText: 'Not Now',
         });
 
         notification.on('action', (_e, index) => {
-            const actionMap: Record<number, string> = { 0: 'start', 1: 'skip', 2: 'not_now' };
+            const actionMap: Record<number, string> = { 0: 'start', 1: 'skip' };
             const action = actionMap[index] ?? 'not_now';
             mainWindow?.webContents.send('notification-action-response', {
                 strategy: data.strategy,
