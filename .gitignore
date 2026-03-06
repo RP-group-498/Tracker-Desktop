@@ -51,3 +51,6 @@ coverage/
 # Misc
 *.local
 .cache/
+
+# ML Model files (too large for GitHub)
+backend/data/models/
