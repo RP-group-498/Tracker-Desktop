@@ -5,8 +5,8 @@
 
 Implement a **per-user contextual bandit (LinUCB)** to suggest the best intervention (5-Second Rule / Pomodoro / Breathing / Visualization / Reframe) based on a **context vector** computed from:
 
-- **Component 1 (Behavior Monitoring)** — not implemented yet → mock values for now
-- **Component 4 (Task Scheduling/Deadlines)** — not implemented yet → mock values for now
+- **Component 1 (Behavior Monitoring)** — live data from `focus_app_research.active_time`
+- **Component 4 (Task Scheduling/Deadlines)** — live data from `adaptive_time_estimation.completed_tasks`
 - **TMT feature proxies** computed from above signals
 
 This plan extends the current working Electron app + FastAPI backend.
@@ -85,58 +85,42 @@ Endpoints:
 
 # What’s Missing (Next Development Steps)
 
-1. Mock Context Vector Generator
-2. LinUCB service in FastAPI
-3. Intervention suggestion flow in Electron
-4. Evaluation logging (bandit_events)
+1. ~~Context Vector Generator~~ — Done (real data from Component 1 + Component 4)
+2. ~~LinUCB service in FastAPI~~ — Done
+3. ~~Intervention suggestion flow in Electron~~ — Done
+4. ~~Evaluation logging (bandit_events)~~ — Done
+5. `idle_ratio` signal (pending confirmation from Component 1)
+6. Step 7 — Trigger-and-Cooldown Algorithm
 
 ---
 
 # System Design (Target Flow)
 
-1. Electron builds context vector `x_t` (mock for now)
-2. Electron calls `POST /bandit/select`
-3. FastAPI returns best intervention
-4. Electron shows notification (Start / Skip / Not now)
-5. Electron computes reward from user response
-6. Electron calls `POST /bandit/update`
-7. FastAPI updates model and logs event
+1. Electron calls `GET /intervention/context/{user_id}` → fetches live signals from Component 1 + Component 4
+2. Electron builds context vector `x_t` from real signals
+3. Electron calls `POST /bandit/select`
+4. FastAPI returns best intervention
+5. Electron shows notification (Start / Skip / Not now)
+6. Electron computes reward from user response
+7. Electron calls `POST /bandit/update`
+8. FastAPI updates model and logs event
 
 ---
 
 # Step-by-Step Implementation Plan
 
-## Step 1 — Add Mock Context Provider
+## Step 1 — Real Context Provider (Done)
 
-Create:
+File: `electron/src/utils/contextBuilder.ts`
 
-`frontend/modules/mockContext.js`
+Functions:
+- `buildVector(signals: ContextSignals): number[]` — computes the 12-element vector from live signals
+- `getContext(userId: string): Promise<number[]>` — fetches signals from `GET /intervention/context/{user_id}` then calls `buildVector`
 
-Function:
-
-`getMockContext(userId): number[]`
-
-Requirements:
-
-- Fixed length vector (example d = 12)
-- All values normalized to 0–1
-
-### Mock Scenarios
-
-**Scenario A — Low urgency**
-- far deadline
-- low switching
-- low impulsiveness
-
-**Scenario B — High urgency**
-- near deadline
-- high impulsiveness
-
-**Scenario C — Overdue**
-- overdue_flag = 1
-- urgency high
-
-Add dropdown in UI to switch scenarios.
+Backend endpoint: `GET /intervention/context/{user_id}` in `backend/app/api/intervention.py`
+- Reads today's `active_time` document from `focus_app_research` DB (Component 1)
+- Reads `completed_tasks` from `adaptive_time_estimation` DB (Component 4)
+- Returns raw signal values; falls back to zeros if no data found
 
 ---
 
@@ -191,12 +175,10 @@ overdue_flag =
 8. app_switch_rate
 9. tab_switch_rate
 10. non_academic_ratio
-11. idle_ratio
+11. idle_ratio (set to 0.0 — not yet finalized)
 12. deadline_urgency = 1 - Delay
 
-Values will later come from Component1 and Component4.
-
-For now create a function to give mock values.
+Values come from Component 1 (`focus_app_research.active_time`) and Component 4 (`adaptive_time_estimation.completed_tasks`).
 
 ---
 
@@ -350,7 +332,7 @@ GET /bandit/events
 
 ---
 
-# Trigger‑and‑Cooldown Algorithm
+# Step 7 — Trigger‑and‑Cooldown Algorithm
 
 The contextual bandit **does not run continuously**.
 
@@ -532,7 +514,7 @@ FastAPI Backend
 
 
 
-# Future Integration
+# Data input details
 
 ## Component 1 — Behavior Monitoring
 

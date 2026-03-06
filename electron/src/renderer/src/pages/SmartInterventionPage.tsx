@@ -1,14 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Chart, registerables } from 'chart.js';
 import './SmartInterventionPage.css';
-import {
-    ScenarioKey,
-    SCENARIOS,
-    getMockContext,
-    setScenario,
-    getCurrentScenario,
-    getScenarioInfo,
-} from '../../../utils/mockContext';
+import { getContext } from '../../../utils/contextBuilder';
 
 Chart.register(...registerables);
 
@@ -34,6 +27,7 @@ const SCENARIO_POINT_COLORS: Record<string, string> = {
     A: '#4ade80',
     B: '#fb923c',
     C: '#f87171',
+    live: '#667eea',
 };
 
 const TIME_FILTERS = [
@@ -187,8 +181,6 @@ function formatTick(ts: number, sinceSeconds: number): string {
 }
 
 const SmartInterventionPage: React.FC = () => {
-    const [scenario, setScenarioState] = useState<ScenarioKey>(getCurrentScenario());
-    const [scenarioDesc, setScenarioDesc] = useState(getScenarioInfo().description);
     const [suggestStatus, setSuggestStatus] = useState('');
     const [suggestDisabled, setSuggestDisabled] = useState(false);
     const [lifeGoal, setLifeGoal] = useState('');
@@ -207,12 +199,12 @@ const SmartInterventionPage: React.FC = () => {
 
     // ── API helpers ───────────────────────────────────────────────────────
 
-    const logMotivation = useCallback(async (vector: number[], sc: ScenarioKey) => {
+    const logMotivation = useCallback(async (vector: number[]) => {
         try {
             await window.electronAPI.intervention.logMotivation({
                 user_id: BANDIT_USER_ID,
                 motivation: vector[6],
-                scenario: sc,
+                scenario: 'live',
             });
         } catch (e) {
             console.warn('[Motivation] Log failed:', e);
@@ -416,22 +408,22 @@ const SmartInterventionPage: React.FC = () => {
 
     const handleSuggest = useCallback(async () => {
         setSuggestDisabled(true);
-        setSuggestStatus('Asking the model...');
+        setSuggestStatus('Fetching context...');
         try {
-            const vector = getMockContext(BANDIT_USER_ID);
-            const sc = getCurrentScenario();
+            const vector = await getContext(BANDIT_USER_ID);
 
             // Log the motivation & refresh chart immediately
-            await logMotivation(vector, sc);
+            await logMotivation(vector);
             fetchAndRenderChart(filterSeconds);
 
+            setSuggestStatus('Asking the model...');
             const result = await window.electronAPI.intervention.banditSelect({
                 user_id: BANDIT_USER_ID,
                 x: vector,
                 alpha: 1.0,
             });
             const { action, allowed_actions } = result as { action: string; allowed_actions: string[] };
-            setSuggestStatus(`[${sc}] Model chose: ${action} (from ${allowed_actions.join(', ')})`);
+            setSuggestStatus(`Model chose: ${action} (from ${allowed_actions.join(', ')})`);
             await triggerBanditNotification(action, vector);
         } catch (err: any) {
             setSuggestStatus(`Error: ${err?.message ?? 'unknown error'}`);
@@ -522,8 +514,10 @@ const SmartInterventionPage: React.FC = () => {
             .then(data => { if ((data as any)?.life_goal) setLifeGoal((data as any).life_goal); })
             .catch(() => { });
 
-        const vector = getMockContext(BANDIT_USER_ID);
-        logMotivation(vector, getCurrentScenario()).then(() => fetchAndRenderChart(filterSeconds));
+        getContext(BANDIT_USER_ID)
+            .then(vector => logMotivation(vector))
+            .then(() => fetchAndRenderChart(filterSeconds))
+            .catch(() => fetchAndRenderChart(filterSeconds));
     }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Auto-refresh chart every 30 seconds ───────────────────────────────
@@ -546,17 +540,6 @@ const SmartInterventionPage: React.FC = () => {
             if (chartInstanceRef.current) { chartInstanceRef.current.destroy(); chartInstanceRef.current = null; }
         };
     }, []);
-
-    // ── Scenario change ───────────────────────────────────────────────────
-
-    const handleScenarioChange = async (sc: ScenarioKey) => {
-        setScenario(sc);
-        setScenarioState(sc);
-        setScenarioDesc(getScenarioInfo().description);
-        const vector = getMockContext(BANDIT_USER_ID);
-        await logMotivation(vector, sc);
-        fetchAndRenderChart(filterSeconds);
-    };
 
     // ── Filter change ─────────────────────────────────────────────────────
 
@@ -604,26 +587,7 @@ const SmartInterventionPage: React.FC = () => {
             {/* Smart Intervention — LinUCB */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                 <h3 className="text-sm font-semibold text-gray-800 mb-1">Smart Intervention — LinUCB</h3>
-                <p className="text-xs text-gray-500 mb-3">Select a scenario to simulate a user state</p>
-
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
-                    <div style={{ flex: 1, minWidth: 160 }}>
-                        <label className="block text-xs text-gray-500 mb-1">Context Scenario</label>
-                        <select
-                            className="sie-scenario-select"
-                            value={scenario}
-                            onChange={e => handleScenarioChange(e.target.value as ScenarioKey)}
-                        >
-                            {(Object.keys(SCENARIOS) as ScenarioKey[]).map(key => (
-                                <option key={key} value={key}>{SCENARIOS[key].label}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div style={{ flex: 2, minWidth: 180 }}>
-                        <label className="block text-xs text-gray-500 mb-1">Description</label>
-                        <p className="text-xs text-gray-600" style={{ paddingTop: 10 }}>{scenarioDesc}</p>
-                    </div>
-                </div>
+                <p className="text-xs text-gray-500 mb-3">Context is built from live behavioral and task data</p>
 
                 <button
                     className="sie-intervention-btn"
@@ -659,9 +623,7 @@ const SmartInterventionPage: React.FC = () => {
                 </div>
 
                 <div className="sie-legend">
-                    <span><span className="sie-legend-dot" style={{ background: '#4ade80' }} />Scenario A</span>
-                    <span><span className="sie-legend-dot" style={{ background: '#fb923c' }} />Scenario B</span>
-                    <span><span className="sie-legend-dot" style={{ background: '#f87171' }} />Scenario C</span>
+                    <span><span className="sie-legend-dot" style={{ background: '#667eea' }} />Live</span>
                 </div>
             </div>
 
