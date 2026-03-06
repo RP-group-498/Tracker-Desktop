@@ -53,6 +53,24 @@ interface ElectronAPI {
     addTask: (data: unknown) => Promise<unknown>;
     getTasks: () => Promise<unknown>;
     deleteTask: (taskId: number) => Promise<unknown>;
+
+    // Intervention
+    intervention: InterventionAPI;
+}
+
+interface InterventionAPI {
+    banditSelect: (req: { user_id: string; x: number[]; alpha?: number }) => Promise<{ action: string; allowed_actions: string[] }>;
+    banditUpdate: (req: { user_id: string; x: number[]; action: string; reward: number; button: string; alpha?: number }) => Promise<{ status: string; n_updates: number }>;
+    getEvents: (userId: string) => Promise<unknown[]>;
+    logMotivation: (entry: { user_id: string; motivation: number; scenario: string }) => Promise<void>;
+    getMotivationHistory: (userId: string, since?: number) => Promise<unknown[]>;
+    getUserGoal: () => Promise<{ life_goal: string }>;
+    saveUserGoal: (goal: string) => Promise<{ status: string }>;
+    notifyActions: (data: { title: string; body: string; strategy: string }) => void;
+    onNotificationResponse: (callback: (data: { strategy: string; action: string }) => void) => void;
+    updateTrayTimer: (label: string) => void;
+    clearTray: () => void;
+    showWindow: () => void;
 }
 
 interface AppState {
@@ -155,6 +173,24 @@ const electronAPI: ElectronAPI = {
     addTask: (data) => ipcRenderer.invoke('procrastination:add-task', data),
     getTasks: () => ipcRenderer.invoke('procrastination:get-tasks'),
     deleteTask: (taskId) => ipcRenderer.invoke('procrastination:delete-task', taskId),
+
+    // Intervention
+    intervention: {
+        banditSelect: (req) => ipcRenderer.invoke('intervention:bandit-select', req),
+        banditUpdate: (req) => ipcRenderer.invoke('intervention:bandit-update', req),
+        getEvents: (userId) => ipcRenderer.invoke('intervention:get-events', userId),
+        logMotivation: (entry) => ipcRenderer.invoke('intervention:log-motivation', entry),
+        getMotivationHistory: (userId, since) => ipcRenderer.invoke('intervention:get-motivation-history', userId, since),
+        getUserGoal: () => ipcRenderer.invoke('intervention:get-user-goal'),
+        saveUserGoal: (goal) => ipcRenderer.invoke('intervention:save-user-goal', goal),
+        notifyActions: (data) => ipcRenderer.send('intervention:notify-actions', data),
+        onNotificationResponse: (callback) => {
+            ipcRenderer.on('notification-action-response', (_event, data) => callback(data));
+        },
+        updateTrayTimer: (label) => ipcRenderer.send('intervention:tray-update', { label }),
+        clearTray: () => ipcRenderer.send('intervention:tray-clear'),
+        showWindow: () => ipcRenderer.send('intervention:window-show'),
+    },
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);
@@ -162,6 +198,6 @@ contextBridge.exposeInMainWorld('electronAPI', electronAPI);
 // Type declaration for renderer
 declare global {
     interface Window {
-        electronAPI: ElectronAPI;
+        electronAPI: ElectronAPI & { intervention: InterventionAPI };
     }
 }

@@ -1,0 +1,69 @@
+{
+  "tasks": [
+    {
+      "task_name": "Microservices Lab",
+      "task_description": "How to build and deploy a complete microservices system from scratch using Docker and an API Gateway?",
+      "sub_tasks": [
+        {
+          "name": "Initialize project structure and select technology stacks for all services",
+          "estimated_minutes": 60
+        },
+        {
+          "name": "Implement Item Service API (GET and POST endpoints)",
+          "estimated_minutes": 120
+        },
+        {
+          "name": "Implement Order Service API (GET and POST endpoints)",
+          "estimated_minutes": 120
+        },
+        {
+          "name": "Implement Payment Service API (GET and POST endpoints)",
+          "estimated_minutes": 120
+        },
+        {
+          "name": "Configure and implement API Gateway with routing rules",
+          "estimated_minutes": 90
+        },
+        {
+          "name": "Create Dockerfiles for all microservices and API Gateway",
+          "estimated_minutes": 60
+        },
+        {
+          "name": "Develop docker-compose.yml for multi-service container orchestration",
+          "estimated_minutes": 90
+        },
+        {
+          "name": "Build and run the complete microservices system using Docker Compose",
+          "estimated_minutes": 30
+        },
+        {
+          "name": "Test all API endpoints using Postman and gather evidence",
+          "estimated_minutes": 120
+        },
+        {
+          "name": "Create a public GitHub repository with the complete working system and submission document",
+          "estimated_minutes": 30
+        }
+      ],
+      "context": "In this 2-hour practical lab you will build a complete Microservices system from scratch. You are free to choose any supported technology stack for each service the only requirement is that each service runs in Docker and can be reached through the API Gateway. You are NOT required to use Spring Boot for every service. See Section 2 for supported technology options per service. If you are unsure, use Spring Boot for all services it is the safest choice and well-documented examples are provided throughout this lab sheet. Services do NOT call each other directly; the API Gateway is the single entry point. Minimum requirement is the GET endpoints; POST endpoints are required for bonus marks. All services are on the same Docker network (microservices-net). Use the service name (e.g., item-service) as the hostname inside your gateway config — NOT localhost. Submission requires a public GitHub repository including Docker setup and API testing evidence.",
+      "ai_suggestions": {
+        "ai_suggested_difficulty": 3,
+        "ai_suggested_time": 14.0
+      },
+      "metrics": {
+        "deadline": "2026-03-10",
+        "days_left": 4,
+        "credits": 4,
+        "percentage": 10,
+        "difficulty_rating": 3
+      },
+      "mcdm_calculation": {
+        "urgency_score": 60.0,
+        "impact_score": 20.0,
+        "difficulty_score": 60.0,
+        "final_weighted_score": 48.0
+      },
+      "priority": "Medium"
+    }
+  ]
+}

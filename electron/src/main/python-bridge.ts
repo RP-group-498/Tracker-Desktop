@@ -107,12 +107,17 @@ export class PythonBridge extends EventEmitter {
             let args: string[];
 
             if (process.env.NODE_ENV === 'development') {
-                // In development, use venv Python
-                pythonPath = path.join(this.backendDir, 'venv', 'Scripts', 'python.exe');
+                // In development, use venv Python (platform-aware paths)
+                if (process.platform === 'win32') {
+                    pythonPath = path.join(this.backendDir, 'venv', 'Scripts', 'python.exe');
+                } else {
+                    pythonPath = path.join(this.backendDir, 'venv', 'bin', 'python');
+                }
                 args = ['-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', String(PYTHON_PORT)];
             } else {
                 // In production, use bundled executable
-                pythonPath = path.join(this.backendDir, 'main.exe');
+                const execName = process.platform === 'win32' ? 'main.exe' : 'main';
+                pythonPath = path.join(this.backendDir, execName);
                 args = [];
             }
 
