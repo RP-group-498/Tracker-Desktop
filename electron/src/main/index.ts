@@ -10,6 +10,7 @@ import path from 'path';
 import { PythonBridge } from './python-bridge';
 import { NativeMessagingServer } from './native-messaging';
 import { DesktopActivityTracker } from './desktop-activity-tracker';
+import { IdleActivityPrompt } from './idle-prompt';
 import { TrayManager } from './tray';
 import { setupIpcHandlers } from './ipc-handlers';
 import { registerProcrastinationHandlers } from './ipc-procrastination';
@@ -26,6 +27,7 @@ let mainWindow: BrowserWindow | null = null;
 let pythonBridge: PythonBridge | null = null;
 let nativeMessagingServer: NativeMessagingServer | null = null;
 let desktopActivityTracker: DesktopActivityTracker | null = null;
+let idleActivityPrompt: IdleActivityPrompt | null = null;
 let trayManager: TrayManager | null = null;
 
 // App state
@@ -191,6 +193,14 @@ async function initializeServices(): Promise<void> {
 
         await desktopActivityTracker.start();
         console.log('[Main] Desktop Activity Tracker started successfully');
+
+        // 3b. Start Idle Activity Prompt (depends on desktop tracker)
+        idleActivityPrompt = new IdleActivityPrompt(pythonBridge!, desktopActivityTracker);
+        idleActivityPrompt.start();
+        idleActivityPrompt.on('activitySubmitted', () => {
+            console.log('[Main] Idle activity submitted by user');
+        });
+        console.log('[Main] Idle Activity Prompt initialized');
     } catch (error) {
         console.error('[Main] Failed to start Desktop Activity Tracker:', error);
         // Don't throw - allow app to continue without desktop tracking
@@ -227,7 +237,12 @@ function updateTrayAndWindow(): void {
 async function cleanup(): Promise<void> {
     console.log('[Main] Cleaning up...');
 
-    // Stop desktop activity tracker first (before backend)
+    // Close idle prompt first
+    if (idleActivityPrompt) {
+        idleActivityPrompt.close();
+    }
+
+    // Stop desktop activity tracker (before backend)
     if (desktopActivityTracker) {
         await desktopActivityTracker.stop();
     }

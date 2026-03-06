@@ -163,3 +163,22 @@ class ActivityBatchResponse(BaseModel):
     received_count: int
     received_ids: List[str]
     errors: Optional[List[str]] = None
+
+
+class IdleActivityRequest(BaseModel):
+    """Schema for idle activity submission from the desktop prompt."""
+
+    activity_id: Optional[str] = None       # predefined activity key (e.g. "reading_book")
+    custom_label: Optional[str] = None      # user-entered text for "Other"
+    idle_duration_ms: int                   # how long they were idle (milliseconds)
+    idle_start: datetime                    # when idle period started
+    idle_end: datetime                      # when user returned
+
+
+class IdleActivityResponse(BaseModel):
+    """Response to idle activity submission."""
+
+    success: bool
+    event_id: Optional[str] = None
+    category: Optional[str] = None
+    error: Optional[str] = None

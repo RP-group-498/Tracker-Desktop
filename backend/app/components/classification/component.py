@@ -138,6 +138,35 @@ DESKTOP_NEUTRAL_APPS = {
     "settings", "control panel", "task manager", "activity monitor",
 }
 
+# Idle activity classifications for user-reported offline activities
+# Maps activity_id -> (category, confidence)
+IDLE_ACTIVITY_CLASSIFICATIONS = {
+    "reading_book":        ("academic",     0.90),
+    "studying_notes":      ("academic",     0.95),
+    "attending_lecture":    ("academic",     0.95),
+    "research_library":    ("academic",     0.90),
+    "writing_notes":       ("academic",     0.85),
+    "break_relaxing":      ("non_academic", 0.90),
+    "exercise_walk":       ("non_academic", 0.85),
+    "eating_meal":         ("non_academic", 0.90),
+    "personal_errands":    ("non_academic", 0.85),
+    "social_conversation": ("neutral",      0.80),
+}
+
+# Keywords for classifying custom idle activity text
+IDLE_ACADEMIC_KEYWORDS = {
+    "study", "research", "read", "reading", "lecture", "class", "course",
+    "homework", "assignment", "thesis", "paper", "exam", "review", "notes",
+    "library", "textbook", "learn", "learning", "tutor", "seminar", "lab",
+}
+
+IDLE_NON_ACADEMIC_KEYWORDS = {
+    "game", "gaming", "movie", "tv", "show", "nap", "sleep", "rest",
+    "shopping", "cook", "cooking", "clean", "cleaning", "laundry",
+    "exercise", "gym", "walk", "run", "eat", "lunch", "dinner", "breakfast",
+    "relax", "break", "chill", "hang out", "play",
+}
+
 
 class ClassificationComponent(ComponentBase):
     """
@@ -382,6 +411,77 @@ class ClassificationComponent(ComponentBase):
 
         # Default to neutral for unknown apps
         return "neutral", 0.50, "desktop_unknown_app"
+
+    def classify_idle_activity(self, activity_id: str = None, custom_label: str = None) -> Dict[str, Any]:
+        """
+        Classify a user-reported idle/offline activity.
+
+        For predefined activities, uses the IDLE_ACTIVITY_CLASSIFICATIONS mapping.
+        For custom text, uses keyword matching with lower confidence.
+
+        Args:
+            activity_id: Predefined activity key (e.g. "reading_book")
+            custom_label: User-entered text for custom activities
+
+        Returns:
+            Dict with category, confidence, source, matched_rule
+        """
+        # Predefined activity lookup
+        if activity_id and activity_id in IDLE_ACTIVITY_CLASSIFICATIONS:
+            category, confidence = IDLE_ACTIVITY_CLASSIFICATIONS[activity_id]
+            self._stats["total_classified"] += 1
+            self._stats["by_category"][category] += 1
+            return {
+                "category": category,
+                "confidence": confidence,
+                "source": "user",
+                "matched_rule": f"idle_predefined:{activity_id}",
+            }
+
+        # Custom text classification via keyword matching
+        if custom_label:
+            label_lower = custom_label.lower()
+            words = set(label_lower.split())
+
+            # Check for academic keywords
+            if words & IDLE_ACADEMIC_KEYWORDS:
+                self._stats["total_classified"] += 1
+                self._stats["by_category"]["academic"] += 1
+                return {
+                    "category": "academic",
+                    "confidence": 0.70,
+                    "source": "user",
+                    "matched_rule": "idle_custom_academic_keywords",
+                }
+
+            # Check for non-academic keywords
+            if words & IDLE_NON_ACADEMIC_KEYWORDS:
+                self._stats["total_classified"] += 1
+                self._stats["by_category"]["non_academic"] += 1
+                return {
+                    "category": "non_academic",
+                    "confidence": 0.70,
+                    "source": "user",
+                    "matched_rule": "idle_custom_non_academic_keywords",
+                }
+
+            # Fallback for unknown custom text
+            self._stats["total_classified"] += 1
+            self._stats["by_category"]["neutral"] += 1
+            return {
+                "category": "neutral",
+                "confidence": 0.50,
+                "source": "user",
+                "matched_rule": "idle_custom_unknown",
+            }
+
+        # No activity specified
+        return {
+            "category": "neutral",
+            "confidence": 0.50,
+            "source": "user",
+            "matched_rule": "idle_no_activity",
+        }
 
     def _classify_by_rules(self, domain: str, url: str, title: str) -> tuple:
         """Apply rule-based classification for browser events."""

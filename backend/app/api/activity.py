@@ -1,6 +1,7 @@
 """Activity event endpoints."""
 
 import asyncio
+import uuid
 from datetime import datetime
 from typing import List, Optional
 
@@ -21,6 +22,8 @@ from app.schemas.activity import (
     ActivityBatchRequest,
     ActivityBatchResponse,
     ClassificationResult,
+    IdleActivityRequest,
+    IdleActivityResponse,
 )
 
 router = APIRouter()
@@ -288,6 +291,116 @@ async def get_current_user_id():
     return {"user_id": user_manager.get_user_id()}
 
 
+@router.post("/idle", response_model=IdleActivityResponse)
+async def submit_idle_activity(
+    data: IdleActivityRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Record what the user was doing during an idle period.
+
+    Called by the desktop idle prompt when the user returns from being away
+    and selects a predefined activity or enters a custom one.
+    """
+    try:
+        registry = ComponentRegistry.get_instance()
+        classifier = registry.get("classification")
+
+        # Classify the idle activity
+        class_result = None
+        if classifier:
+            class_result = classifier.classify_idle_activity(
+                activity_id=data.activity_id,
+                custom_label=data.custom_label,
+            )
+
+        # Create classification record
+        classification = None
+        if class_result:
+            classification = Classification(
+                category=class_result["category"],
+                confidence=class_result["confidence"],
+                source=class_result["source"],
+                created_at=datetime.utcnow(),
+            )
+            db.add(classification)
+            await db.flush()
+
+        # Build a descriptive title
+        activity_title = data.custom_label or data.activity_id or "idle"
+
+        # Get user ID
+        user_manager = get_user_manager()
+        user_id = user_manager.get_user_id() if user_manager else None
+
+        event_id = str(uuid.uuid4())
+
+        # Create the activity event
+        event = ActivityEvent(
+            event_id=event_id,
+            user_id=user_id,
+            source="idle_report",
+            activity_type="offline",
+            timestamp=data.idle_end,
+            start_time=data.idle_start,
+            end_time=data.idle_end,
+            url=f"idle://{data.activity_id or 'custom'}",
+            domain="idle",
+            path="",
+            title=activity_title,
+            app_name=None,
+            app_path=None,
+            window_title=activity_title,
+            active_time=0,
+            idle_time=data.idle_duration_ms,
+            classification_id=classification.id if classification else None,
+        )
+
+        db.add(event)
+        await db.commit()
+
+        # Sync to MongoDB in the background
+        mongo_sync = get_mongodb_sync()
+        if mongo_sync:
+            class_dict = None
+            if classification:
+                class_dict = {
+                    "category": classification.category,
+                    "confidence": classification.confidence,
+                    "source": classification.source,
+                }
+
+            mongo_doc = MongoDBSyncService.build_document(
+                event_data={
+                    "event_id": event_id,
+                    "source": "idle_report",
+                    "activity_type": "offline",
+                    "timestamp": data.idle_end,
+                    "start_time": data.idle_start,
+                    "end_time": data.idle_end,
+                    "url": f"idle://{data.activity_id or 'custom'}",
+                    "domain": "idle",
+                    "title": activity_title,
+                    "active_time": 0,
+                    "idle_time": data.idle_duration_ms,
+                },
+                classification=class_dict,
+                user_id=user_id or "",
+            )
+            asyncio.create_task(mongo_sync.sync_batch([mongo_doc]))
+
+        return IdleActivityResponse(
+            success=True,
+            event_id=event_id,
+            category=class_result["category"] if class_result else None,
+        )
+
+    except Exception as e:
+        return IdleActivityResponse(
+            success=False,
+            error=str(e),
+        )
+
 @router.get("/{event_id}", response_model=ActivityEventResponse)
 async def get_activity_event(
     event_id: str,
@@ -316,3 +429,4 @@ async def get_activity_event(
             source=event.classification.source,
         ) if event.classification else None,
     )
+

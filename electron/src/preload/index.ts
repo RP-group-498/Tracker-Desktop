@@ -54,6 +54,16 @@ interface ElectronAPI {
     getTasks: () => Promise<unknown>;
     deleteTask: (taskId: number) => Promise<unknown>;
 
+    // Idle Activity Prompt
+    submitIdleActivity: (data: {
+        activityId: string | null;
+        customLabel: string | null;
+        idleDurationMs: number;
+        idleStart: string;
+        idleEnd: string;
+    }) => Promise<unknown>;
+    dismissIdlePrompt: () => Promise<unknown>;
+
     // Intervention
     intervention: InterventionAPI;
 }
@@ -187,6 +197,10 @@ const electronAPI: ElectronAPI = {
     addTask: (data) => ipcRenderer.invoke('procrastination:add-task', data),
     getTasks: () => ipcRenderer.invoke('procrastination:get-tasks'),
     deleteTask: (taskId) => ipcRenderer.invoke('procrastination:delete-task', taskId),
+
+    // Idle Activity Prompt
+    submitIdleActivity: (data) => ipcRenderer.invoke('submit-idle-activity', data),
+    dismissIdlePrompt: () => ipcRenderer.invoke('dismiss-idle-prompt'),
 
     // Intervention
     intervention: {
