@@ -350,31 +350,230 @@ GET /bandit/events
 
 ---
 
+# Trigger‑and‑Cooldown Algorithm
+
+The contextual bandit **does not run continuously**.
+
+Instead the Electron client runs a **periodic monitoring loop**.
+
+The bandit answers:
+
+"Which intervention is best now?"
+
+The trigger layer answers:
+
+"Should we intervene now?"
+
+These responsibilities are separated.
+
+---
+
+## Monitoring Loop
+
+Run every **60 seconds**.
+
+At each cycle:
+
+1. Collect Component 1 signals
+2. Collect Component 4 task data
+3. Build context vector
+4. Evaluate procrastination risk
+5. Check cooldown rules
+6. If allowed → call `/bandit/select`
+7. Show intervention
+8. Capture response
+9. Compute reward
+10. Call `/bandit/update`
+
+---
+
+## Runtime State
+
+Electron keeps:
+
+activeIntervention  
+globalCooldownUntil  
+actionCooldownUntil[action]  
+lastContextHash
+
+Meaning
+
+activeIntervention → currently running intervention
+
+globalCooldownUntil → block all interventions until this time
+
+actionCooldownUntil → block specific intervention temporarily
+
+lastContextHash → prevents repeated suggestions when context unchanged
+
+---
+
+## Trigger Conditions
+
+An intervention is triggered if any condition holds:
+
+idle_ratio > 0.40
+
+OR
+
+non_academic_ratio > 0.35
+
+OR
+
+switching_score > 0.60
+
+OR
+
+(deadline_urgency > 0.60 AND motivation < 0.40)
+
+OR
+
+overdue_flag = 1
+
+switching_score = normalize(app_switch_rate + tab_switch_rate)
+
+---
+
+## Cooldown Rules
+
+Monitoring interval: **60 seconds**
+
+Minimum gap between interventions: **10 minutes**
+
+After **Start**
+
+- Pomodoro → block until Pomodoro ends
+- Other actions → 10 minute cooldown
+
+After **Not Now**
+
+- Global cooldown → 5 minutes
+- Same action cooldown → 15 minutes
+
+After **Skip**
+
+- Global cooldown → 5 minutes
+- Same action cooldown → 10 minutes
+
+---
+
+## Duplicate Context Suppression
+
+To avoid repeated suggestions:
+
+1. Round context vector values to 2 decimals
+2. Convert to a hash string
+3. Compare with previous hash
+
+If unchanged → suppress intervention this cycle.
+
+Update hash only when an intervention is shown.
+
+---
+
+# Pseudocode
+
+Every 60 seconds:
+
+if activeIntervention exists → return
+
+if currentTime < globalCooldownUntil → return
+
+read Component1 data  
+read Component4 data
+
+x_t = buildContextVector()
+
+if shouldTrigger(x_t) == false → return
+
+contextHash = hash(x_t)
+
+if contextHash == lastContextHash → return
+
+allowedActions = filterByUrgency(x_t)
+
+allowedActions = removeCooldownActions()
+
+if allowedActions empty → return
+
+selectedAction = POST /bandit/select
+
+showIntervention(selectedAction)
+
+response = wait for Start / Skip / Not Now
+
+reward = computeReward(response)
+
+POST /bandit/update
+
+applyCooldowns()
+
+lastContextHash = contextHash
+
+---
+
+# Responsibility Split
+
+Electron Client
+
+- monitoring loop
+- context building
+- trigger detection
+- cooldown management
+- notification display
+- reward capture
+
+FastAPI Backend
+
+- LinUCB selection
+- model update
+- MongoDB persistence
+- event logging
+
+
+
 # Future Integration
 
 ## Component 1 — Behavior Monitoring
 
-Will provide:
+provide:
 
 - app_switch_rate
 - tab_switch_rate
+(to get app_switch_rate and tab_switch_rate you can use totalAppSwitches from the focus_app_research db, active_time collection)
+
 - non_academic_transitions
+(to get non_academic_transitions you can use totalAppSwitches from the focus_app_research db, active_time collection)
+
 - total_transitions
+(to get total_transitions you can use totalAppSwitches from the focus_app_research db, active_time collection)
+
 - idle_ratio
+(Not yet confirmed)
 
 ## Component 4 — Task Scheduling
 
-Will provide:
+provide:
 
 - completed_tasks_last_7_days
 - assigned_tasks_last_7_days
-- task_priority
-- grade_weight_normalized
-- time_spent_on_task
-- assigned_time
-- task_deadline_time
+(to get completed_tasks_last_7_days and assigned_tasks_last_7_days you can use status(completed, scheduled) from the 'adaptive_time_estimation' db, 'completed_tasks' collection. )
 
-Until then use mock context.
+- task_priority
+(For this use priority from the 'adaptive_time_estimation' db, 'completed_tasks' collection.)
+
+- grade_weight_normalized
+(For this use credits and weight from the 'adaptive_time_estimation' db, 'completed_tasks' collection.)
+
+- time_spent_on_task
+(For this use actual_time from the 'adaptive_time_estimation' db, 'completed_tasks' collection.)
+
+- assigned_time
+(For this use system_estimate and user_estimate from the 'adaptive_time_estimation' db, 'completed_tasks' collection. Sometimes user don't change the estimate time, then take system_estimate for this)
+
+- task_deadline_time
+(For this use deadline from the 'adaptive_time_estimation' db, 'completed_tasks' collection.)
+
 
 ---
 

@@ -562,3 +562,11 @@ BrokenPipeError: [Errno 32] Broken pipe
 2026-03-06 12:41:59,041 - INFO - Use pytorch device_name: mps
 2026-03-06 12:41:59,041 - INFO - Load pretrained SentenceTransformer: data/models/sbert_model
 2026-03-06 12:41:59,042 - INFO - [Scheduler] Background scheduler started.
+2026-03-06 13:47:09,111 - INFO - [Classification] Loading ML model (first use)...
+2026-03-06 13:47:09,113 - INFO - [MLClassifier] Loading model: facebook/bart-large-mnli
+2026-03-06 13:47:09,113 - INFO - [MLClassifier] This may take 15-30 seconds on first load...
+2026-03-06 13:47:09,668 - INFO - HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-03-06 13:47:09,734 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/config.json "HTTP/1.1 200 OK"
+2026-03-06 13:47:10,356 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-03-06 13:47:10,646 - INFO - HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-03-06 13:47:10,772 - INFO - [MLClassifier] Model loaded successfully
