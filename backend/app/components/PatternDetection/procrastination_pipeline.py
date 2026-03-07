@@ -1,4 +1,5 @@
 """
+patternDetection/procrastination_pipeline.py
 Backward-compatibility re-exports.
 
 All logic has been split into focused modules:
