@@ -4,7 +4,7 @@ import requests
 import logging
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # Fix Windows console encoding for emojis
@@ -29,12 +29,15 @@ logging.basicConfig(
 
 # Configuration — FastAPI backend (configurable via .env)
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api/tasks")
-USERS_TO_SYNC = os.getenv("SCHEDULER_USERS", "user_003,user_001").split(",")
+USERS_TO_SYNC = os.getenv("SCHEDULER_USERS","124804d8-40e0-4f90-af05-eeea5c2d7550,user_001").split(",")
 SCHEDULE_TIME = os.getenv("SCHEDULER_TIME", "21:09")
 
 
-def allocate_user_tasks(student_id, active_time_id, start_date="2026-03-01", days_ahead=90):
+def allocate_user_tasks(student_id, active_time_id, start_date=None, days_ahead=90):
     """Triggers task allocation for a student based on their active time."""
+    if start_date is None:
+        start_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
     url = f"{API_BASE_URL}/allocate/{student_id}"
     payload = {
         "active_time_user_id": active_time_id,
@@ -93,9 +96,9 @@ def fetch_active_time():
 
                 success_count += 1
 
-                # If user_003 is synced, trigger allocation for student_123
-                if user_id == "user_003":
-                    allocate_user_tasks("student_123", "user_003")
+                # If 124804d8-40e0-4f90-af05-eeea5c2d7550 is synced, trigger allocation for student_123
+                if user_id == "124804d8-40e0-4f90-af05-eeea5c2d7550":
+                    allocate_user_tasks("student_123", "124804d8-40e0-4f90-af05-eeea5c2d7550")
 
             else:
                 logging.warning(f"FAILED: {user_id} | Status: {response.status_code} | Reason: {response.text[:100]}")

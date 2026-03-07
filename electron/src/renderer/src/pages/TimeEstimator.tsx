@@ -59,11 +59,33 @@ const TimeEstimator: React.FC = () => {
   const [modalTasks, setModalTasks] = useState<Task[]>([])
   const [timerTick, setTimerTick] = useState(0)
   const [availableTime, setAvailableTime] = useState<string>('-')
+  const [notification, setNotification] = useState<{ message: string; type: string } | null>(null)
   const taskTimersRef = useRef<Record<string, TimerState>>({})
 
   const showNotification = useCallback((message: string, type: string) => {
-    console.log(`${type}: ${message}`)
-    if (type === 'error') alert(message)
+    setNotification({ message, type })
+    setTimeout(() => setNotification(null), 5000)
+  }, [])
+
+  const getTaskValidationStatus = useCallback((task: Task) => {
+    if (task.status === 'completed') return { isValid: true, message: 'Completed' }
+    if (task.status === 'failed') return { isValid: false, message: 'Window Expired' }
+    
+    if (!task.time_allocation_date || !task.predictedActiveStart || !task.predictedActiveEnd) {
+      return { isValid: false, message: 'No time window allocated' }
+    }
+    
+    const now = new Date()
+    const startTime = parseActiveTime(task.predictedActiveStart, task.time_allocation_date)
+    const endTime = parseActiveTime(task.predictedActiveEnd, task.time_allocation_date)
+
+    if (startTime && now < startTime) {
+      return { isValid: false, message: `Starts at ${task.predictedActiveStart}` }
+    }
+    if (endTime && now > endTime) {
+      return { isValid: false, message: 'Active window expired' }
+    }
+    return { isValid: true, message: 'Ready to start' }
   }, [])
 
   const getElapsed = useCallback((taskId: string): number => {
@@ -161,22 +183,9 @@ const TimeEstimator: React.FC = () => {
     const task = tasks.find(t => t.name === taskName)
     if (!task) { showNotification('Task not found.', 'error'); return }
 
-    if (!task.time_allocation_date || !task.predictedActiveStart || !task.predictedActiveEnd) {
-      showNotification('Task does not have an allocated time window.', 'error')
-      return
-    }
-
-    const now = new Date()
-    const nowStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
-    const startTime = parseActiveTime(task.predictedActiveStart, task.time_allocation_date)
-    const endTime = parseActiveTime(task.predictedActiveEnd, task.time_allocation_date)
-
-    if (startTime && now < startTime) {
-      showNotification(`Active window hasn't started yet. Starts at: ${task.predictedActiveStart}. Now: ${nowStr}`, 'error')
-      return
-    }
-    if (endTime && now > endTime) {
-      showNotification(`Active window has ended. Window was: ${task.predictedActiveStart} - ${task.predictedActiveEnd}. Now: ${nowStr}`, 'error')
+    const validation = getTaskValidationStatus(task)
+    if (!validation.isValid) {
+      showNotification(`Cannot start task: ${validation.message}`, 'error')
       return
     }
 
@@ -232,6 +241,12 @@ const TimeEstimator: React.FC = () => {
     if (!task) return
     const timer = taskTimersRef.current[task.id]
     if (!timer || !timer.isPaused) return
+
+    const validation = getTaskValidationStatus(task)
+    if (!validation.isValid) {
+      showNotification(`Cannot resume task: ${validation.message}`, 'error')
+      return
+    }
 
     const interval = setInterval(() => setTimerTick(t => t + 1), 1000)
     timer.segmentStart = Date.now()
@@ -359,6 +374,9 @@ const TimeEstimator: React.FC = () => {
       ? `<div class="modal-meta-item"><span class="meta-label">Active Window:</span><span class="meta-value">${task.predictedActiveStart} - ${task.predictedActiveEnd}</span></div>`
       : ''
 
+    const validation = getTaskValidationStatus(task)
+    const validationHtml = `<div class="modal-meta-item"><span class="meta-label">Status:</span><span class="meta-value" style="color: ${validation.isValid ? '#10b981' : '#ef4444'}">${validation.message}</span></div>`
+
     let buttonHTML = ''
     let timerHTML = ''
 
@@ -367,7 +385,7 @@ const TimeEstimator: React.FC = () => {
     } else if (isFailed) {
       buttonHTML = '<button class="btn-sm btn-danger" disabled style="background-color:#ef4444;border:none;color:white;cursor:default;">✗ Failed</button>'
     } else if (!timer) {
-      buttonHTML = `<button class="btn-sm btn-primary start-task-btn" data-task-name="${task.name}">▶ Start</button>`
+      buttonHTML = `<button class="btn-sm btn-primary start-task-btn" data-task-name="${task.name}" ${!validation.isValid ? 'disabled style="opacity:0.6;cursor:not-allowed;"' : ''}>▶ Start</button>`
     } else if (timer.isPaused) {
       timerHTML = `<span id="timer-${task.id}" style="font-size:0.85em;color:#f59e0b;font-weight:600;">${formatElapsed(elapsed)}</span>`
       buttonHTML = `<button class="btn-sm resume-task-btn" data-task-name="${task.name}" style="background-color:#f59e0b;border:none;color:white;padding:4px 10px;border-radius:4px;cursor:pointer;">▶ Resume</button>
@@ -391,6 +409,7 @@ const TimeEstimator: React.FC = () => {
           <div class="modal-meta-item"><span class="meta-label">Category:</span><span class="meta-value">${task.category || 'general'}</span></div>
           <div class="modal-meta-item"><span class="meta-label">Estimated Time:</span><span class="meta-value">${formatTime(estimatedTime)}</span></div>
           ${activeWindowHtml}
+          ${validationHtml}
           <div class="modal-meta-item"><span class="meta-label">Confidence:</span><span class="meta-value confidence-${task.confidence}">${task.confidence}</span></div>
           <div class="modal-meta-item"><span class="meta-label">Method:</span><span class="meta-value">${task.method}</span></div>
           ${task.actual_time ? `<div class="modal-meta-item"><span class="meta-label">Actual Time:</span><span class="meta-value">${formatTime(task.actual_time)}</span></div>` : ''}
@@ -418,6 +437,21 @@ const TimeEstimator: React.FC = () => {
           <Link to="/time-estimator" className="nav-link active">Time Estimator</Link>
         </div>
       </nav>
+
+      {notification && (
+        <div style={{
+          position: 'fixed', top: '1rem', right: '1rem', zIndex: 9999,
+          padding: '0.75rem 1.25rem', borderRadius: '8px', fontWeight: 500,
+          backgroundColor: notification.type === 'error' ? '#ef4444' :
+                           notification.type === 'success' ? '#10b981' :
+                           notification.type === 'info' ? '#3b82f6' : '#6c757d',
+          color: 'white',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          animation: 'modalSlideIn 0.3s ease'
+        }}>
+          {notification.message}
+        </div>
+      )}
 
       <div className="main-content">
         <div className="page-header">

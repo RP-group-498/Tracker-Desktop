@@ -1,75 +1,51 @@
 {
   "tasks": [
     {
-      "task_name": "MICROSERVICES Lab",
-      "task_description": "How to build a complete microservices system from scratch using Docker and an API Gateway?",
+      "task_name": "Transforming BiteDash into Microservices",
+      "task_description": "How to redesign BiteDash's online food delivery platform using a microservices-based architecture to address existing performance, scalability, flexibility, and reliability issues?",
       "sub_tasks": [
         {
-          "name": "Understand Lab Objectives & Architecture",
-          "estimated_minutes": 30
-        },
-        {
-          "name": "Choose Technology Stack for Each Service",
-          "estimated_minutes": 20
-        },
-        {
-          "name": "Implement Item Service (GET & POST endpoints)",
-          "estimated_minutes": 120
-        },
-        {
-          "name": "Implement Order Service (GET & POST endpoints)",
-          "estimated_minutes": 120
-        },
-        {
-          "name": "Implement Payment Service (GET & POST endpoints)",
-          "estimated_minutes": 120
-        },
-        {
-          "name": "Implement and Configure API Gateway",
-          "estimated_minutes": 120
-        },
-        {
-          "name": "Create Dockerfiles for All Services",
-          "estimated_minutes": 60
-        },
-        {
-          "name": "Create Docker Compose Configuration",
+          "name": "Identify Microservices.",
           "estimated_minutes": 90
         },
         {
-          "name": "Build and Run Microservices with Docker Compose",
-          "estimated_minutes": 60
+          "name": "Define Communication & Data Handling. (How will microservices communicate with each other? Will each service have its own database, or will some services share data?)",
+          "estimated_minutes": 150
         },
         {
-          "name": "Test All API Endpoints with Postman",
-          "estimated_minutes": 90
+          "name": "Plan the Migration Strategy. (Which services will be migrated first? How will the transition be handled without disrupting users?)",
+          "estimated_minutes": 120
         },
         {
-          "name": "Prepare GitHub Repository and Submission Document",
-          "estimated_minutes": 60
+          "name": "Ensure Fault Tolerance & Scalability.",
+          "estimated_minutes": 150
         },
         {
-          "name": "Debugging and Troubleshooting",
-          "estimated_minutes": 180
+          "name": "Design the Architecture Diagram & API Structure.",
+          "estimated_minutes": 210
+        },
+        {
+          "name": "Create a PowerPoint Presentation covering all points.",
+          "estimated_minutes": 120
         }
       ],
-      "context": "This is a 2-hour practical lab to build a complete microservices system from scratch. Students are free to choose any supported technology stack for each service. The only requirement is that each service runs in Docker and can be reached through the API Gateway. The API Gateway is the single entry point and routes every request to the correct microservice; services do NOT call each other directly. The system consists of Item Service (Port 8081), Order Service (Port 8082), Payment Service (Port 8083), and API Gateway (Port 8080). Technology stack options include Spring Boot (Java), Node.js + Express, FastAPI (Python), Gin (Go), Django REST, Flask (Python), .NET Core, Kong/NGINX, and Express Gateway. Quick Start Templates and code examples for Spring Boot are provided. The API Gateway must route requests based on URL path prefixes (e.g., /items/** to Item Service). All services must be on the same Docker network (`microservices-net`), and the service name (e.g., `item-service`) should be used as the hostname inside the gateway config, NOT `localhost`. Minimum requirement is to implement GET endpoints; POST endpoints are required for bonus marks. Testing should be done using Postman. The final submission requires a public GitHub repository with the complete working microservices system, including Docker setup and API testing evidence, and this repo link must be included in a word document.",
+      "context": "BiteDash is an online food delivery platform facing challenges with performance, scalability, flexibility, and reliability due to its monolithic architecture and growing user base. The platform experiences slow response times during peak hours, system slowdowns, increased server costs, difficulties with new feature deployment, and ripple effects from failures in one area. The task is to act as a Microservices Architect and propose a microservices-based architecture to overcome these challenges, enhance flexibility, allow independent scaling and updates, and provide a more efficient food delivery experience. The final deliverable is a PowerPoint Presentation covering all the required points.",
       "ai_suggestions": {
         "ai_suggested_difficulty": 5,
-        "ai_suggested_time": 20.0
+        "ai_suggested_time": 14.0
       },
       "metrics": {
-        "deadline": "2026-03-10",
-        "days_left": 4,
+        "deadline": "2026-03-30",
+        "days_left": 23,
         "credits": 4,
-        "percentage": 10,
+        "percentage": 20,
         "difficulty_rating": 5
       },
       "mcdm_calculation": {
-        "urgency_score": 60.0,
-        "impact_score": 20.0,
+        "urgency_score": 20.0,
+        "impact_score": 50.0,
         "difficulty_score": 100.0,
-        "final_weighted_score": 56.0
+        "final_weighted_score": 45.0
       },
       "priority": "Medium"
     }
