@@ -294,8 +294,10 @@ async function getPredictionsFromAPI(taskData) {
                 const prediction = predictions.predictions[index];
 
                 let aiEstimateMinutes = 0;
-                if (typeof subtask === 'object' && subtask.estimated_minutes) {
-                    aiEstimateMinutes = subtask.estimated_minutes;
+                let suggestedDate = null;
+                if (typeof subtask === 'object') {
+                    aiEstimateMinutes = subtask.estimated_minutes || 0;
+                    suggestedDate = subtask.suggested_date; // Preserve from Gemini
                 }
 
                 let finalTime;
@@ -314,7 +316,8 @@ async function getPredictionsFromAPI(taskData) {
                         ai_estimated_minutes: aiEstimateMinutes,
                         api_predicted_minutes: prediction.predicted_time,
                         confidence: prediction.confidence,
-                        method: prediction.method
+                        method: prediction.method,
+                        suggested_date: suggestedDate
                     };
                 } else {
                     return {
@@ -323,7 +326,8 @@ async function getPredictionsFromAPI(taskData) {
                         ai_estimated_minutes: aiEstimateMinutes,
                         api_predicted_minutes: prediction.predicted_time,
                         confidence: prediction.confidence,
-                        method: prediction.method
+                        method: prediction.method,
+                        suggested_date: null
                     };
                 }
             });
@@ -402,6 +406,16 @@ function displayResults(task) {
                 headerDiv.className = 'subtask-header';
                 headerDiv.innerHTML = headerContent;
 
+                // Add Suggested Date display
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'subtask-date';
+                dateDiv.style.fontSize = '0.85em';
+                dateDiv.style.color = '#6b7280';
+                dateDiv.style.marginTop = '4px';
+                if (subtask.suggested_date) {
+                    dateDiv.innerHTML = `📅 Suggested: ${subtask.suggested_date}`;
+                }
+
                 const minTime = Math.max(10, minutes - 20);
                 const maxTime = minutes + 40;
 
@@ -426,6 +440,7 @@ function displayResults(task) {
                 `;
 
                 li.appendChild(headerDiv);
+                li.appendChild(dateDiv);
                 li.appendChild(adjustmentDiv);
             } else {
                 li.textContent = subtask;
@@ -684,7 +699,8 @@ async function saveAllTasks() {
             predicted_time: subtask.estimated_minutes,
             user_estimate: userSelectedTime,
             confidence: subtask.confidence || 'MEDIUM',
-            category: subtask.category || 'general'
+            category: subtask.category || 'general',
+            suggested_date: subtask.suggested_date // Pass to backend
         };
     });
 

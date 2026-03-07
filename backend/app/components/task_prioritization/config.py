@@ -47,7 +47,7 @@ def get_extraction_prompt(deadline_input: str, user_days_left: int, user_credits
     - Extract the EXACT text from the PDF wherever possible.
     - For `task_name`: Use the main assignment title.
     - For `task_description`: Write a clear, simple ONE-LINE QUESTION that summarizes what needs to be done (e.g., "How to implement a sorting algorithm?").
-    - For `sub_tasks`: List ALL subtasks, requirements, or deliverables as objects with their name and estimated time in minutes.
+    - For `sub_tasks`: List ALL subtasks, requirements, or deliverables as objects with their name, estimated time in minutes, and a logical `suggested_date` (YYYY-MM-DD) between {today_date_str} and {deadline_input}.
     - For `context`: Include any important notes, constraints, or additional information.
     - For `ai_suggested_difficulty`: Predict the difficulty from a university student perspective on a scale of 1, 3, or 5 (Easy = 1, Medium = 3, Hard = 5).
     - For `ai_suggested_time`: Estimate the total time in hours needed for a university student to complete the task as an integer.
@@ -60,15 +60,18 @@ def get_extraction_prompt(deadline_input: str, user_days_left: int, user_credits
       "sub_tasks": [
         {{
           "name": "First subtask or requirement",
-          "estimated_minutes": 90
+          "estimated_minutes": 90,
+          "suggested_date": "2026-03-08"
         }},
         {{
           "name": "Second subtask or requirement",
-          "estimated_minutes": 45
+          "estimated_minutes": 45,
+          "suggested_date": "2026-03-09"
         }},
         {{
           "name": "Third subtask or requirement",
-          "estimated_minutes": 120
+          "estimated_minutes": 120,
+          "suggested_date": "2026-03-12"
         }}
       ],
       "context": "Any additional notes, constraints, or important information from the PDF",

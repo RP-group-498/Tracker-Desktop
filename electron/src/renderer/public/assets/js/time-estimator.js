@@ -1,12 +1,13 @@
 const { ipcRenderer } = require('electron');
 
-// Configuration — updated to point at FastAPI backend on port 8001
+// Configuration — updated to point at FastAPI backend on port 8000
 const API_BASE_URL = 'http://localhost:8001/api/tasks';
 const USER_ID = 'student_123';
 
 // State
 let currentDate = new Date();
 let tasks = [];
+let scheduledSummaryTasks = []; // Data from /scheduled-summary endpoint
 let currentFilter = 'all';
 
 // Per-task timer state: { [taskId]: { segmentStart, accumulated, isPaused, timerInterval } }
@@ -112,16 +113,26 @@ function setupEventListeners() {
 async function loadTasksFromAPI(silent = false) {
     try {
         if (!silent) console.log('Fetching tasks from API...');
-        const response = await fetch(`${API_BASE_URL}/tasks/${USER_ID}`);
+        
+        // Fetch both endpoints in parallel
+        const [tasksResponse, summaryResponse] = await Promise.all([
+            fetch(`${API_BASE_URL}/tasks/${USER_ID}`),
+            fetch(`${API_BASE_URL}/scheduled-summary/${USER_ID}`)
+        ]);
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!tasksResponse.ok) throw new Error(`Tasks API error! status: ${tasksResponse.status}`);
+        if (!summaryResponse.ok) console.warn('Scheduled summary API not available');
 
-        const data = await response.json();
-        if (!silent) console.log('API Response:', data);
+        const tasksData = await tasksResponse.json();
+        const summaryData = summaryResponse.ok ? await summaryResponse.json() : { tasks: [] };
 
-        tasks = data.tasks.map(task => {
+        if (!silent) console.log('Tasks API Response:', tasksData);
+        if (!silent) console.log('Summary API Response:', summaryData);
+
+        // Store scheduled summary
+        scheduledSummaryTasks = summaryData.tasks || [];
+
+        tasks = tasksData.tasks.map(task => {
             let priority = 'Medium';
             if (task.main_task && task.main_task.difficulty) {
                 const difficulty = task.main_task.difficulty;
@@ -149,7 +160,7 @@ async function loadTasksFromAPI(silent = false) {
             };
         });
 
-        if (!silent) console.log(`Loaded ${tasks.length} tasks`);
+        if (!silent) console.log(`Loaded ${tasks.length} tasks and ${scheduledSummaryTasks.length} summary items`);
 
         tasks.forEach(task => {
             if (task.status === 'in_progress' && !taskTimers[task.id]) {
@@ -179,7 +190,7 @@ async function loadTasksFromAPI(silent = false) {
 
     } catch (error) {
         console.error('Failed to load tasks from API:', error);
-        showNotification('Failed to load tasks. Make sure the API is running at ' + API_BASE_URL, 'error');
+        if (!silent) showNotification('Failed to load tasks. Make sure the API is running at ' + API_BASE_URL, 'error');
     }
 }
 
@@ -237,17 +248,26 @@ function createDayElement(day, year, month, isOtherMonth = false, isToday = fals
 
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
+    // Tasks from the main tasks API (usually allocated tasks)
     const tasksForDay = tasks.filter(task => {
         if (!task.time_allocation_date) return false;
         const taskDate = task.time_allocation_date.split('T')[0];
         return taskDate === dateStr;
     });
 
-    if (tasksForDay.length > 0) {
+    // Summary items from the new summary API (Gemini suggested dates)
+    const summaryForDay = scheduledSummaryTasks.filter(s => {
+        if (!s.suggested_date) return false;
+        return s.suggested_date.split('T')[0] === dateStr;
+    });
+
+    const hasAnyTask = tasksForDay.length > 0 || summaryForDay.length > 0;
+
+    if (hasAnyTask) {
         dayElement.classList.add('has-task');
 
         const hasFailed = tasksForDay.some(task => task.status === 'failed');
-        const hasCompleted = tasksForDay.some(task => task.status === 'completed');
+        const hasCompleted = tasksForDay.some(task => task.status === 'completed') && tasksForDay.length > 0;
 
         if (hasFailed) {
             dayElement.classList.add('has-failed-task');
@@ -256,7 +276,7 @@ function createDayElement(day, year, month, isOtherMonth = false, isToday = fals
         }
 
         dayElement.addEventListener('click', () => {
-            showTasksForDate(dateStr, tasksForDay);
+            showTasksForDate(dateStr, tasksForDay, summaryForDay);
         });
     }
 
@@ -264,23 +284,31 @@ function createDayElement(day, year, month, isOtherMonth = false, isToday = fals
     dayNumber.className = 'day-number';
     dayNumber.textContent = day;
 
-    if (tasksForDay.length > 0) {
+    if (hasAnyTask) {
         const taskCount = document.createElement('div');
         taskCount.className = 'task-count';
 
-        const failedCount = tasksForDay.filter(t => t.status === 'failed').length;
-        const completedCount = tasksForDay.filter(t => t.status === 'completed').length;
+        // Prioritize showing counts from allocated tasks, fallback to summary
+        if (tasksForDay.length > 0) {
+            const failedCount = tasksForDay.filter(t => t.status === 'failed').length;
+            const completedCount = tasksForDay.filter(t => t.status === 'completed').length;
 
-        if (failedCount > 0) {
-            taskCount.style.backgroundColor = '#ef4444';
-            taskCount.style.color = 'white';
-            taskCount.textContent = `${failedCount} ✗`;
-        } else if (completedCount === tasksForDay.length) {
-            taskCount.style.backgroundColor = '#10b981';
-            taskCount.style.color = 'white';
-            taskCount.textContent = `${completedCount} ✓`;
+            if (failedCount > 0) {
+                taskCount.style.backgroundColor = '#ef4444';
+                taskCount.style.color = 'white';
+                taskCount.textContent = `${failedCount} ✗`;
+            } else if (completedCount === tasksForDay.length && tasksForDay.length > 0) {
+                taskCount.style.backgroundColor = '#10b981';
+                taskCount.style.color = 'white';
+                taskCount.textContent = `${completedCount} ✓`;
+            } else {
+                taskCount.textContent = tasksForDay.length;
+            }
         } else {
-            taskCount.textContent = tasksForDay.length;
+            // Only summary tasks
+            taskCount.style.backgroundColor = '#ef4444'; // Red for suggested tasks
+            taskCount.style.color = 'white';
+            taskCount.textContent = summaryForDay.length;
         }
 
         dayElement.appendChild(dayNumber);
@@ -293,7 +321,7 @@ function createDayElement(day, year, month, isOtherMonth = false, isToday = fals
 }
 
 // Show tasks for a specific date in modal
-function showTasksForDate(dateStr, tasksForDay) {
+function showTasksForDate(dateStr, tasksForDay, summaryForDay = []) {
     const date = new Date(dateStr);
     const formattedDate = date.toLocaleDateString('en-US', {
         weekday: 'long',
@@ -305,10 +333,54 @@ function showTasksForDate(dateStr, tasksForDay) {
     modalDate.textContent = formattedDate;
     modalTaskList.innerHTML = '';
 
-    tasksForDay.forEach(task => {
-        const taskElement = createModalTaskElement(task);
-        modalTaskList.appendChild(taskElement);
-    });
+    // Show allocated tasks first
+    if (tasksForDay.length > 0) {
+        const allocatedHeader = document.createElement('h4');
+        allocatedHeader.textContent = 'Allocated Tasks';
+        allocatedHeader.style.margin = '10px 0 5px 0';
+        allocatedHeader.style.fontSize = '0.9em';
+        allocatedHeader.style.color = '#4b5563';
+        modalTaskList.appendChild(allocatedHeader);
+
+        tasksForDay.forEach(task => {
+            const taskElement = createModalTaskElement(task);
+            modalTaskList.appendChild(taskElement);
+        });
+    }
+
+    // Show summary/suggested tasks if they aren't already in tasksForDay
+    // (Filtering out by name to avoid duplicates if they exist in both)
+    const uniqueSummary = summaryForDay.filter(s => 
+        !tasksForDay.some(t => t.name === s.subtask_name)
+    );
+
+    if (uniqueSummary.length > 0) {
+        const summaryHeader = document.createElement('h4');
+        summaryHeader.textContent = 'System Suggested';
+        summaryHeader.style.margin = '15px 0 5px 0';
+        summaryHeader.style.fontSize = '0.9em';
+        summaryHeader.style.color = '#ef4444';
+        modalTaskList.appendChild(summaryHeader);
+
+        uniqueSummary.forEach(s => {
+            const summaryItem = document.createElement('div');
+            summaryItem.className = 'modal-task-item Medium';
+            summaryItem.style.borderLeftColor = '#ef4444';
+            summaryItem.innerHTML = `
+                <div class="modal-task-header">
+                    <div class="modal-task-title">${s.subtask_name}</div>
+                    <span class="status-badge" style="background-color: #fee2e2; color: #ef4444;">System Suggested</span>
+                </div>
+                <div class="modal-task-meta">
+                    <div class="modal-meta-item">
+                        <span class="meta-label">Final Deadline:</span>
+                        <span class="meta-value">${s.deadline}</span>
+                    </div>
+                </div>
+            `;
+            modalTaskList.appendChild(summaryItem);
+        });
+    }
 
     taskModal.style.display = 'block';
 }
