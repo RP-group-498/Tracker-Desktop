@@ -54,10 +54,10 @@ const appState: AppState = {
  */
 function createWindow(): void {
     mainWindow = new BrowserWindow({
-        width: 400,
-        height: 500,
-        minWidth: 350,
-        minHeight: 400,
+        width: 1200,
+        height: 800,
+        minWidth: 800,
+        minHeight: 600,
         show: process.env.NODE_ENV === 'development', // Show in dev, hidden in production (tray)
         frame: true,
         resizable: true,
@@ -89,32 +89,6 @@ function createWindow(): void {
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
-}
-
-/**
- * Create the task prioritizer window (vanilla HTML pages with nodeIntegration enabled)
- */
-function createTaskWindow(): BrowserWindow {
-    const taskWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        title: 'Task Prioritizer',
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-        },
-    });
-
-    // In dev, Vite doesn't write files to disk — load straight from source.
-    // In production, Vite copies public/ → dist/renderer/ verbatim.
-    const isDev = process.env.NODE_ENV === 'development';
-    const htmlPath = isDev
-        ? path.join(__dirname, '../../src/renderer/public/pages/pdf-analysis.html')
-        : path.join(__dirname, '../renderer/pages/pdf-analysis.html');
-
-    taskWindow.loadFile(htmlPath);
-
-    return taskWindow;
 }
 
 /**
@@ -319,24 +293,6 @@ app.on('ready', async () => {
         () => trayManager ? (trayManager as any)['tray'] : null,
     );
 
-    // Open task prioritizer window
-    ipcMain.handle('open-task-prioritizer', () => {
-        createTaskWindow();
-    });
-
-    // Navigate between task-prioritization pages (pdf-analysis ↔ time-estimator)
-    ipcMain.on('navigate', (_event, page: string) => {
-        const senderWindow = BrowserWindow.fromWebContents(_event.sender);
-        if (!senderWindow) return;
-
-        const isDev = process.env.NODE_ENV === 'development';
-        const basePath = isDev
-            ? path.join(__dirname, '../../src/renderer/public/pages')
-            : path.join(__dirname, '../renderer/pages');
-
-        const htmlFile = `${page}.html`;
-        senderWindow.loadFile(path.join(basePath, htmlFile));
-    });
 
     // Now create window
     createWindow();

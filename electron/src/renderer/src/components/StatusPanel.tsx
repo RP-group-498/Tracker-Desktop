@@ -101,15 +101,14 @@ const StatusPanel: React.FC<Props> = ({
                   <div key={category} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div
-                        className={`w-3 h-3 rounded ${
-                          category === 'academic'
+                        className={`w-3 h-3 rounded ${category === 'academic'
                             ? 'bg-green-500'
                             : category === 'productivity'
-                            ? 'bg-blue-500'
-                            : category === 'non_academic'
-                            ? 'bg-red-500'
-                            : 'bg-gray-400'
-                        }`}
+                              ? 'bg-blue-500'
+                              : category === 'non_academic'
+                                ? 'bg-red-500'
+                                : 'bg-gray-400'
+                          }`}
                       />
                       <span className="text-sm capitalize">{category.replace('_', ' ')}</span>
                     </div>
@@ -165,12 +164,6 @@ const StatusPanel: React.FC<Props> = ({
             Restart Backend
           </button>
         </div>
-        <button
-          onClick={() => window.electronAPI.openTaskPrioritizer()}
-          className="w-full mt-2 px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded"
-        >
-          Open Task Prioritizer
-        </button>
       </div>
     </div>
   );
