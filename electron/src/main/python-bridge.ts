@@ -298,6 +298,13 @@ export class PythonBridge extends EventEmitter {
     }
 
     /**
+     * End a session (marks it as "ended" with an end_time)
+     */
+    async endSession(sessionId: string): Promise<ApiResponse<unknown>> {
+        return this.request('POST', `/session/${sessionId}/end`);
+    }
+
+    /**
      * Submit activity batch
      */
     async submitActivityBatch(events: unknown[]): Promise<ApiResponse<{ received_ids: string[] }>> {

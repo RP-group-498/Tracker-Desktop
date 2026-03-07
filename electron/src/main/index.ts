@@ -118,8 +118,34 @@ function createTaskWindow(): BrowserWindow {
 }
 
 /**
- * Initialize all services
+ * Create a new session and share it with all tracking components.
+ * Ends the previous session if one exists.
  */
+async function createAndShareSession(): Promise<void> {
+    // End old session if one exists
+    if (appState.currentSessionId) {
+        try {
+            await pythonBridge!.endSession(appState.currentSessionId);
+            console.log(`[Main] Ended previous session: ${appState.currentSessionId}`);
+        } catch (err) {
+            console.error('[Main] Failed to end previous session:', err);
+        }
+    }
+
+    // Create new session
+    const result = await pythonBridge!.createSession();
+    if (result.success && result.data) {
+        const sessionId = (result.data as { session_id: string }).session_id;
+        appState.currentSessionId = sessionId;
+        desktopActivityTracker?.setSessionId(sessionId);
+        nativeMessagingServer?.setSessionId(sessionId);
+        updateTrayAndWindow();
+        console.log(`[Main] New session created: ${sessionId}`);
+    } else {
+        console.error('[Main] Failed to create session:', result.error);
+    }
+}
+
 async function initializeServices(): Promise<void> {
     console.log('[Main] Initializing services...');
 
@@ -140,6 +166,9 @@ async function initializeServices(): Promise<void> {
 
     await pythonBridge!.start();
 
+    // 1b. Auto-create a session immediately after backend is ready
+    await createAndShareSession();
+
     // 2. Start Native Messaging server (nativeMessagingServer already created in app.on('ready'))
     nativeMessagingServer!.on('extensionConnected', () => {
         appState.extensionConnected = true;
@@ -152,8 +181,9 @@ async function initializeServices(): Promise<void> {
         console.log('[Main] Browser extension disconnected');
     });
     nativeMessagingServer!.on('sessionCreated', (sessionId: string) => {
+        // This fires only when NativeMessagingServer had to create a session itself
+        // (shouldn't happen now that we auto-create, but keep for safety)
         appState.currentSessionId = sessionId;
-        // Also update desktop tracker with session ID
         desktopActivityTracker?.setSessionId(sessionId);
         updateTrayAndWindow();
     });
@@ -200,6 +230,11 @@ async function initializeServices(): Promise<void> {
         idleActivityPrompt.on('activitySubmitted', () => {
             console.log('[Main] Idle activity submitted by user');
         });
+        // When user returns from idle → end old session, start new one
+        idleActivityPrompt.on('sessionRotate', async () => {
+            console.log('[Main] Session rotation triggered (idle return)');
+            await createAndShareSession();
+        });
         console.log('[Main] Idle Activity Prompt initialized');
     } catch (error) {
         console.error('[Main] Failed to start Desktop Activity Tracker:', error);
@@ -245,6 +280,16 @@ async function cleanup(): Promise<void> {
     // Stop desktop activity tracker (before backend)
     if (desktopActivityTracker) {
         await desktopActivityTracker.stop();
+    }
+
+    // End the current session before shutting down
+    if (appState.currentSessionId && pythonBridge) {
+        try {
+            await pythonBridge.endSession(appState.currentSessionId);
+            console.log(`[Main] Ended session on quit: ${appState.currentSessionId}`);
+        } catch (err) {
+            console.error('[Main] Failed to end session on quit:', err);
+        }
     }
 
     if (nativeMessagingServer) {

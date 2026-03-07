@@ -35,6 +35,14 @@ export class NativeMessagingServer extends EventEmitter {
     }
 
     /**
+     * Set the current session ID (shared with desktop tracker).
+     * When the browser extension connects, it will receive this session.
+     */
+    setSessionId(sessionId: string): void {
+        this.currentSession = { sessionId };
+    }
+
+    /**
      * Start the HTTP server
      */
     async start(): Promise<void> {
@@ -133,7 +141,23 @@ export class NativeMessagingServer extends EventEmitter {
     private async handleConnect(_message: ExtensionMessage): Promise<unknown> {
         console.log('[NativeMessaging] Extension connecting...');
 
-        // Create a new session in the backend
+        // If we already have a session (created at app startup), reuse it
+        if (this.currentSession?.sessionId) {
+            console.log(`[NativeMessaging] Reusing existing session: ${this.currentSession.sessionId}`);
+
+            if (!this.extensionConnected) {
+                this.extensionConnected = true;
+                this.emit('extensionConnected');
+            }
+
+            return {
+                type: 'session',
+                sessionId: this.currentSession.sessionId,
+                status: 'active',
+            };
+        }
+
+        // No existing session — create a new one in the backend
         const result = await this.pythonBridge.createSession();
 
         if (result.success && result.data) {

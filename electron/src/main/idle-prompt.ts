@@ -145,6 +145,8 @@ export class IdleActivityPrompt extends EventEmitter {
                 if (result.success) {
                     console.log('[IdlePrompt] Idle activity saved successfully');
                     this.emit('activitySubmitted', data);
+                    // Signal main process to end old session and start a new one
+                    this.emit('sessionRotate');
                 } else {
                     console.error('[IdlePrompt] Failed to save idle activity:', result.error);
                 }

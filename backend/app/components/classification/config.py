@@ -16,7 +16,7 @@ DEFAULT_ML_CONFIG: Dict[str, Any] = {
     "zero_shot": {
         "model_name": "facebook/bart-large-mnli",
         "device": "cpu",  # "cpu" or "cuda" (if GPU available)
-        "confidence_threshold": 0.55,  # Minimum confidence to accept ML result (lowered from 0.60 to reduce neutral classifications)
+        "confidence_threshold": 0.80,  # Minimum confidence to accept ML result (raised — below this, delegate to Gemini AI)
         "batch_size": 1,  # Batch size for inference (1 for real-time)
     },
 
@@ -25,6 +25,11 @@ DEFAULT_ML_CONFIG: Dict[str, Any] = {
         "model_name": "sentence-transformers/all-MiniLM-L6-v2",
         "device": "cpu",
         "similarity_threshold": 0.70,  # Minimum similarity for classification
+    },
+
+    # Gemini Fallback (if zero-shot fails)
+    "gemini": {
+        "model_name": "gemini-2.5-flash",
     },
 
     # Performance settings
