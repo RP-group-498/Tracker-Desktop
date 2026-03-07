@@ -23,7 +23,7 @@ import { CooldownManager } from './cooldownManager';
 import { hashContext, isDuplicateContext, updateHash, resetHash } from './contextHasher';
 
 const MONITORING_INTERVAL_MS = 60_000; // 60 seconds
-const BANDIT_USER_ID = 'u123';
+const BANDIT_USER_ID = '124804d8-40e0-4f90-af05-eeea5c2d7550';
 
 export interface MonitoringCallbacks {
     /** Called to request a bandit selection + show notification. */

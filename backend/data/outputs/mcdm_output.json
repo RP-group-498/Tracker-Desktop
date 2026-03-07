@@ -1,77 +1,49 @@
 {
   "tasks": [
     {
-      "task_name": "MICROSERVICES Lab",
-      "task_description": "How to build a complete microservices system from scratch using Docker and an API Gateway?",
+      "task_name": "Transforming BiteDash into Microservices",
+      "task_description": "How to redesign BiteDash's online food delivery platform using a microservices-based architecture to address existing performance, scalability, and flexibility challenges?",
       "sub_tasks": [
         {
-          "name": "Understand Lab Objectives & Architecture",
-          "estimated_minutes": 30
-        },
-        {
-          "name": "Choose Technology Stack for Each Service",
-          "estimated_minutes": 20
-        },
-        {
-          "name": "Implement Item Service (GET & POST endpoints)",
-          "estimated_minutes": 120
-        },
-        {
-          "name": "Implement Order Service (GET & POST endpoints)",
-          "estimated_minutes": 120
-        },
-        {
-          "name": "Implement Payment Service (GET & POST endpoints)",
-          "estimated_minutes": 120
-        },
-        {
-          "name": "Implement and Configure API Gateway",
-          "estimated_minutes": 120
-        },
-        {
-          "name": "Create Dockerfiles for All Services",
-          "estimated_minutes": 60
-        },
-        {
-          "name": "Create Docker Compose Configuration",
+          "name": "Identify Microservices.",
           "estimated_minutes": 90
         },
         {
-          "name": "Build and Run Microservices with Docker Compose",
-          "estimated_minutes": 60
+          "name": "Define Communication & Data Handling.",
+          "estimated_minutes": 120
         },
         {
-          "name": "Test All API Endpoints with Postman",
+          "name": "Plan the Migration Strategy.",
           "estimated_minutes": 90
         },
         {
-          "name": "Prepare GitHub Repository and Submission Document",
-          "estimated_minutes": 60
+          "name": "Ensure Fault Tolerance & Scalability.",
+          "estimated_minutes": 90
         },
         {
-          "name": "Debugging and Troubleshooting",
+          "name": "Design the Architecture Diagram & API Structure.",
           "estimated_minutes": 180
         }
       ],
-      "context": "This is a 2-hour practical lab to build a complete microservices system from scratch. Students are free to choose any supported technology stack for each service. The only requirement is that each service runs in Docker and can be reached through the API Gateway. The API Gateway is the single entry point and routes every request to the correct microservice; services do NOT call each other directly. The system consists of Item Service (Port 8081), Order Service (Port 8082), Payment Service (Port 8083), and API Gateway (Port 8080). Technology stack options include Spring Boot (Java), Node.js + Express, FastAPI (Python), Gin (Go), Django REST, Flask (Python), .NET Core, Kong/NGINX, and Express Gateway. Quick Start Templates and code examples for Spring Boot are provided. The API Gateway must route requests based on URL path prefixes (e.g., /items/** to Item Service). All services must be on the same Docker network (`microservices-net`), and the service name (e.g., `item-service`) should be used as the hostname inside the gateway config, NOT `localhost`. Minimum requirement is to implement GET endpoints; POST endpoints are required for bonus marks. Testing should be done using Postman. The final submission requires a public GitHub repository with the complete working microservices system, including Docker setup and API testing evidence, and this repo link must be included in a word document.",
+      "context": "BiteDash is a leading online food delivery platform experiencing performance, scalability, and flexibility challenges due to its monolithic architecture. The goal is to transition to a microservices-based architecture to enhance flexibility, allow independent scaling, updating, and recovery of functionalities. The student is hired as a Microservices Architect, and the team is responsible for proposing a microservices-based architecture. The final submission is a PowerPoint Presentation covering all the required points.",
       "ai_suggestions": {
-        "ai_suggested_difficulty": 5,
-        "ai_suggested_time": 20.0
+        "ai_suggested_difficulty": 3,
+        "ai_suggested_time": 10.0
       },
       "metrics": {
-        "deadline": "2026-03-10",
-        "days_left": 4,
-        "credits": 4,
+        "deadline": "2026-03-20",
+        "days_left": 13,
+        "credits": 3,
         "percentage": 10,
-        "difficulty_rating": 5
+        "difficulty_rating": 3
       },
       "mcdm_calculation": {
-        "urgency_score": 60.0,
-        "impact_score": 20.0,
-        "difficulty_score": 100.0,
-        "final_weighted_score": 56.0
+        "urgency_score": 40.0,
+        "impact_score": 15.0,
+        "difficulty_score": 60.0,
+        "final_weighted_score": 36.5
       },
-      "priority": "Medium"
+      "priority": "Low"
     }
   ]
 }

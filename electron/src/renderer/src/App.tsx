@@ -33,6 +33,14 @@ const Dashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [hasVisitedIntervention, setHasVisitedIntervention] = useState(false);
+
+  const handleTabChange = (tab: Tab) => {
+    if (tab === 'intervention') {
+      setHasVisitedIntervention(true);
+    }
+    setActiveTab(tab);
+  };
 
   useEffect(() => {
     const fetchState = async () => {
@@ -74,7 +82,7 @@ const Dashboard: React.FC = () => {
         {TABS.map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleTabChange(tab.id)}
             className={`px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors ${
               activeTab === tab.id
                 ? 'border-blue-600 text-blue-600'
@@ -105,7 +113,11 @@ const Dashboard: React.FC = () => {
 
         {activeTab === 'procrastination' && <ProcrastinationPage />}
         {activeTab === 'calibration' && <CalibrationPage />}
-        {activeTab === 'intervention' && <SmartInterventionPage />}
+        {hasVisitedIntervention && (
+          <div className={activeTab === 'intervention' ? 'block' : 'hidden'}>
+            <SmartInterventionPage />
+          </div>
+        )}
       </main>
 
       {/* Footer */}

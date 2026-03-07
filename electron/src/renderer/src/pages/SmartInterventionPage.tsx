@@ -7,7 +7,7 @@ import { CooldownManager } from '../utils/cooldownManager';
 
 Chart.register(...registerables);
 
-const BANDIT_USER_ID = 'u123';
+const BANDIT_USER_ID = '124804d8-40e0-4f90-af05-eeea5c2d7550';
 
 const ACTION_TO_STRATEGY: Record<string, string> = {
     FIVE_SECOND_RULE: '5_second_rule',
