@@ -332,6 +332,14 @@ function createModalTaskElement(task) {
         </div>
     ` : '';
 
+    const validation = getTaskValidationStatus(task);
+    const validationHtml = `
+        <div class="modal-meta-item">
+            <span class="meta-label">Status:</span>
+            <span class="meta-value" style="color: ${validation.isValid ? '#10b981' : '#ef4444'}">${validation.message}</span>
+        </div>
+    `;
+
     let buttonHTML;
     let timerHTML = '';
 
@@ -342,7 +350,7 @@ function createModalTaskElement(task) {
     } else {
         const timer = taskTimers[task.id];
         if (!timer) {
-            buttonHTML = `<button class="btn-sm btn-primary start-task-btn" data-subtask-description="${task.name}">▶ Start</button>`;
+            buttonHTML = `<button class="btn-sm btn-primary start-task-btn" data-subtask-description="${task.name}" ${!validation.isValid ? 'disabled style="opacity:0.6;cursor:not-allowed;"' : ''}>▶ Start</button>`;
         } else if (timer.isPaused) {
             timerHTML = `<span id="timer-${task.id}" style="font-size:0.85em;color:#f59e0b;font-weight:600;">${formatElapsed(timer.accumulated)}</span>`;
             buttonHTML = `
@@ -377,6 +385,7 @@ function createModalTaskElement(task) {
                 <span class="meta-value">${timeStr}</span>
             </div>
             ${activeWindowHtml}
+            ${validationHtml}
             <div class="modal-meta-item">
                 <span class="meta-label">Confidence:</span>
                 <span class="meta-value confidence-${task.confidence}">${task.confidence}</span>
@@ -437,27 +446,36 @@ function parseActiveTime(timeStr, dateStr) {
     return date;
 }
 
+// Task Validation logic
+function getTaskValidationStatus(task) {
+    if (task.status === 'completed') return { isValid: true, message: 'Completed' };
+    if (task.status === 'failed') return { isValid: false, message: 'Window Expired' };
+    
+    if (!task.time_allocation_date || !task.predictedActiveStart || !task.predictedActiveEnd) {
+        return { isValid: false, message: 'No time window allocated' };
+    }
+    
+    const now = new Date();
+    const startTime = parseActiveTime(task.predictedActiveStart, task.time_allocation_date);
+    const endTime = parseActiveTime(task.predictedActiveEnd, task.time_allocation_date);
+
+    if (startTime && now < startTime) {
+        return { isValid: false, message: `Starts at ${task.predictedActiveStart}` };
+    }
+    if (endTime && now > endTime) {
+        return { isValid: false, message: 'Active window expired' };
+    }
+    return { isValid: true, message: 'Ready to start' };
+}
+
 // Start task — validates active window then starts timer
 async function startTask(subtaskDescription) {
     const task = tasks.find(t => t.name === subtaskDescription);
     if (!task) { showNotification('Task not found.', 'error'); return; }
 
-    if (!task.time_allocation_date || !task.predictedActiveStart || !task.predictedActiveEnd) {
-        showNotification('Task does not have an allocated time window.', 'error');
-        return;
-    }
-
-    const now = new Date();
-    const nowStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    const startTime = parseActiveTime(task.predictedActiveStart, task.time_allocation_date);
-    const endTime   = parseActiveTime(task.predictedActiveEnd,   task.time_allocation_date);
-
-    if (now < startTime) {
-        showNotification(`Active window hasn't started yet. Starts at: ${task.predictedActiveStart}. Now: ${nowStr}`, 'error');
-        return;
-    }
-    if (now > endTime) {
-        showNotification(`Active window has ended. Window was: ${task.predictedActiveStart} - ${task.predictedActiveEnd}. Now: ${nowStr}`, 'error');
+    const validation = getTaskValidationStatus(task);
+    if (!validation.isValid) {
+        showNotification(`Cannot start task: ${validation.message}`, 'error');
         return;
     }
 
@@ -523,6 +541,12 @@ async function pauseTask(subtaskDescription) {
 async function resumeTask(subtaskDescription) {
     const task = tasks.find(t => t.name === subtaskDescription);
     if (!task) return;
+
+    const validation = getTaskValidationStatus(task);
+    if (!validation.isValid) {
+        showNotification(`Cannot resume task: ${validation.message}`, 'error');
+        return;
+    }
 
     const timer = taskTimers[task.id];
     if (!timer || !timer.isPaused) return;
@@ -745,8 +769,57 @@ function updateTimeEstimation() {
 
 // Show notification
 function showNotification(message, type = 'info') {
-    console.log(`${type}: ${message}`);
+    const container = document.getElementById('notificationContainer');
+    if (!container) {
+        console.log(`${type}: ${message}`);
+        return;
+    }
+
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    
+    // Inline styles for the notification
+    const colors = {
+        error: '#ef4444',
+        success: '#10b981',
+        info: '#3b82f6',
+        warning: '#f59e0b'
+    };
+    
+    notification.style.cssText = `
+        padding: 0.75rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 500;
+        background-color: ${colors[type] || '#6c757d'};
+        color: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        min-width: 250px;
+        pointer-events: auto;
+        animation: slideIn 0.3s ease;
+        margin-bottom: 0.5rem;
+        font-family: 'Inter', -apple-system, sans-serif;
+    `;
+    
+    notification.textContent = message;
+    container.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(20px)';
+        notification.style.transition = 'all 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
 }
+
+// Add animation keyframe to document
+const notificationStyle = document.createElement('style');
+notificationStyle.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+`;
+document.head.appendChild(notificationStyle);
 
 // Refresh tasks button (optional - can be called manually)
 window.refreshTasks = loadTasksFromAPI;
