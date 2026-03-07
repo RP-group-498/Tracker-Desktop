@@ -64,7 +64,17 @@ class GeminiBatchWorker:
             return
 
         gemini = classifier.get_gemini_classifier()
-        if not gemini or not gemini._initialized:
+        if not gemini:
+            return
+            
+        if not gemini._initialized:
+            try:
+                gemini.initialize()
+            except Exception as e:
+                logger.error(f"[GeminiBatchWorker] Failed to initialize Gemini classifier: {e}")
+                
+        if not gemini._initialized:
+            logger.warning("[GeminiBatchWorker] Gemini not initialized, skipping batch")
             return
 
         async with async_session_maker() as db:
