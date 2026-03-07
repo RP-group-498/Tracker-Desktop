@@ -7,22 +7,20 @@ from google.genai.types import Part
 
 from .config import GEMINI_MODEL
 
+import logging
+from app.services.gemini_service import GeminiService
 
 class GeminiPDFExtractor:
     """Handle PDF extraction using Gemini API."""
 
     def __init__(self):
-        """Initialize Gemini client."""
+        """Initialize Gemini client via the shared service."""
         try:
-            api_key = os.environ.get("GEMINI_API_KEY")
-
-            if not api_key:
-                raise ValueError("GEMINI_API_KEY not found. Please check your environment variables.")
-
-            self.client = genai.Client(api_key=api_key)
-            print("Gemini client initialized successfully.")
+            gemini_service = GeminiService()
+            self.client = gemini_service.get_client()
+            logging.info("GeminiPDFExtractor initialized with shared Gemini service.")
         except Exception as e:
-            print(f"Error initializing client: {e}. Check your GEMINI_API_KEY.")
+            logging.error(f"Error initializing GeminiPDFExtractor: {e}")
             raise
 
     def extract_text_from_pdf(self, pdf_path: str, extraction_prompt: str) -> str:

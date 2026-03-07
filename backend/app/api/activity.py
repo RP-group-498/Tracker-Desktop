@@ -28,6 +28,10 @@ from app.schemas.activity import (
 
 router = APIRouter()
 
+# Serialize SQLite writes — aiosqlite only supports one writer at a time.
+# Without this, concurrent batch + idle requests can produce "database is locked".
+_db_write_lock = asyncio.Lock()
+
 
 @router.post("/batch", response_model=ActivityBatchResponse)
 async def receive_activity_batch(
@@ -51,142 +55,141 @@ async def receive_activity_batch(
     user_manager = get_user_manager()
     user_id = user_manager.get_user_id() if user_manager else None
 
-    for event_data in batch.events:
-        try:
-            # Check if event already exists (deduplication)
-            result = await db.execute(
-                select(ActivityEvent).where(ActivityEvent.event_id == event_data.event_id)
-            )
-            existing = result.scalar_one_or_none()
+    async with _db_write_lock:
+        for event_data in batch.events:
+            try:
+                # Check if event already exists (deduplication)
+                result = await db.execute(
+                    select(ActivityEvent).where(ActivityEvent.event_id == event_data.event_id)
+                )
+                existing = result.scalar_one_or_none()
 
-            if existing:
+                if existing:
+                    received_ids.append(event_data.event_id)
+                    continue
+
+                # Create classification
+                classification = None
+                if classifier:
+                    try:
+                        class_result = classifier.process({
+                            "domain": event_data.domain,
+                            "url": event_data.url,
+                            "title": event_data.title,
+                            "active_time": event_data.active_time,
+                            "path": event_data.path,
+                            # Source identification
+                            "source": event_data.source,
+                            "activity_type": event_data.activity_type,
+                            # Desktop-specific fields
+                            "app_name": event_data.app_name,
+                            "app_path": event_data.app_path,
+                            "window_title": event_data.window_title,
+                            # Context (browser only)
+                            "youtube_context": event_data.youtube_context.model_dump() if event_data.youtube_context else None,
+                            "google_context": event_data.google_context.model_dump() if event_data.google_context else None,
+                            "social_context": event_data.social_context.model_dump() if event_data.social_context else None,
+                        })
+
+                        classification = Classification(
+                            category=class_result["category"],
+                            confidence=class_result["confidence"],
+                            source=class_result["source"],
+                            created_at=datetime.utcnow(),
+                        )
+                        db.add(classification)
+                        await db.flush()  # Get the ID
+
+                    except Exception as e:
+                        errors.append(f"Classification error for {event_data.event_id}: {str(e)}")
+
+                # Build context_data JSON
+                context_data = {}
+                if event_data.youtube_context:
+                    context_data["youtube"] = event_data.youtube_context.model_dump()
+                if event_data.google_context:
+                    context_data["google"] = event_data.google_context.model_dump()
+                if event_data.social_context:
+                    context_data["social"] = event_data.social_context.model_dump()
+
+                # Create activity event
+                event = ActivityEvent(
+                    event_id=event_data.event_id,
+                    user_id=user_id,
+                    session_id=event_data.session_id,
+                    # Source identification
+                    source=event_data.source,
+                    activity_type=event_data.activity_type,
+                    # Timestamps
+                    timestamp=event_data.timestamp,
+                    start_time=event_data.start_time,
+                    end_time=event_data.end_time,
+                    # URL/Domain info
+                    url=event_data.url,
+                    domain=event_data.domain,
+                    path=event_data.path,
+                    title=event_data.title,
+                    # Desktop-specific fields
+                    app_name=event_data.app_name,
+                    app_path=event_data.app_path,
+                    window_title=event_data.window_title,
+                    # Time tracking
+                    active_time=event_data.active_time,
+                    idle_time=event_data.idle_time,
+                    # Tab info
+                    tab_id=event_data.tab_id,
+                    window_id=event_data.window_id,
+                    is_incognito=event_data.is_incognito,
+                    # Enrichment data
+                    url_components=event_data.url_components.model_dump() if event_data.url_components else None,
+                    title_hints=event_data.title_hints.model_dump() if event_data.title_hints else None,
+                    engagement=event_data.engagement.model_dump() if event_data.engagement else None,
+                    context_data=context_data if context_data else None,
+                    classification_id=classification.id if classification else None,
+                )
+
+                db.add(event)
                 received_ids.append(event_data.event_id)
-                continue
 
-            # Create classification
-            classification = None
-            if classifier:
-                try:
-                    class_result = classifier.process({
-                        "domain": event_data.domain,
-                        "url": event_data.url,
-                        "title": event_data.title,
-                        "active_time": event_data.active_time,
-                        "path": event_data.path,
-                        # Source identification
+                # Build MongoDB document for sync
+                class_dict = None
+                if classification:
+                    class_dict = {
+                        "category": classification.category,
+                        "confidence": classification.confidence,
+                        "source": classification.source,
+                    }
+
+                mongo_doc = MongoDBSyncService.build_document(
+                    event_data={
+                        "event_id": event_data.event_id,
+                        "session_id": event_data.session_id,
                         "source": event_data.source,
                         "activity_type": event_data.activity_type,
-                        # Desktop-specific fields
+                        "timestamp": event_data.timestamp,
+                        "start_time": event_data.start_time,
+                        "end_time": event_data.end_time,
+                        "url": event_data.url,
+                        "domain": event_data.domain,
+                        "path": event_data.path,
+                        "title": event_data.title,
                         "app_name": event_data.app_name,
                         "app_path": event_data.app_path,
                         "window_title": event_data.window_title,
-                        # Context (browser only)
-                        "youtube_context": event_data.youtube_context.model_dump() if event_data.youtube_context else None,
-                        "google_context": event_data.google_context.model_dump() if event_data.google_context else None,
-                        "social_context": event_data.social_context.model_dump() if event_data.social_context else None,
-                    })
+                        "active_time": event_data.active_time,
+                        "idle_time": event_data.idle_time,
+                        "url_components": event_data.url_components.model_dump() if event_data.url_components else None,
+                        "title_hints": event_data.title_hints.model_dump() if event_data.title_hints else None,
+                        "engagement": event_data.engagement.model_dump() if event_data.engagement else None,
+                        "context_data": context_data if context_data else None,
+                    },
+                    classification=class_dict,
+                    user_id=user_id or "",
+                )
+                mongo_documents.append(mongo_doc)
 
-                    classification = Classification(
-                        category=class_result["category"],
-                        confidence=class_result["confidence"],
-                        source=class_result["source"],
-                        created_at=datetime.utcnow(),
-                    )
-                    db.add(classification)
-                    await db.flush()  # Get the ID
-
-                except Exception as e:
-                    errors.append(f"Classification error for {event_data.event_id}: {str(e)}")
-
-            # Build context_data JSON
-            context_data = {}
-            if event_data.youtube_context:
-                context_data["youtube"] = event_data.youtube_context.model_dump()
-            if event_data.google_context:
-                context_data["google"] = event_data.google_context.model_dump()
-            if event_data.social_context:
-                context_data["social"] = event_data.social_context.model_dump()
-
-            # Create activity event
-            event = ActivityEvent(
-                event_id=event_data.event_id,
-                user_id=user_id,
-                session_id=event_data.session_id,
-                # Source identification
-                source=event_data.source,
-                activity_type=event_data.activity_type,
-                # Timestamps
-                timestamp=event_data.timestamp,
-                start_time=event_data.start_time,
-                end_time=event_data.end_time,
-                # URL/Domain info
-                url=event_data.url,
-                domain=event_data.domain,
-                path=event_data.path,
-                title=event_data.title,
-                # Desktop-specific fields
-                app_name=event_data.app_name,
-                app_path=event_data.app_path,
-                window_title=event_data.window_title,
-                # Time tracking
-                active_time=event_data.active_time,
-                idle_time=event_data.idle_time,
-                # Tab info
-                tab_id=event_data.tab_id,
-                window_id=event_data.window_id,
-                is_incognito=event_data.is_incognito,
-                # Enrichment data
-                url_components=event_data.url_components.model_dump() if event_data.url_components else None,
-                title_hints=event_data.title_hints.model_dump() if event_data.title_hints else None,
-                engagement=event_data.engagement.model_dump() if event_data.engagement else None,
-                context_data=context_data if context_data else None,
-                classification_id=classification.id if classification else None,
-            )
-
-            db.add(event)
-            received_ids.append(event_data.event_id)
-
-            # Build MongoDB document for sync
-            class_dict = None
-            if classification:
-                class_dict = {
-                    "category": classification.category,
-                    "confidence": classification.confidence,
-                    "source": classification.source,
-                }
-
-            mongo_doc = MongoDBSyncService.build_document(
-                event_data={
-                    "event_id": event_data.event_id,
-                    "session_id": event_data.session_id,
-                    "source": event_data.source,
-                    "activity_type": event_data.activity_type,
-                    "timestamp": event_data.timestamp,
-                    "start_time": event_data.start_time,
-                    "end_time": event_data.end_time,
-                    "url": event_data.url,
-                    "domain": event_data.domain,
-                    "path": event_data.path,
-                    "title": event_data.title,
-                    "app_name": event_data.app_name,
-                    "app_path": event_data.app_path,
-                    "window_title": event_data.window_title,
-                    "active_time": event_data.active_time,
-                    "idle_time": event_data.idle_time,
-                    "url_components": event_data.url_components.model_dump() if event_data.url_components else None,
-                    "title_hints": event_data.title_hints.model_dump() if event_data.title_hints else None,
-                    "engagement": event_data.engagement.model_dump() if event_data.engagement else None,
-                    "context_data": context_data if context_data else None,
-                },
-                classification=class_dict,
-                user_id=user_id or "",
-            )
-            mongo_documents.append(mongo_doc)
-
-        except Exception as e:
-            errors.append(f"Error processing {event_data.event_id}: {str(e)}")
-
-    await db.commit()
+            except Exception as e:
+                errors.append(f"Error processing {event_data.event_id}: {str(e)}")
 
     # Sync to MongoDB in the background (fire-and-forget)
     mongo_sync = get_mongodb_sync()
@@ -306,7 +309,7 @@ async def submit_idle_activity(
         registry = ComponentRegistry.get_instance()
         classifier = registry.get("classification")
 
-        # Classify the idle activity
+        # Classify the idle activity (CPU-bound, done outside lock)
         class_result = None
         if classifier:
             class_result = classifier.classify_idle_activity(
@@ -314,52 +317,50 @@ async def submit_idle_activity(
                 custom_label=data.custom_label,
             )
 
-        # Create classification record
-        classification = None
-        if class_result:
-            classification = Classification(
-                category=class_result["category"],
-                confidence=class_result["confidence"],
-                source=class_result["source"],
-                created_at=datetime.utcnow(),
-            )
-            db.add(classification)
-            await db.flush()
-
-        # Build a descriptive title
-        activity_title = data.custom_label or data.activity_id or "idle"
-
         # Get user ID
         user_manager = get_user_manager()
         user_id = user_manager.get_user_id() if user_manager else None
 
         event_id = str(uuid.uuid4())
+        activity_title = data.custom_label or data.activity_id or "idle"
 
-        # Create the activity event
-        event = ActivityEvent(
-            event_id=event_id,
-            user_id=user_id,
-            source="idle_report",
-            activity_type="offline",
-            timestamp=data.idle_end,
-            start_time=data.idle_start,
-            end_time=data.idle_end,
-            url=f"idle://{data.activity_id or 'custom'}",
-            domain="idle",
-            path="",
-            title=activity_title,
-            app_name=None,
-            app_path=None,
-            window_title=activity_title,
-            active_time=0,
-            idle_time=data.idle_duration_ms,
-            classification_id=classification.id if classification else None,
-        )
+        async with _db_write_lock:
+            # Create classification record
+            classification = None
+            if class_result:
+                classification = Classification(
+                    category=class_result["category"],
+                    confidence=class_result["confidence"],
+                    source=class_result["source"],
+                    created_at=datetime.utcnow(),
+                )
+                db.add(classification)
+                await db.flush()
 
-        db.add(event)
-        await db.commit()
+            # Create the activity event
+            event = ActivityEvent(
+                event_id=event_id,
+                user_id=user_id,
+                source="idle_report",
+                activity_type="offline",
+                timestamp=data.idle_end,
+                start_time=data.idle_start,
+                end_time=data.idle_end,
+                url=f"idle://{data.activity_id or 'custom'}",
+                domain="idle",
+                path="",
+                title=activity_title,
+                app_name=None,
+                app_path=None,
+                window_title=activity_title,
+                active_time=0,
+                idle_time=data.idle_duration_ms,
+                classification_id=classification.id if classification else None,
+            )
 
-        # Sync to MongoDB in the background
+            db.add(event)
+
+        # Sync to MongoDB in the background (outside lock)
         mongo_sync = get_mongodb_sync()
         if mongo_sync:
             class_dict = None

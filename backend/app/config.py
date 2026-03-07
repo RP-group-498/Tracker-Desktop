@@ -70,7 +70,7 @@ class Settings(BaseSettings):
                 "zero_shot": {
                     "model_name": "facebook/bart-large-mnli",
                     "device": "cpu",  # "cpu" or "cuda" (if GPU available)
-                    "confidence_threshold": 0.60,  # Minimum confidence for ML
+                    "confidence_threshold": 0.80,  # Minimum confidence for ML (below this → Gemini)
                 },
             }
         },
