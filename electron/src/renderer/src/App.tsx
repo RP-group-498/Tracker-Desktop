@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
 import StatusPanel from './components/StatusPanel';
 import ConnectionIndicator from './components/ConnectionIndicator';
-import PDFAnalysis from './pages/PDFAnalysis';
-import TimeEstimator from './pages/TimeEstimator';
 import ProcrastinationPage from './pages/ProcrastinationPage';
 import CalibrationPage from './pages/CalibrationPage';
 import SmartInterventionPage from './pages/SmartInterventionPage';
+import TaskPrioritizationTab from './pages/TaskPrioritizationTab';
 
 interface AppState {
   pythonRunning: boolean;
@@ -15,16 +13,17 @@ interface AppState {
   eventCount: number;
 }
 
-type Tab = 'dashboard' | 'procrastination' | 'calibration' | 'intervention';
+type Tab = 'dashboard' | 'tasks' | 'procrastination' | 'calibration' | 'intervention';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'dashboard',       label: 'Dashboard' },
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'tasks', label: 'Tasks' },
   { id: 'procrastination', label: 'Analysis' },
-  { id: 'calibration',     label: 'Settings' },
-  { id: 'intervention',    label: 'Interventions' },
+  { id: 'calibration', label: 'Settings' },
+  { id: 'intervention', label: 'Interventions' },
 ];
 
-const Dashboard: React.FC = () => {
+const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
     pythonRunning: false,
     extensionConnected: false,
@@ -75,11 +74,10 @@ const Dashboard: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors ${
-              activeTab === tab.id
+            className={`px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors ${activeTab === tab.id
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             {tab.label}
           </button>
@@ -103,6 +101,7 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'tasks' && <TaskPrioritizationTab />}
         {activeTab === 'procrastination' && <ProcrastinationPage />}
         {activeTab === 'calibration' && <CalibrationPage />}
         {activeTab === 'intervention' && <SmartInterventionPage />}
@@ -116,16 +115,5 @@ const Dashboard: React.FC = () => {
   );
 };
 
-const App: React.FC = () => {
-  return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/pdf-analysis" element={<PDFAnalysis />} />
-        <Route path="/time-estimator" element={<TimeEstimator />} />
-      </Routes>
-    </HashRouter>
-  );
-};
-
 export default App;
+

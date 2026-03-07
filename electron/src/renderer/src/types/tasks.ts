@@ -59,3 +59,9 @@ export interface TimerState {
   isPaused: boolean
   timerInterval: ReturnType<typeof setInterval> | null
 }
+
+export interface ScheduledSummaryTask {
+  subtask_name: string
+  suggested_date: string
+  deadline: string
+}

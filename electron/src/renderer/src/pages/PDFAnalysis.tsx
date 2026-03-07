@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { TaskData, Subtask } from '../types/tasks'
 import '../styles/pages.css'
 import '../styles/pdf-analysis.css'
@@ -20,7 +19,11 @@ function formatTime(minutes: number): string {
   }
 }
 
-const PDFAnalysis: React.FC = () => {
+interface PDFAnalysisProps {
+  embedded?: boolean
+}
+
+const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
   const [inputMode, setInputMode] = useState<'pdf' | 'text'>('pdf')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [deadline, setDeadline] = useState('')
@@ -42,7 +45,7 @@ const PDFAnalysis: React.FC = () => {
 
   useEffect(() => {
     if (taskData?.sub_tasks) {
-      setSliderValues(taskData.sub_tasks.map(s => s.estimated_minutes || 0))
+      setSliderValues(taskData.sub_tasks.map(s => s.user_selected_minutes ?? s.estimated_minutes ?? 0))
     }
   }, [taskData])
 
@@ -278,21 +281,23 @@ const PDFAnalysis: React.FC = () => {
 
   return (
     <div className="container">
-      <nav className="navbar">
-        <div className="nav-brand" />
-        <div className="nav-links">
-          <Link to="/pdf-analysis" className="nav-link active">PDF Analysis</Link>
-          <Link to="/time-estimator" className="nav-link">Time Estimator</Link>
-        </div>
-      </nav>
+      {!embedded && (
+        <nav className="navbar">
+          <div className="nav-brand" />
+          <div className="nav-links">
+            <span className="nav-link active">PDF Analysis</span>
+            <span className="nav-link">Time Estimator</span>
+          </div>
+        </nav>
+      )}
 
       {notification && (
         <div style={{
           position: 'fixed', top: '1rem', right: '1rem', zIndex: 9999,
           padding: '0.75rem 1.25rem', borderRadius: '8px', fontWeight: 500,
           backgroundColor: notification.type === 'error' ? '#dc3545' :
-                           notification.type === 'success' ? '#28a745' :
-                           notification.type === 'warning' ? '#ffc107' : '#6c757d',
+            notification.type === 'success' ? '#28a745' :
+              notification.type === 'warning' ? '#ffc107' : '#6c757d',
           color: notification.type === 'warning' ? '#212529' : 'white',
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
         }}>
