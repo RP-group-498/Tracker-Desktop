@@ -106,6 +106,7 @@ const PDFAnalysis: React.FC = () => {
             api_predicted_minutes: prediction.predicted_time,
             confidence: prediction.confidence,
             method: prediction.method,
+            suggested_date: subtask.suggested_date // Preserve from Gemini
           }
         })
         return { ...data, sub_tasks: updatedSubtasks, total_estimated_time: totalEstimatedTime }
@@ -236,6 +237,7 @@ const PDFAnalysis: React.FC = () => {
         user_estimate: userSelectedTime,
         confidence: subtask.confidence || 'MEDIUM',
         category: subtask.category || 'general',
+        suggested_date: subtask.suggested_date // Pass through to backend
       }
     })
 

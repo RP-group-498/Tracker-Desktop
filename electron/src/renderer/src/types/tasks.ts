@@ -12,6 +12,7 @@ export interface Subtask {
   method?: Method
   user_selected_minutes?: number | null
   category?: string
+  suggested_date?: string
 }
 
 export interface MCDMCalculation {
@@ -43,6 +44,7 @@ export interface Task {
   confidence: Confidence
   method: Method
   time_allocation_date?: string
+  suggested_date?: string
   created_date?: string
   completed_date?: string
   priority: Priority
