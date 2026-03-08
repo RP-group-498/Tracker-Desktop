@@ -40,7 +40,7 @@ def allocate_user_tasks(student_id, active_time_id, start_date=None, days_ahead=
     if start_date is None:
         start_date = (datetime.now(ZoneInfo("Asia/Colombo")) - timedelta(days=1)).strftime("%Y-%m-%d")
 
-    url = f"{API_BASE_URL}/allocate/{student_id}"
+    url = f"{API_BASE_URL}/allocate-internal/{student_id}"
     payload = {
         "active_time_user_id": active_time_id,
         "start_date": start_date,
