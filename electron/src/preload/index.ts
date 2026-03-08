@@ -53,6 +53,7 @@ interface ElectronAPI {
     addTask: (data: unknown) => Promise<unknown>;
     getTasks: () => Promise<unknown>;
     deleteTask: (taskId: number) => Promise<unknown>;
+    getCalibrationHistory: (days?: number) => Promise<unknown>;
 }
 
 interface AppState {
@@ -155,6 +156,7 @@ const electronAPI: ElectronAPI = {
     addTask: (data) => ipcRenderer.invoke('procrastination:add-task', data),
     getTasks: () => ipcRenderer.invoke('procrastination:get-tasks'),
     deleteTask: (taskId) => ipcRenderer.invoke('procrastination:delete-task', taskId),
+    getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

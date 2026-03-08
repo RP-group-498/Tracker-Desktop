@@ -6,6 +6,7 @@ import PDFAnalysis from './pages/PDFAnalysis';
 import TimeEstimator from './pages/TimeEstimator';
 import ProcrastinationPage from './pages/ProcrastinationPage';
 import CalibrationPage from './pages/CalibrationPage';
+import CalibrationDetailsPage from './pages/CalibrationDetailsPage';
 
 interface AppState {
   pythonRunning: boolean;
@@ -14,12 +15,13 @@ interface AppState {
   eventCount: number;
 }
 
-type Tab = 'dashboard' | 'procrastination' | 'calibration';
+type Tab = 'dashboard' | 'procrastination' | 'calibration' | 'calibration-details';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'dashboard',       label: 'Dashboard' },
-  { id: 'procrastination', label: 'Analysis' },
-  { id: 'calibration',     label: 'Settings' },
+  { id: 'dashboard',            label: 'Dashboard' },
+  { id: 'procrastination',      label: 'Analysis' },
+  { id: 'calibration',          label: 'Settings' },
+  { id: 'calibration-details',  label: 'Calibration Details' },
 ];
 
 const Dashboard: React.FC = () => {
@@ -103,6 +105,7 @@ const Dashboard: React.FC = () => {
 
         {activeTab === 'procrastination' && <ProcrastinationPage />}
         {activeTab === 'calibration' && <CalibrationPage />}
+        {activeTab === 'calibration-details' && <CalibrationDetailsPage />}
       </main>
 
       {/* Footer */}

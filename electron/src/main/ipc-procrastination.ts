@@ -107,13 +107,13 @@ export function registerProcrastinationHandlers(pythonBridge: PythonBridge): voi
 
     // Save user calibration (focus period, study days, study duration)
     ipcMain.handle('procrastination:save-calibration', async (_event, data: unknown) => {
-        const result = await pythonBridge.request('POST', '/procrastination/calibration', data);
+        const result = await pythonBridge.request('POST', '/analysis/calibration', data);
         return result.data;
     });
 
     // Get current user calibration
     ipcMain.handle('procrastination:get-calibration', async () => {
-        const result = await pythonBridge.request('GET', '/procrastination/calibration');
+        const result = await pythonBridge.request('GET', '/analysis/calibration');
         return result.data;
     });
 
@@ -132,6 +132,12 @@ export function registerProcrastinationHandlers(pythonBridge: PythonBridge): voi
     // Delete a task by ID
     ipcMain.handle('procrastination:delete-task', async (_event, taskId: number) => {
         const result = await pythonBridge.request('DELETE', `/procrastination/tasks/${taskId}`);
+        return result.data;
+    });
+
+    // Calibration phase history (14-day graphs)
+    ipcMain.handle('calibration:get-history', async (_event, days: number = 14) => {
+        const result = await pythonBridge.request('GET', `/analysis/calibration-history?days=${days}`);
         return result.data;
     });
 }
