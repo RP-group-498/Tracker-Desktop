@@ -59,6 +59,7 @@ interface ElectronAPI {
     addTask: (data: unknown) => Promise<unknown>;
     getTasks: () => Promise<unknown>;
     deleteTask: (taskId: number) => Promise<unknown>;
+    getCalibrationHistory: (days?: number) => Promise<unknown>;
 
     // Idle Activity Prompt
     submitIdleActivity: (data: {
@@ -101,7 +102,6 @@ interface InterventionAPI {
     updateTrayTimer: (label: string) => void;
     clearTray: () => void;
     showWindow: () => void;
-    getCalibrationHistory: (days?: number) => Promise<unknown>;
 }
 
 interface AppState {
