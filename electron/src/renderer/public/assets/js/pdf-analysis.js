@@ -3,7 +3,7 @@ const path = require('path');
 
 // Configuration — API calls for time predictions go to FastAPI backend
 const API_BASE_URL = 'http://localhost:8001/api/tasks';
-const USER_ID = 'student_123';
+const USER_ID = '124804d8-40e0-4f90-af05-eeea5c2d7550';
 
 // DOM Elements
 const uploadArea = document.getElementById('uploadArea');
@@ -392,7 +392,7 @@ function displayResults(task) {
 
                 if (subtask.confidence) {
                     const confidenceColor = subtask.confidence === 'HIGH' ? '#10b981' :
-                                           subtask.confidence === 'MEDIUM' ? '#f59e0b' : '#ef4444';
+                        subtask.confidence === 'MEDIUM' ? '#f59e0b' : '#ef4444';
                     headerContent += ` <span style="color: ${confidenceColor}; font-size: 0.85em;">[${subtask.confidence}]</span>`;
                 }
 

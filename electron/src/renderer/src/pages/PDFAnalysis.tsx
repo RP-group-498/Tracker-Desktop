@@ -4,7 +4,7 @@ import '../styles/pages.css'
 import '../styles/pdf-analysis.css'
 
 const API_BASE_URL = 'http://localhost:8000/api/tasks'
-const USER_ID = 'student_123'
+const USER_ID = '124804d8-40e0-4f90-af05-eeea5c2d7550'
 
 function formatTime(minutes: number): string {
   if (minutes === 0 || !minutes) return '0 minutes'

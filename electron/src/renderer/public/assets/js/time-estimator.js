@@ -2,7 +2,7 @@ const { ipcRenderer } = require('electron');
 
 // Configuration — updated to point at FastAPI backend on port 8000
 const API_BASE_URL = 'http://localhost:8001/api/tasks';
-const USER_ID = 'student_123';
+const USER_ID = '124804d8-40e0-4f90-af05-eeea5c2d7550';
 
 // State
 let currentDate = new Date();
@@ -113,7 +113,7 @@ function setupEventListeners() {
 async function loadTasksFromAPI(silent = false) {
     try {
         if (!silent) console.log('Fetching tasks from API...');
-        
+
         // Fetch both endpoints in parallel
         const [tasksResponse, summaryResponse] = await Promise.all([
             fetch(`${API_BASE_URL}/tasks/${USER_ID}`),
@@ -350,7 +350,7 @@ function showTasksForDate(dateStr, tasksForDay, summaryForDay = []) {
 
     // Show summary/suggested tasks if they aren't already in tasksForDay
     // (Filtering out by name to avoid duplicates if they exist in both)
-    const uniqueSummary = summaryForDay.filter(s => 
+    const uniqueSummary = summaryForDay.filter(s =>
         !tasksForDay.some(t => t.name === s.subtask_name)
     );
 
@@ -522,11 +522,11 @@ function parseActiveTime(timeStr, dateStr) {
 function getTaskValidationStatus(task) {
     if (task.status === 'completed') return { isValid: true, message: 'Completed' };
     if (task.status === 'failed') return { isValid: false, message: 'Window Expired' };
-    
+
     if (!task.time_allocation_date || !task.predictedActiveStart || !task.predictedActiveEnd) {
         return { isValid: false, message: 'No time window allocated' };
     }
-    
+
     const now = new Date();
     const startTime = parseActiveTime(task.predictedActiveStart, task.time_allocation_date);
     const endTime = parseActiveTime(task.predictedActiveEnd, task.time_allocation_date);
@@ -849,7 +849,7 @@ function showNotification(message, type = 'info') {
 
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
-    
+
     // Inline styles for the notification
     const colors = {
         error: '#ef4444',
@@ -857,7 +857,7 @@ function showNotification(message, type = 'info') {
         info: '#3b82f6',
         warning: '#f59e0b'
     };
-    
+
     notification.style.cssText = `
         padding: 0.75rem 1.25rem;
         border-radius: 8px;
@@ -871,10 +871,10 @@ function showNotification(message, type = 'info') {
         margin-bottom: 0.5rem;
         font-family: 'Inter', -apple-system, sans-serif;
     `;
-    
+
     notification.textContent = message;
     container.appendChild(notification);
-    
+
     setTimeout(() => {
         notification.style.opacity = '0';
         notification.style.transform = 'translateX(20px)';

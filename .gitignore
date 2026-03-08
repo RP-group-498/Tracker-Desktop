@@ -51,6 +51,8 @@ coverage/
 # Misc
 *.local
 .cache/
+mcdm_output.json
+backend/data/focusapp.db
 
 # ML Model files (too large for GitHub)
 backend/data/models/
