@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # Batch size limit for Gemini API prompts
 MAX_BATCH_SIZE = 50
 # Interval between runs (seconds), e.g., 4 minutes
-POLL_INTERVAL = 240
+POLL_INTERVAL = 7200
 
 
 class GeminiBatchWorker:

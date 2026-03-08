@@ -3,8 +3,10 @@
 from fastapi import APIRouter
 from app.config import settings
 from app.core.component_registry import ComponentRegistry
-from app.services.user_manager import get_user_manager
 from app.services.mongodb_sync import get_mongodb_sync
+from app.api.deps import get_current_user
+from fastapi import Depends
+from typing import Dict, Any
 
 router = APIRouter()
 
@@ -30,8 +32,7 @@ async def health_check():
     }
 
     # User ID
-    user_manager = get_user_manager()
-    user_id = user_manager.get_user_id() if user_manager else None
+    user_id = None
 
     return {
         "status": "healthy",

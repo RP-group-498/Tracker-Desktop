@@ -13,7 +13,9 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from app.services.mongodb_sync import get_mongodb_sync
-from app.services.user_manager import get_user_manager
+from app.api.deps import get_current_user
+from fastapi import Depends
+from typing import Dict, Any
 from app.components.PatternDetection.procrastination_pipeline import run_analysis_pipeline
 
 router = APIRouter()
@@ -29,11 +31,7 @@ def _get_motor_db():
     return sync._db
 
 
-def _get_user_id() -> str:
-    user_manager = get_user_manager()
-    if not user_manager:
-        raise HTTPException(status_code=500, detail="User manager not initialized")
-    return user_manager.get_user_id()
+
 
 
 # ── Calibration ───────────────────────────────────────────────────────────────
@@ -45,10 +43,13 @@ class CalibrationIn(BaseModel):
 
 
 @router.post("/calibration")
-async def save_calibration(data: CalibrationIn):
+async def save_calibration(
+    data: CalibrationIn,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
     """Save (or update) study preferences to MongoDB user_calibration."""
     motor_db = _get_motor_db()
-    user_id = _get_user_id()
+    user_id = current_user.get("sub")
     doc = {
         "user_id": user_id,
         "focusPeriod": data.focusPeriod,
@@ -65,10 +66,12 @@ async def save_calibration(data: CalibrationIn):
 
 
 @router.get("/calibration")
-async def get_calibration():
+async def get_calibration(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
     """Get the current user's study preferences from MongoDB."""
     motor_db = _get_motor_db()
-    user_id = _get_user_id()
+    user_id = current_user.get("sub")
     doc = await motor_db["user_calibration"].find_one({"user_id": user_id}, {"_id": 0})
     if not doc:
         return {
@@ -84,10 +87,11 @@ async def get_calibration():
 @router.post("/run")
 async def run_pipeline(
     date: Optional[str] = Query(None, description="YYYY-MM-DD (default: today UTC)"),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Run the full analysis pipeline for today (or a specific past date)."""
     motor_db = _get_motor_db()
-    user_id = _get_user_id()
+    user_id = current_user.get("sub")
 
     target_date: Optional[datetime] = None
     if date:
@@ -107,10 +111,11 @@ async def run_pipeline(
 @router.get("/active-time")
 async def get_active_time(
     date: Optional[str] = Query(None, description="YYYY-MM-DD (default: today UTC)"),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Fetch stored active-time result for a given date."""
     motor_db = _get_motor_db()
-    user_id = _get_user_id()
+    user_id = current_user.get("sub")
     date_str = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     doc = await motor_db["active_time"].find_one(
         {"userId": user_id, "date": date_str}, {"_id": 0}
@@ -125,10 +130,11 @@ async def get_active_time(
 @router.get("/procrastination")
 async def get_procrastination(
     date: Optional[str] = Query(None, description="YYYY-MM-DD (default: today UTC)"),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Fetch stored procrastination result for a given date."""
     motor_db = _get_motor_db()
-    user_id = _get_user_id()
+    user_id = current_user.get("sub")
     date_str = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     doc = await motor_db["procrastination_results"].find_one(
         {"userId": user_id, "date": date_str}, {"_id": 0}
@@ -143,11 +149,12 @@ async def get_procrastination(
 @router.get("/predicted-active-time")
 async def get_predicted_active_time(
     date: Optional[str] = Query(None, description="YYYY-MM-DD (default: tomorrow UTC)"),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Fetch the stored predicted active time for tomorrow (or a specific date)."""
     from datetime import timedelta
     motor_db = _get_motor_db()
-    user_id = _get_user_id()
+    user_id = current_user.get("sub")
     date_str = date or (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
     doc = await motor_db["predicted_active_time"].find_one(
         {"userId": user_id, "date": date_str}, {"_id": 0}
@@ -175,10 +182,11 @@ async def get_predicted_active_time(
 @router.get("/history")
 async def get_history(
     days: int = Query(7, description="Number of past days to return"),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Fetch the last N days of procrastination results."""
     motor_db = _get_motor_db()
-    user_id = _get_user_id()
+    user_id = current_user.get("sub")
     cursor = (
         motor_db["procrastination_results"]
         .find({"userId": user_id}, {"_id": 0})
@@ -191,16 +199,17 @@ async def get_history(
 @router.get("/calibration-history")
 async def get_calibration_history(
     days: int = Query(14, description="Number of past days (default 14 = calibration window)"),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Fetch last N days of active_time records for calibration phase graphs."""
     from app.components.PatternDetection.calibration_history import get_calibration_history as _get_hist
     motor_db = _get_motor_db()
-    user_id = _get_user_id()
+    user_id = current_user.get("sub")
     return await _get_hist(motor_db, user_id, days)
 
 
 @router.get("/tasks")
-async def get_tasks():
+async def get_tasks(current_user: Dict[str, Any] = Depends(get_current_user)):
     """Return all tasks from rsearch_task_db tasks collection."""
     from app.components.PatternDetection.mongodb_tasks import _parse_deadline
     motor_db = _get_motor_db()

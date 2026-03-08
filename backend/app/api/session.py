@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.models.activity import BrowserSession, ActivityEvent
 from app.schemas.session import SessionCreate, SessionResponse, SessionUpdate
+from app.api.deps import get_current_user
+from typing import Dict, Any
 
 router = APIRouter()
 
@@ -18,7 +20,8 @@ router = APIRouter()
 @router.post("", response_model=SessionResponse)
 async def create_session(
     session_data: SessionCreate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """
     Create a new browser tracking session.
@@ -30,7 +33,7 @@ async def create_session(
 
     new_session = BrowserSession(
         session_id=session_id,
-        user_id=session_data.user_id,
+        user_id=current_user["sub"],
         start_time=datetime.utcnow(),
         status="active",
     )
@@ -50,11 +53,17 @@ async def create_session(
 
 
 @router.get("/current", response_model=Optional[SessionResponse])
-async def get_current_session(db: AsyncSession = Depends(get_db)):
+async def get_current_session(
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
     """Get the current active session, if any."""
     result = await db.execute(
         select(BrowserSession)
-        .where(BrowserSession.status == "active")
+        .where(
+            BrowserSession.status == "active",
+            BrowserSession.user_id == current_user["sub"]
+        )
         .order_by(BrowserSession.start_time.desc())
         .limit(1)
     )
@@ -83,11 +92,15 @@ async def get_current_session(db: AsyncSession = Depends(get_db)):
 @router.get("/{session_id}", response_model=SessionResponse)
 async def get_session(
     session_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Get a specific session by ID."""
     result = await db.execute(
-        select(BrowserSession).where(BrowserSession.session_id == session_id)
+        select(BrowserSession).where(
+            BrowserSession.session_id == session_id,
+            BrowserSession.user_id == current_user["sub"]
+        )
     )
     session = result.scalar_one_or_none()
 
@@ -115,11 +128,15 @@ async def get_session(
 async def update_session(
     session_id: str,
     update_data: SessionUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Update a session (e.g., pause, resume, end)."""
     result = await db.execute(
-        select(BrowserSession).where(BrowserSession.session_id == session_id)
+        select(BrowserSession).where(
+            BrowserSession.session_id == session_id,
+            BrowserSession.user_id == current_user["sub"]
+        )
     )
     session = result.scalar_one_or_none()
 
@@ -157,11 +174,15 @@ async def update_session(
 @router.post("/{session_id}/end", response_model=SessionResponse)
 async def end_session(
     session_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """End a session."""
     result = await db.execute(
-        select(BrowserSession).where(BrowserSession.session_id == session_id)
+        select(BrowserSession).where(
+            BrowserSession.session_id == session_id,
+            BrowserSession.user_id == current_user["sub"]
+        )
     )
     session = result.scalar_one_or_none()
 

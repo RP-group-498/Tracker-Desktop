@@ -23,6 +23,12 @@ interface ElectronAPI {
     // Session
     getCurrentSession: () => Promise<Session | null>;
 
+    // Auth
+    getAuthToken: () => Promise<string | null>;
+    onAuthSuccess: (callback: (authData: any) => void) => void;
+    startOAuthLogin: () => Promise<void>;
+    clearAuth: () => Promise<void>;
+
     // Activity
     getRecentActivity: (limit?: number) => Promise<Activity[]>;
     getActivityStats: () => Promise<ActivityStats>;
@@ -174,6 +180,14 @@ const electronAPI: ElectronAPI = {
     // Session
     getCurrentSession: () => ipcRenderer.invoke('get-current-session'),
 
+    // Auth
+    getAuthToken: () => ipcRenderer.invoke('get-auth-token'),
+    onAuthSuccess: (callback) => {
+        ipcRenderer.on('auth-success', (_event, authData) => callback(authData));
+    },
+    startOAuthLogin: () => ipcRenderer.invoke('start-oauth-login'),
+    clearAuth: () => ipcRenderer.invoke('clear-auth'),
+
     // Activity
     getRecentActivity: (limit = 50) => ipcRenderer.invoke('get-recent-activity', limit),
     getActivityStats: () => ipcRenderer.invoke('get-activity-stats'),
@@ -198,7 +212,6 @@ const electronAPI: ElectronAPI = {
     addTask: (data) => ipcRenderer.invoke('procrastination:add-task', data),
     getTasks: () => ipcRenderer.invoke('procrastination:get-tasks'),
     deleteTask: (taskId) => ipcRenderer.invoke('procrastination:delete-task', taskId),
-    getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
 
     // Idle Activity Prompt
     submitIdleActivity: (data) => ipcRenderer.invoke('submit-idle-activity', data),
@@ -221,6 +234,7 @@ const electronAPI: ElectronAPI = {
         updateTrayTimer: (label) => ipcRenderer.send('intervention:tray-update', { label }),
         clearTray: () => ipcRenderer.send('intervention:tray-clear'),
         showWindow: () => ipcRenderer.send('intervention:window-show'),
+        getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
     },
 };
 

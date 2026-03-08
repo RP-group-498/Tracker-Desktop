@@ -6,6 +6,8 @@ import CalibrationPage from './pages/CalibrationPage';
 import SmartInterventionPage from './pages/SmartInterventionPage';
 import TaskPrioritizationTab from './pages/TaskPrioritizationTab';
 import CalibrationDetailsPage from './pages/CalibrationDetailsPage';
+import LoginPage from './pages/LoginPage';
+import { useAuth } from './context/AuthContext';
 
 interface AppState {
   pythonRunning: boolean;
@@ -17,12 +19,12 @@ interface AppState {
 type Tab = 'dashboard' | 'tasks' | 'procrastination' | 'calibration' | 'intervention' | 'calibration-details';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'dashboard',      label: 'Dashboard' },
+  { id: 'dashboard', label: 'Dashboard' },
   { id: 'tasks', label: 'Tasks' },
-  { id: 'procrastination',      label: 'Analysis' },
-  { id: 'calibration',      label: 'Settings' },
+  { id: 'procrastination', label: 'Analysis' },
+  { id: 'calibration', label: 'Settings' },
   { id: 'intervention', label: 'Interventions' },
-  { id: 'calibration-details',  label: 'Calibration Details' },
+  { id: 'calibration-details', label: 'Calibration Details' },
 ];
 
 const App: React.FC = () => {
@@ -34,6 +36,8 @@ const App: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+
+  const { isAuthenticated, isLoading: authLoading, logout, user } = useAuth();
 
   useEffect(() => {
     const fetchState = async () => {
@@ -54,7 +58,7 @@ const App: React.FC = () => {
     });
   }, []);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-gray-500">Loading...</div>
@@ -62,12 +66,27 @@ const App: React.FC = () => {
     );
   }
 
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
-      <header className="px-4 pt-4 pb-2">
-        <h1 className="text-xl font-bold text-gray-800">Focus App</h1>
-        <p className="text-sm text-gray-500">Procrastination Detection System</p>
+      <header className="px-4 pt-4 pb-2 flex justify-between items-center">
+        <div>
+          <h1 className="text-xl font-bold text-gray-800">Focus App</h1>
+          <p className="text-sm text-gray-500">Procrastination Detection System</p>
+        </div>
+        <div className="flex items-center gap-4">
+          {user && <span className="text-sm text-gray-600">Logged in as {user.email || 'User'}</span>}
+          <button
+            onClick={logout}
+            className="px-3 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
       </header>
 
       {/* Tab Bar */}
@@ -77,8 +96,8 @@ const App: React.FC = () => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors ${activeTab === tab.id
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
             {tab.label}

@@ -26,6 +26,7 @@ export class PythonBridge extends EventEmitter {
     private healthCheckTimer: NodeJS.Timeout | null = null;
     private restartAttempts = 0;
     private backendDir: string;
+    private authToken: string | null = null;
 
     constructor() {
         super();
@@ -240,15 +241,21 @@ export class PythonBridge extends EventEmitter {
         return new Promise((resolve) => {
             const postData = body ? JSON.stringify(body) : '';
 
+            const headers: http.OutgoingHttpHeaders = {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData),
+            };
+
+            if (this.authToken) {
+                headers['Authorization'] = `Bearer ${this.authToken}`;
+            }
+
             const options: http.RequestOptions = {
                 hostname: '127.0.0.1',
                 port: PYTHON_PORT,
                 path: `/api${path}`,
                 method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Content-Length': Buffer.byteLength(postData),
-                },
+                headers,
                 timeout,
             };
 
@@ -321,6 +328,13 @@ export class PythonBridge extends EventEmitter {
      */
     async getComponentStatus(name: string): Promise<ApiResponse<unknown>> {
         return this.request('GET', `/components/${name}/status`);
+    }
+
+    /**
+     * Set the current authentication token
+     */
+    setAuthToken(token: string | null): void {
+        this.authToken = token;
     }
 
     /**

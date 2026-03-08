@@ -21,12 +21,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
 from app.core.database import init_db, close_db
 from app.components import load_all_components
 from app.api import api_router
-from app.services.user_manager import init_user_manager
 from app.services.mongodb_sync import init_mongodb_sync
 from services.scheduler.active_time_sync import start_scheduler, stop_scheduler
 from app.services.gemini_batch_worker import start_gemini_worker, stop_gemini_worker
@@ -39,10 +39,6 @@ async def lifespan(app: FastAPI):
     print(f"[Backend] Starting {settings.app_name} v{settings.app_version}")
     await init_db()
     load_all_components(settings.component_config)
-
-    # Initialize user manager
-    user_manager = init_user_manager(settings.data_dir)
-    print(f"[Backend] User ID: {user_manager.get_user_id()}")
 
     # Initialize MongoDB sync if configured
     mongo_sync = None
@@ -87,6 +83,9 @@ app = FastAPI(
     description="Backend API for procrastination detection desktop application",
     lifespan=lifespan,
 )
+
+# Add SessionMiddleware for OAuth State
+app.add_middleware(SessionMiddleware, secret_key=settings.jwt_secret_key)
 
 # Configure CORS
 app.add_middleware(

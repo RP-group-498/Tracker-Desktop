@@ -59,8 +59,8 @@ function SummaryCards({ records }: { records: CalibrationDayRecord[] }) {
 
   const mostProductiveDay = withData.length > 0
     ? withData.reduce((best, r) =>
-        (r.fullDayAcademicMinutes ?? 0) > (best.fullDayAcademicMinutes ?? 0) ? r : best
-      )
+      (r.fullDayAcademicMinutes ?? 0) > (best.fullDayAcademicMinutes ?? 0) ? r : best
+    )
     : null;
 
   return (
@@ -272,7 +272,7 @@ const CalibrationDetailsPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await window.electronAPI.getCalibrationHistory(14) as CalibrationDayRecord[];
+      const data = await window.electronAPI.intervention.getCalibrationHistory(14) as CalibrationDayRecord[];
       setRecords(data || []);
     } catch {
       setError('Could not load calibration history. Is MongoDB connected?');

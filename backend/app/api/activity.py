@@ -10,21 +10,22 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.services.user_manager import get_user_manager
 from app.services.mongodb_sync import get_mongodb_sync, MongoDBSyncService
 
 from app.core.database import get_db
 from app.core.component_registry import ComponentRegistry
 from app.models.activity import ActivityEvent, Classification
 from app.schemas.activity import (
-    ActivityEventCreate,
     ActivityEventResponse,
     ActivityBatchRequest,
     ActivityBatchResponse,
     ClassificationResult,
     IdleActivityRequest,
     IdleActivityResponse,
+    ActivityStatsResponse
 )
+from app.api.deps import get_current_user
+from typing import Dict, Any
 
 router = APIRouter()
 
@@ -36,7 +37,8 @@ _db_write_lock = asyncio.Lock()
 @router.post("/batch", response_model=ActivityBatchResponse)
 async def receive_activity_batch(
     batch: ActivityBatchRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """
     Receive a batch of activity events from the browser extension.
@@ -51,9 +53,8 @@ async def receive_activity_batch(
     registry = ComponentRegistry.get_instance()
     classifier = registry.get("classification")
 
-    # Get user ID from the user manager
-    user_manager = get_user_manager()
-    user_id = user_manager.get_user_id() if user_manager else None
+    # Get user ID from current context
+    user_id = current_user.get("sub")
 
     async with _db_write_lock:
         for event_data in batch.events:
@@ -204,12 +205,13 @@ async def receive_activity_batch(
     )
 
 
-@router.get("/recent", response_model=List[ActivityEventResponse])
+@router.get("", response_model=List[ActivityEventResponse])
 async def get_recent_activity(
     limit: int = Query(50, ge=1, le=500),
     session_id: Optional[str] = None,
     domain: Optional[str] = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """
     Get recent activity events.
@@ -217,6 +219,7 @@ async def get_recent_activity(
     Optionally filter by session_id or domain.
     """
     query = select(ActivityEvent).options(selectinload(ActivityEvent.classification))
+    query = query.where(ActivityEvent.user_id == current_user["sub"])
 
     if session_id:
         query = query.where(ActivityEvent.session_id == session_id)
@@ -246,10 +249,11 @@ async def get_recent_activity(
     ]
 
 
-@router.get("/stats")
+@router.get("/stats", response_model=ActivityStatsResponse)
 async def get_activity_stats(
     session_id: Optional[str] = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Get activity statistics."""
     query = select(
@@ -257,6 +261,7 @@ async def get_activity_stats(
         func.sum(ActivityEvent.active_time).label("total_active_time"),
         func.sum(ActivityEvent.idle_time).label("total_idle_time"),
     )
+    query = query.where(ActivityEvent.user_id == current_user["sub"])
 
     if session_id:
         query = query.where(ActivityEvent.session_id == session_id)
@@ -269,7 +274,9 @@ async def get_activity_stats(
         Classification.category,
         func.count(ActivityEvent.id).label("count"),
         func.sum(ActivityEvent.active_time).label("time"),
-    ).join(ActivityEvent.classification).group_by(Classification.category)
+    ).join(ActivityEvent.classification)
+    category_query = category_query.where(ActivityEvent.user_id == current_user["sub"])
+    category_query = category_query.group_by(Classification.category)
 
     if session_id:
         category_query = category_query.where(ActivityEvent.session_id == session_id)
@@ -285,19 +292,17 @@ async def get_activity_stats(
     }
 
 
-@router.get("/user-id")
-async def get_current_user_id():
+@router.get("/user", response_model=dict)
+async def get_current_user_id(current_user: Dict[str, Any] = Depends(get_current_user)):
     """Get the current user ID for this machine."""
-    user_manager = get_user_manager()
-    if not user_manager:
-        raise HTTPException(status_code=500, detail="User manager not initialized")
-    return {"user_id": user_manager.get_user_id()}
+    return {"user_id": current_user["sub"]}
 
 
 @router.post("/idle", response_model=IdleActivityResponse)
 async def submit_idle_activity(
     data: IdleActivityRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """
     Record what the user was doing during an idle period.
@@ -317,9 +322,8 @@ async def submit_idle_activity(
                 custom_label=data.custom_label,
             )
 
-        # Get user ID
-        user_manager = get_user_manager()
-        user_id = user_manager.get_user_id() if user_manager else None
+        # Get user ID from current context
+        user_id = current_user.get("sub")
 
         event_id = str(uuid.uuid4())
         activity_title = data.custom_label or data.activity_id or "idle"
@@ -405,7 +409,8 @@ async def submit_idle_activity(
 @router.get("/{event_id}", response_model=ActivityEventResponse)
 async def get_activity_event(
     event_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Get a specific activity event by ID."""
     result = await db.execute(
