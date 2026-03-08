@@ -4,16 +4,29 @@
  *
  * Registers all intervention-related IPC channels.
  * Call registerInterventionHandlers() from index.ts after pythonBridge is created.
+ *
+ * On Windows, native Notification actions and tray.setTitle() are not supported.
+ * This module uses InterventionPopup (custom BrowserWindow toasts) on Windows
+ * and native Notification on macOS.
  */
 
 import { ipcMain, Notification, BrowserWindow, Tray } from 'electron';
 import { PythonBridge } from './python-bridge';
+import { InterventionPopup } from './intervention-popup';
+
+const isMac = process.platform === 'darwin';
 
 export function registerInterventionHandlers(
     pythonBridge: PythonBridge,
     getMainWindow: () => BrowserWindow | null,
     getTray?: () => Tray | null,
 ): void {
+
+    // Create popup manager for Windows
+    let interventionPopup: InterventionPopup | null = null;
+    if (!isMac) {
+        interventionPopup = new InterventionPopup(getMainWindow);
+    }
 
     // ── API bridge handlers ────────────────────────────────────────────────
 
@@ -68,6 +81,13 @@ export function registerInterventionHandlers(
     // ── OS Notification with action buttons ───────────────────────────────
 
     ipcMain.on('intervention:notify-actions', (_event, data: { title: string; body: string; strategy: string }) => {
+        if (!isMac && interventionPopup) {
+            // Windows: use custom popup window (native Notification has no action buttons)
+            interventionPopup.show(data);
+            return;
+        }
+
+        // macOS: use native Notification with action buttons
         const mainWindow = getMainWindow();
 
         const notification = new Notification({
@@ -100,19 +120,37 @@ export function registerInterventionHandlers(
         notification.show();
     });
 
-    // ── Tray timer (macOS menu bar label) ─────────────────────────────────
+    // ── Tray timer ────────────────────────────────────────────────────────
 
     ipcMain.on('intervention:tray-update', (_event, data: { label: string }) => {
         const tray = getTray?.();
-        if (tray) {
-            tray.setTitle(data.label);
+
+        if (isMac) {
+            // macOS: setTitle() renders text next to tray icon in menu bar
+            if (tray) {
+                tray.setTitle(data.label);
+            }
+        } else {
+            // Windows: setTitle() is a no-op; use popup timer + tooltip instead
+            if (tray) {
+                tray.setToolTip('Focus App - ' + data.label);
+            }
+            interventionPopup?.updateTimer(data.label);
         }
     });
 
     ipcMain.on('intervention:tray-clear', () => {
         const tray = getTray?.();
-        if (tray) {
-            tray.setTitle('');
+
+        if (isMac) {
+            if (tray) {
+                tray.setTitle('');
+            }
+        } else {
+            if (tray) {
+                tray.setToolTip('Focus App');
+            }
+            interventionPopup?.clearTimer();
         }
     });
 

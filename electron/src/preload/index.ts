@@ -70,6 +70,11 @@ interface ElectronAPI {
     }) => Promise<unknown>;
     dismissIdlePrompt: () => Promise<unknown>;
 
+    // Intervention popup (Windows custom popup windows)
+    interventionPopupAction: (data: { strategy: string; action: string }) => void;
+    onInterventionTimerUpdate: (callback: (label: string) => void) => void;
+    onInterventionTimerClear: (callback: () => void) => void;
+
     // Intervention
     intervention: InterventionAPI;
 }
@@ -102,6 +107,13 @@ interface InterventionAPI {
     clearTray: () => void;
     showWindow: () => void;
     getCalibrationHistory: (days?: number) => Promise<unknown>;
+}
+
+// Additional API for intervention popup windows (used by intervention-notification.html)
+interface ElectronPopupAPI {
+    interventionPopupAction: (data: { strategy: string; action: string }) => void;
+    onInterventionTimerUpdate: (callback: (label: string) => void) => void;
+    onInterventionTimerClear: (callback: () => void) => void;
 }
 
 interface AppState {
@@ -217,6 +229,15 @@ const electronAPI: ElectronAPI = {
     submitIdleActivity: (data) => ipcRenderer.invoke('submit-idle-activity', data),
     dismissIdlePrompt: () => ipcRenderer.invoke('dismiss-idle-prompt'),
 
+    // Intervention popup (Windows custom popup windows)
+    interventionPopupAction: (data) => ipcRenderer.send('intervention-popup:action', data),
+    onInterventionTimerUpdate: (callback) => {
+        ipcRenderer.on('intervention-popup:timer-update', (_event, label) => callback(label));
+    },
+    onInterventionTimerClear: (callback) => {
+        ipcRenderer.on('intervention-popup:timer-clear', () => callback());
+    },
+
     // Intervention
     intervention: {
         banditSelect: (req) => ipcRenderer.invoke('intervention:bandit-select', req),
@@ -243,6 +264,6 @@ contextBridge.exposeInMainWorld('electronAPI', electronAPI);
 // Type declaration for renderer
 declare global {
     interface Window {
-        electronAPI: ElectronAPI & { intervention: InterventionAPI };
+        electronAPI: ElectronAPI & { intervention: InterventionAPI } & ElectronPopupAPI;
     }
 }
