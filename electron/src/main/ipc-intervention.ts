@@ -100,6 +100,49 @@ export function registerInterventionHandlers(
         notification.show();
     });
 
+    // ── Pomodoro progress notification (countdown + cancel) ───────────────
+
+    let pomodoroProgressNotification: Notification | null = null;
+    let suppressPomodoroCloseAction = false;
+
+    ipcMain.on('intervention:pomodoro-progress', (_event, data: { timeLeft: string }) => {
+        const mainWindow = getMainWindow();
+
+        // Keep a single OS notification for the running Pomodoro session.
+        // Repeated progress events update the tray timer only.
+        if (pomodoroProgressNotification) {
+            return;
+        }
+
+        pomodoroProgressNotification = new Notification({
+            title: 'Pomodoro In Progress',
+            body: `Started at ${data.timeLeft}. Timer is running in tray. Close to cancel.`,
+            silent: true,
+        });
+
+        pomodoroProgressNotification.on('close', () => {
+            if (!suppressPomodoroCloseAction) {
+                // Treat user dismiss/close as cancel Pomodoro.
+                mainWindow?.webContents.send('notification-action-response', {
+                    strategy: 'pomodoro',
+                    action: 'cancel',
+                });
+            }
+            pomodoroProgressNotification = null;
+            suppressPomodoroCloseAction = false;
+        });
+
+        pomodoroProgressNotification.show();
+    });
+
+    ipcMain.on('intervention:pomodoro-clear-progress', () => {
+        if (pomodoroProgressNotification) {
+            suppressPomodoroCloseAction = true;
+            pomodoroProgressNotification.close();
+            pomodoroProgressNotification = null;
+        }
+    });
+
     // ── Tray timer (macOS menu bar label) ─────────────────────────────────
 
     ipcMain.on('intervention:tray-update', (_event, data: { label: string }) => {

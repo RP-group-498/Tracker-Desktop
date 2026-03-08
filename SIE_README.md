@@ -47,6 +47,8 @@ This plan extends the current working Electron app + FastAPI backend.
 - Handles notification responses:
   - 5-second countdown and “Go” notification
   - Pomodoro timer (25 min) + break timer (5 min)
+    - Countdown shown in **system tray** and **OS notification** (with Cancel button)
+    - Academic activity % during timer determines reward
   - Breathing/Visualization modals
   - Reframe uses saved life goal
 
@@ -223,53 +225,27 @@ Stores:
 
 ---
 
-# API Endpoints
+# Reward Mapping
 
-## POST /bandit/select
-
-Request:
-
-{
-"user_id": "u123",
-"x": [ ...context vector... ],
-"alpha": 1.0
-}
-
-Response:
-
-{
-"action": "POMODORO"
-}
-
----
-
-## POST /bandit/update
-
-Request:
-
-{
-"user_id": "u123",
-"x": [ ...context vector... ],
-"action": "POMODORO",
-"reward": 0.4,
-"button": "NOT_NOW"
-}
-
-Response:
-
-{
-"status": "ok"
-}
-
----
-
-# Reward Mapping (Phase 1)
+## Default (Non-Pomodoro)
 
 Start → 1.0  
 Skip → 0.2  
-Not Now → 0.4
+Not Now → 0.4  
+Cancel → 0.2
 
-Later versions can add behavioral reward.
+## Pomodoro Reward (Academic Activity Based)
+
+When a Pomodoro timer ends (or is cancelled), the system fetches recent `activity_events` from the Pomodoro window and computes the percentage of `active_time` where `classification.category == 'academic'`:
+
+| Academic % | Reward | Outcome |
+|-----------|--------|-------------------------------------------|
+| ≥ 80%     | 1.0    | Success — break timer starts              |
+| 51–79%    | 0.6    | Decent — no break on cancel               |
+| 30–50%    | 0.4    | Partial — needs improvement               |
+| ≤ 20%     | 0.2    | Low — mostly non-academic activity        |
+
+Full natural completion (timer reaches 0:00) always starts the break timer regardless of academic %, but the reward is still academic-based.
 
 ---
 
@@ -437,6 +413,11 @@ After **Skip**
 - Global cooldown → 5 minutes
 - Same action cooldown → 10 minutes
 
+After **Cancel** (Pomodoro aborted mid-session)
+
+- Global cooldown → 5 minutes
+- Same action cooldown → 10 minutes
+
 ---
 
 ## Duplicate Context Suppression
@@ -562,6 +543,59 @@ Exports `MonitoringLoop` class:
 ## Pending
 
 - `idle_ratio` trigger condition is commented out (not yet confirmed)
+
+---
+
+# Step 8 — Pomodoro Improvements (Done)
+
+## Changes Made
+
+### Academic Activity-Based Reward
+
+When a Pomodoro session ends, the system evaluates the user's activity during that session:
+
+1. Fetches up to 200 recent `activity_events` via `getRecentActivity()`
+2. Filters events within the Pomodoro time window (`timestamp >= pomodoroStartTime`)
+3. Sums `active_time` by `classification.category`
+4. Computes `academicPct = academicTime / totalTime`
+5. Maps to reward: ≥80% → 1.0, 30–50% → 0.4, ≤20% → 0.2, else → 0.6
+
+### Cancel / Abort
+
+Users can cancel a running Pomodoro via the progress notification's **Cancel Pomodoro** button.
+
+On cancel:
+- Timer stops, tray clears, progress notification dismissed
+- Academic reward is still computed from the partial session
+- If academic % ≥ 80%: treated as early success, break timer starts
+- Otherwise: cancel cooldown applied (5 min global, 10 min action)
+
+### Countdown in Notifications
+
+While the Pomodoro timer runs:
+- **System tray** shows `MM:SS` countdown (every second)
+- **OS notification** shows "Pomodoro In Progress — MM:SS remaining" (every 15 seconds)
+- The notification includes a **Cancel Pomodoro** action button
+- Works on both macOS and Windows
+
+## Modified Files
+
+### `SmartInterventionPage.tsx`
+- Added `computeAcademicReward()` — fetches activity events, computes academic %
+- Added `finishPomodoro(wasFullCompletion)` — handles reward + break logic
+- Added `cancelPomodoro()` — cancel handler
+- Rewrote `startPomodoroTimer()` — tracks start time, sends progress notifications
+- Updated notification response handler for `cancel` action
+
+### `ipc-intervention.ts`
+- Added `intervention:pomodoro-progress` IPC — creates progress notification with Cancel button
+- Added `intervention:pomodoro-clear-progress` IPC — dismisses progress notification
+
+### `preload/index.ts`
+- Added `updatePomodoroProgress(timeLeft)` and `clearPomodoroProgress()` to InterventionAPI
+
+### `cooldownManager.ts`
+- Added `cancel` response type to `applyCooldown()` (same rules as `skip`)
 
 
 

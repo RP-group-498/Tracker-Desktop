@@ -7,7 +7,7 @@ import { CooldownManager } from '../utils/cooldownManager';
 
 Chart.register(...registerables);
 
-const BANDIT_USER_ID = '124804d8-40e0-4f90-af05-eeea5c2d7550';
+const BANDIT_USER_ID = 'u123';
 
 const ACTION_TO_STRATEGY: Record<string, string> = {
     FIVE_SECOND_RULE: '5_second_rule',
@@ -215,6 +215,8 @@ const SmartInterventionPage: React.FC = () => {
     const pomodoroIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const breakIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const fiveSecIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const pomodoroStartTimeRef = useRef<number>(0);
+    const [pomodoroActive, setPomodoroActive] = useState(false);
 
     // ── API helpers ───────────────────────────────────────────────────────
 
@@ -372,30 +374,12 @@ const SmartInterventionPage: React.FC = () => {
         }, 1000);
     }, []);
 
-    const startPomodoroTimer = useCallback(() => {
-        let timeLeft = 25 * 60;
-        const update = () => {
-            const m = Math.floor(timeLeft / 60);
-            const s = timeLeft % 60;
-            window.electronAPI.intervention.updateTrayTimer(`${m}:${s.toString().padStart(2, '0')}`);
-        };
-        update();
-        pomodoroIntervalRef.current = setInterval(() => {
-            timeLeft--;
-            update();
-            if (timeLeft <= 0) {
-                clearInterval(pomodoroIntervalRef.current!);
-                window.electronAPI.intervention.clearTray();
-                startBreakTimer();
-            }
-        }, 1000);
-    }, [startBreakTimer]);
-
     // ── Bandit helpers ────────────────────────────────────────────────────
 
     const computeReward = (button: string): number => {
         if (button === 'start') return 1.0;
         if (button === 'not_now' || button === 'reject') return 0.4;
+        if (button === 'cancel') return 0.2;
         return 0.2;
     };
 
@@ -419,6 +403,135 @@ const SmartInterventionPage: React.FC = () => {
             console.warn('[Bandit] Update error:', err);
         }
     }, []);
+
+    // ── Pomodoro academic reward + timer ──────────────────────────────────
+
+    const POMODORO_TOTAL_SECONDS = 25 * 60;
+    const POMODORO_80_PERCENT = Math.floor(POMODORO_TOTAL_SECONDS * 0.8); // 20 min
+
+    /**
+     * Compute the academic-activity reward based on activity events
+     * during the Pomodoro window.
+     *   ≥ 80% academic → 1.0  (success)
+     *   30–50% academic → 0.4  (partial)
+     *   ≤ 20% academic → 0.2  (low)
+     *   else (51-79%) → 0.6   (decent but not full)
+     */
+    const computeAcademicReward = useCallback(async (): Promise<number> => {
+        try {
+            const events = await window.electronAPI.getRecentActivity(200) as Array<{
+                timestamp: string;
+                active_time: number;
+                classification?: { category: string };
+            }>;
+
+            const pomodoroStart = pomodoroStartTimeRef.current;
+            if (!pomodoroStart || events.length === 0) return 0.2;
+
+            // Filter events within the Pomodoro window
+            const windowEvents = events.filter(e => {
+                const t = new Date(e.timestamp).getTime();
+                return t >= pomodoroStart;
+            });
+
+            if (windowEvents.length === 0) return 0.2;
+
+            let academicTime = 0;
+            let totalTime = 0;
+            for (const e of windowEvents) {
+                const time = e.active_time ?? 0;
+                totalTime += time;
+                if (e.classification?.category === 'academic') {
+                    academicTime += time;
+                }
+            }
+
+            const academicPct = totalTime > 0 ? academicTime / totalTime : 0;
+            console.log(`[Pomodoro] Academic activity: ${(academicPct * 100).toFixed(1)}% (academic=${academicTime}ms, total=${totalTime}ms)`);
+
+            if (academicPct >= 0.8) return 1.0;
+            if (academicPct >= 0.3 && academicPct <= 0.5) return 0.4;
+            if (academicPct <= 0.2) return 0.2;
+            return 0.6; // 51-79%
+        } catch (err) {
+            console.warn('[Pomodoro] Failed to compute academic reward:', err);
+            return 0.2;
+        }
+    }, []);
+
+    const finishPomodoro = useCallback(async (wasFullCompletion: boolean) => {
+        // Clear timers
+        if (pomodoroIntervalRef.current) clearInterval(pomodoroIntervalRef.current);
+        pomodoroIntervalRef.current = null;
+        setPomodoroActive(false);
+
+        // Clear UI
+        window.electronAPI.intervention.clearTray();
+        window.electronAPI.intervention.clearPomodoroProgress();
+
+        // Compute academic-based reward
+        const reward = await computeAcademicReward();
+
+        // Send bandit update if we have pending context
+        if (pendingBanditRef.current && pendingBanditRef.current.action === 'POMODORO') {
+            const buttonLabel = wasFullCompletion ? 'completed' : (reward >= 1.0 ? 'completed_early' : 'cancel');
+            await sendBanditUpdate(
+                pendingBanditRef.current.action,
+                pendingBanditRef.current.vector,
+                reward,
+                buttonLabel,
+            );
+        }
+
+        const elapsed = Date.now() - pomodoroStartTimeRef.current;
+        const elapsedSecs = Math.floor(elapsed / 1000);
+        console.log(`[Pomodoro] Finished — elapsed=${elapsedSecs}s, fullCompletion=${wasFullCompletion}, reward=${reward}`);
+
+        // Start break timer if successful (full completion or ≥80% academic)
+        if (wasFullCompletion || reward >= 1.0) {
+            startBreakTimer();
+        } else {
+            // Apply cancel cooldown
+            cooldownRef.current.applyCooldown('POMODORO', 'cancel');
+        }
+
+        pomodoroStartTimeRef.current = 0;
+    }, [computeAcademicReward, sendBanditUpdate, startBreakTimer]);
+
+    const cancelPomodoro = useCallback(() => {
+        finishPomodoro(false);
+    }, [finishPomodoro]);
+
+    const startPomodoroTimer = useCallback(() => {
+        let timeLeft = POMODORO_TOTAL_SECONDS;
+        pomodoroStartTimeRef.current = Date.now();
+        setPomodoroActive(true);
+
+        const formatTime = (secs: number) => {
+            const m = Math.floor(secs / 60);
+            const s = secs % 60;
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        };
+
+        // Update tray
+        const update = () => {
+            window.electronAPI.intervention.updateTrayTimer(formatTime(timeLeft));
+        };
+        update();
+
+        // Send initial progress notification
+        window.electronAPI.intervention.updatePomodoroProgress(formatTime(timeLeft));
+
+        pomodoroIntervalRef.current = setInterval(() => {
+            timeLeft--;
+            update();
+            if (timeLeft <= 0) {
+                finishPomodoro(true);
+            }
+        }, 1000);
+    }, [finishPomodoro]);
+
+    // ── Notification trigger ───────────────────────────────────────────────
 
     const triggerBanditNotification = useCallback(async (action: string, vector: number[]) => {
         const strategy = ACTION_TO_STRATEGY[action];
@@ -570,39 +683,51 @@ const SmartInterventionPage: React.FC = () => {
         window.electronAPI.intervention.onNotificationResponse(async ({ strategy, action }) => {
             const logAction = action === 'reject' ? 'not_now' : action;
 
+            // Handle Pomodoro cancel from progress notification
+            if (strategy === 'pomodoro' && logAction === 'cancel') {
+                cancelPomodoro();
+                return;
+            }
+
             if (pendingBanditRef.current && ACTION_TO_STRATEGY[pendingBanditRef.current.action] === strategy) {
-                const reward = computeReward(logAction);
-                await sendBanditUpdate(
-                    pendingBanditRef.current.action,
-                    pendingBanditRef.current.vector,
-                    reward,
-                    logAction,
-                );
+                // Don't send bandit update for pomodoro start here — it's handled by finishPomodoro
+                if (!(strategy === 'pomodoro' && logAction === 'start')) {
+                    const reward = computeReward(logAction);
+                    await sendBanditUpdate(
+                        pendingBanditRef.current.action,
+                        pendingBanditRef.current.vector,
+                        reward,
+                        logAction,
+                    );
+                    pendingBanditRef.current = null;
+                }
 
-                // Apply cooldown from the monitoring loop
-                const banditAction = pendingBanditRef.current.action;
-                cooldownRef.current.applyCooldown(
-                    banditAction,
-                    logAction as 'start' | 'skip' | 'not_now',
-                );
+                // Apply cooldown (except for pomodoro start — cooldown handled by finishPomodoro)
+                if (!(strategy === 'pomodoro' && logAction === 'start')) {
+                    const banditAction = pendingBanditRef.current?.action ?? strategy.toUpperCase();
+                    cooldownRef.current.applyCooldown(
+                        banditAction,
+                        logAction as 'start' | 'skip' | 'not_now' | 'cancel',
+                    );
+                    pendingBanditRef.current = null;
+                }
 
-                pendingBanditRef.current = null;
                 fetchAndRenderChart(filterSeconds);
             }
 
-            if (strategy === 'pomodoro' && action === 'start') {
+            if (strategy === 'pomodoro' && logAction === 'start') {
                 startPomodoroTimer();
-            } else if (strategy === '5_second_rule' && action === 'start') {
+            } else if (strategy === '5_second_rule' && logAction === 'start') {
                 startFiveSecondCountdown();
-            } else if (strategy === 'breathing' && action === 'start') {
+            } else if (strategy === 'breathing' && logAction === 'start') {
                 window.electronAPI.intervention.showWindow();
                 setShowBreathing(true);
-            } else if (strategy === 'visualization' && action === 'start') {
+            } else if (strategy === 'visualization' && logAction === 'start') {
                 window.electronAPI.intervention.showWindow();
                 setShowVisualization(true);
             }
         });
-    }, [sendBanditUpdate, fetchAndRenderChart, filterSeconds, startPomodoroTimer, startFiveSecondCountdown]);
+    }, [sendBanditUpdate, fetchAndRenderChart, filterSeconds, startPomodoroTimer, startFiveSecondCountdown, cancelPomodoro]);
 
     // ── Mount: load goal + initial log + chart ────────────────────────────
 
@@ -636,6 +761,7 @@ const SmartInterventionPage: React.FC = () => {
             if (fiveSecIntervalRef.current) clearInterval(fiveSecIntervalRef.current);
             if (chartInstanceRef.current) { chartInstanceRef.current.destroy(); chartInstanceRef.current = null; }
             if (monitorRef.current?.isRunning()) monitorRef.current.stop();
+            window.electronAPI.intervention.clearPomodoroProgress();
         };
     }, []);
 

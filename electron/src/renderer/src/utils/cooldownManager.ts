@@ -74,7 +74,7 @@ export class CooldownManager {
      * @param action  The bandit action that was shown (e.g. 'POMODORO')
      * @param response  The user's button press: 'start' | 'skip' | 'not_now'
      */
-    applyCooldown(action: string, response: 'start' | 'skip' | 'not_now'): void {
+    applyCooldown(action: string, response: 'start' | 'skip' | 'not_now' | 'cancel'): void {
         const now = Date.now();
         this._activeIntervention = null;
 
@@ -96,6 +96,7 @@ export class CooldownManager {
                 break;
 
             case 'skip':
+            case 'cancel':
                 this.globalCooldownUntil = now + SKIP_GLOBAL_MS;
                 this.actionCooldownUntil[action] = now + SKIP_ACTION_MS;
                 break;

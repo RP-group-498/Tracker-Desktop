@@ -94,6 +94,8 @@ interface InterventionAPI {
     onNotificationResponse: (callback: (data: { strategy: string; action: string }) => void) => void;
     updateTrayTimer: (label: string) => void;
     clearTray: () => void;
+    updatePomodoroProgress: (timeLeft: string) => void;
+    clearPomodoroProgress: () => void;
     showWindow: () => void;
 }
 
@@ -218,6 +220,8 @@ const electronAPI: ElectronAPI = {
         },
         updateTrayTimer: (label) => ipcRenderer.send('intervention:tray-update', { label }),
         clearTray: () => ipcRenderer.send('intervention:tray-clear'),
+        updatePomodoroProgress: (timeLeft) => ipcRenderer.send('intervention:pomodoro-progress', { timeLeft }),
+        clearPomodoroProgress: () => ipcRenderer.send('intervention:pomodoro-clear-progress'),
         showWindow: () => ipcRenderer.send('intervention:window-show'),
     },
 };
