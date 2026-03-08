@@ -95,6 +95,7 @@ interface InterventionAPI {
     updateTrayTimer: (label: string) => void;
     clearTray: () => void;
     showWindow: () => void;
+    getCalibrationHistory: (days?: number) => Promise<unknown>;
 }
 
 interface AppState {
@@ -197,6 +198,7 @@ const electronAPI: ElectronAPI = {
     addTask: (data) => ipcRenderer.invoke('procrastination:add-task', data),
     getTasks: () => ipcRenderer.invoke('procrastination:get-tasks'),
     deleteTask: (taskId) => ipcRenderer.invoke('procrastination:delete-task', taskId),
+    getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
 
     // Idle Activity Prompt
     submitIdleActivity: (data) => ipcRenderer.invoke('submit-idle-activity', data),

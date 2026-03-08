@@ -1,4 +1,5 @@
 """
+/procastination_pattern/procrast_pipeline.py
 Orchestrator: wires together readers, pure computation, and DB writes.
 """
 
@@ -50,7 +51,7 @@ async def run_analysis_pipeline(
     # Fetch all inputs
     records = await _fetch_behavior_records(motor_db, user_id, start_dt, end_dt)
     calibration = await _get_calibration(motor_db, user_id)
-    near_tasks = await _get_near_deadline_tasks(motor_db, user_id)
+    near_tasks = await _get_near_deadline_tasks(motor_db)
     history = await _get_active_time_history(motor_db, user_id, 7)
 
     # Compute

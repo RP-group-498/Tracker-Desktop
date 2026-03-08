@@ -188,22 +188,34 @@ async def get_history(
     return await cursor.to_list(length=None)
 
 
-@router.get("/tasks")
-async def get_tasks():
-    """Return all tasks for the current user from MongoDB Task collection."""
+@router.get("/calibration-history")
+async def get_calibration_history(
+    days: int = Query(14, description="Number of past days (default 14 = calibration window)"),
+):
+    """Fetch last N days of active_time records for calibration phase graphs."""
+    from app.components.PatternDetection.calibration_history import get_calibration_history as _get_hist
     motor_db = _get_motor_db()
     user_id = _get_user_id()
-    cursor = motor_db["Task"].find(
-        {"userId": user_id},
-        {"_id": 0, "task_name": 1, "name": 1, "deadline": 1, "priority": 1},
+    return await _get_hist(motor_db, user_id, days)
+
+
+@router.get("/tasks")
+async def get_tasks():
+    """Return all tasks from rsearch_task_db tasks collection."""
+    from app.components.PatternDetection.mongodb_tasks import _parse_deadline
+    motor_db = _get_motor_db()
+    cursor = motor_db["tasks"].find(
+        {},
+        {"_id": 0, "task_name": 1, "metrics": 1, "priority": 1},
     )
     docs = await cursor.to_list(length=None)
     result = []
     for doc in docs:
-        deadline = doc.get("deadline")
+        metrics = doc.get("metrics") or {}
+        deadline_date = _parse_deadline(metrics.get("deadline"))
         result.append({
-            "task_name": doc.get("task_name") or doc.get("name", "Unnamed task"),
-            "deadline": deadline.isoformat() if isinstance(deadline, datetime) else deadline,
+            "task_name": doc.get("task_name", "Unnamed task"),
+            "deadline": deadline_date.isoformat() if deadline_date else None,
             "priority": doc.get("priority", "Medium"),
         })
     return result

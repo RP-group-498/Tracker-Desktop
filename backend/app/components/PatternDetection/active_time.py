@@ -10,7 +10,6 @@ def _minutes_to_time(m: int) -> str:
     mins = m % 60
     return datetime(2000, 1, 1, h, mins).strftime("%I:%M %p")
 
-
 def _severity_from_ratio(r: float) -> str:
     if r < 0.3:
         return "low"
@@ -20,7 +19,6 @@ def _severity_from_ratio(r: float) -> str:
         return "warning"
     else:
         return "high"
-
 
 def _detect_active_time_pure(
     records: list[BehaviorRecord],

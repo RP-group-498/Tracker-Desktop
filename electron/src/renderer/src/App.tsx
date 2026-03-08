@@ -5,6 +5,7 @@ import ProcrastinationPage from './pages/ProcrastinationPage';
 import CalibrationPage from './pages/CalibrationPage';
 import SmartInterventionPage from './pages/SmartInterventionPage';
 import TaskPrioritizationTab from './pages/TaskPrioritizationTab';
+import CalibrationDetailsPage from './pages/CalibrationDetailsPage';
 
 interface AppState {
   pythonRunning: boolean;
@@ -13,14 +14,15 @@ interface AppState {
   eventCount: number;
 }
 
-type Tab = 'dashboard' | 'tasks' | 'procrastination' | 'calibration' | 'intervention';
+type Tab = 'dashboard' | 'tasks' | 'procrastination' | 'calibration' | 'intervention' | 'calibration-details';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'dashboard',      label: 'Dashboard' },
   { id: 'tasks', label: 'Tasks' },
-  { id: 'procrastination', label: 'Analysis' },
-  { id: 'calibration', label: 'Settings' },
+  { id: 'procrastination',      label: 'Analysis' },
+  { id: 'calibration',      label: 'Settings' },
   { id: 'intervention', label: 'Interventions' },
+  { id: 'calibration-details',  label: 'Calibration Details' },
 ];
 
 const App: React.FC = () => {
@@ -105,6 +107,7 @@ const App: React.FC = () => {
         {activeTab === 'procrastination' && <ProcrastinationPage />}
         {activeTab === 'calibration' && <CalibrationPage />}
         {activeTab === 'intervention' && <SmartInterventionPage />}
+        {activeTab === 'calibration-details' && <CalibrationDetailsPage />}
       </main>
 
       {/* Footer */}

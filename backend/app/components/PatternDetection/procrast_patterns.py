@@ -1,3 +1,5 @@
+#procastination_pattern/procrast_patterns.py
+
 from .constants import WEIGHTS, TASK_SWITCH_DEVIATION, INACTIVITY_THRESHOLD
 from .active_time import _severity_from_ratio
 

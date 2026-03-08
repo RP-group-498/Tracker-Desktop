@@ -120,7 +120,6 @@ async def _fetch_behavior_records(
 
     return records
 
-
 async def _get_calibration(motor_db: AsyncIOMotorDatabase, user_id: str) -> dict:
     """Return user_calibration doc or sensible defaults."""
     doc = await motor_db["user_calibration"].find_one({"user_id": user_id}, {"_id": 0})
@@ -132,14 +131,11 @@ async def _get_calibration(motor_db: AsyncIOMotorDatabase, user_id: str) -> dict
         "studyDays": ["Mon", "Tue", "Wed", "Thu", "Fri"],
     }
 
-
 async def _get_near_deadline_tasks(
-    motor_db: AsyncIOMotorDatabase, user_id: str
+    motor_db: AsyncIOMotorDatabase,
 ) -> list[dict]:
-    """Thin wrapper — delegates to shared mongodb_tasks helper."""
     from .mongodb_tasks import get_near_deadline_tasks
-    return await get_near_deadline_tasks(motor_db, user_id)
-
+    return await get_near_deadline_tasks(motor_db)
 
 async def _get_active_time_history(
     motor_db: AsyncIOMotorDatabase, user_id: str, n_days: int
@@ -152,7 +148,6 @@ async def _get_active_time_history(
         .limit(n_days)
     )
     return await cursor.to_list(length=None)
-
 
 async def _fetch_stored_prediction(
     motor_db: AsyncIOMotorDatabase, user_id: str

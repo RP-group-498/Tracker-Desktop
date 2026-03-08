@@ -1,4 +1,4 @@
-# Focus period → (start_hour, end_hour) in 24-h format
+#procastination_pattern/constants.py
 FOCUS_WINDOWS = {
     "morning":   (6,  12),
     "afternoon": (12, 16),

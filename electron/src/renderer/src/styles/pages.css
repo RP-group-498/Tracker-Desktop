@@ -318,6 +318,225 @@ body {
 .mb-2 { margin-bottom: 1rem; }
 .mb-3 { margin-bottom: 1.5rem; }
 
+/* ── Calibration History Charts ────────────────────────────────────────────── */
+
+.calib-history-section {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+}
+
+.calib-history-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.calib-history-subtitle {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.calib-chart {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px 8px;
+}
+
+.calib-chart-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.calib-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.calib-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.calib-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.calib-bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    min-width: 20px;
+    max-width: 40px;
+}
+
+.calib-bar-wrap {
+    height: 80px;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+/* stacked bar: reversed flex so bottom = first item visually */
+.calib-bar-stack {
+    display: flex;
+    flex-direction: column-reverse;
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    overflow: hidden;
+}
+
+.calib-bar-fill-wrap {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+}
+
+.calib-bar-fill {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    transition: height 0.3s ease;
+    min-height: 2px;
+}
+
+.calib-bar-empty {
+    width: 100%;
+    height: 4px;
+    background: var(--border-color);
+    opacity: 0.5;
+    border-radius: 2px;
+}
+
+.calib-bar-label {
+    font-size: 0.55rem;
+    color: var(--text-secondary);
+    margin-top: 3px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* ── Calibration Details: Summary Cards ─────────────────────────────────── */
+
+.calib-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.calib-summary-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.calib-summary-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.calib-summary-unit {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-left: 2px;
+}
+
+.calib-summary-label {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* ── Status Badges ───────────────────────────────────────────────────────── */
+
+.calib-status-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.calib-status-ok {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.calib-status-low {
+    background: rgba(249, 115, 22, 0.15);
+    color: #ea580c;
+    border: 1px solid rgba(249, 115, 22, 0.4);
+}
+
+.calib-status-no-logs {
+    background: rgba(156, 163, 175, 0.2);
+    color: #6b7280;
+    border: 1px solid rgba(156, 163, 175, 0.4);
+}
+
+/* ── Daily Detail Table ──────────────────────────────────────────────────── */
+
+.calib-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.65rem;
+    margin-top: 6px;
+}
+
+.calib-detail-table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.calib-detail-table td {
+    padding: 4px 6px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.calib-row-low td {
+    opacity: 0.8;
+}
+
+.calib-row-no-logs td {
+    opacity: 0.5;
+    font-style: italic;
+}
+
 /* Scrollbar Styles */
 ::-webkit-scrollbar {
     width: 10px;

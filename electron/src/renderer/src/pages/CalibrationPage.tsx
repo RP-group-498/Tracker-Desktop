@@ -39,8 +39,14 @@ const CalibrationPage: React.FC = () => {
 
   async function loadCalibration() {
     try {
-      const data = await window.electronAPI.getProcrastinationCalibration() as CalibrationData | null;
-      if (data) setCalib(data);
+      const raw = await window.electronAPI.getProcrastinationCalibration() as Record<string, unknown> | null;
+      if (raw && (raw.focusPeriod || raw.focus_period)) {
+        setCalib({
+          focus_period: (raw.focusPeriod ?? raw.focus_period ?? 'morning') as string,
+          study_days: (raw.studyDays ?? raw.study_days ?? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']) as string[],
+          study_duration_hours: (raw.studyDuration ?? raw.study_duration_hours ?? 2) as number,
+        });
+      }
     } catch {
       // not yet saved, use defaults
     }
@@ -68,10 +74,14 @@ const CalibrationPage: React.FC = () => {
     setSaving(true);
     setError(null);
     try {
-      await window.electronAPI.saveProcrastinationCalibration(calib);
+      await window.electronAPI.saveProcrastinationCalibration({
+        focusPeriod: calib.focus_period,
+        studyDays: calib.study_days,
+        studyDuration: calib.study_duration_hours,
+      });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
+    } catch {
       setError('Failed to save. Is the backend running?');
     } finally {
       setSaving(false);
@@ -134,7 +144,7 @@ const CalibrationPage: React.FC = () => {
               key={day}
               onClick={() => toggleDay(day)}
               className={`w-10 h-8 rounded text-xs border ${
-                calib.study_days.includes(day)
+                calib.study_days?.includes(day)
                   ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
@@ -177,6 +187,53 @@ const CalibrationPage: React.FC = () => {
       {error && (
         <p className="text-xs text-red-500 bg-red-50 px-2 py-1 rounded">{error}</p>
       )}
+
+      {/* Tasks */}
+      <div className="border-t border-gray-200 pt-4">
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Tasks</h3>
+        <div className="flex gap-2 mb-2">
+          <input
+            type="text"
+            placeholder="Task name"
+            value={newTask.task_name}
+            onChange={e => setNewTask(prev => ({ ...prev, task_name: e.target.value }))}
+            className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs"
+          />
+          <input
+            placeholder="Task name"
+            type="date"
+            value={newTask.deadline}
+            onChange={e => setNewTask(prev => ({ ...prev, deadline: e.target.value }))}
+            className="px-2 py-1 border border-gray-300 rounded text-xs"
+          />
+          <button
+            onClick={addTask}
+            className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+          >
+            Add
+          </button>
+        </div>
+        {tasks.length === 0 ? (
+          <p className="text-xs text-gray-400">No tasks yet.</p>
+        ) : (
+          <ul className="space-y-1">
+            {tasks.map(t => (
+              <li key={t.id} className="flex justify-between items-center text-xs bg-white border border-gray-200 rounded px-2 py-1">
+                <span className="text-gray-700">{t.task_name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400">{new Date(t.deadline).toLocaleDateString()}</span>
+                  <button
+                    onClick={() => removeTask(t.id)}
+                    className="text-red-400 hover:text-red-600 text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };
