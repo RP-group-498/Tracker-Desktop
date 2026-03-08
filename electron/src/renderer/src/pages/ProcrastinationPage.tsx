@@ -130,26 +130,34 @@ const ProcrastinationPage: React.FC = () => {
   const academicPct = totalTracked > 0 ? Math.round((at.academicMinutes / totalTracked) * 100) : 0;
 
   // Goal completion: academic / expectedStudyMinutes
-const rawGoalPct =
-  at.expectedStudyMinutes > 0
-    ? Math.round((at.fullDayAcademicMinutes / at.expectedStudyMinutes) * 100)
-    : 0;
+  const rawGoalPct =
+    at.expectedStudyMinutes > 0
+      ? Math.round((at.fullDayAcademicMinutes / at.expectedStudyMinutes) * 100)
+      : 0;
 
-      const goalPct = Math.min(rawGoalPct, 100);
+  const goalPct = Math.min(rawGoalPct, 100);
 
-      const goalMinsRemaining = Math.max(
-        0,
-        at.expectedStudyMinutes - at.fullDayAcademicMinutes
-      );
+  const goalMinsRemaining = Math.max(
+    0,
+    at.expectedStudyMinutes - at.fullDayAcademicMinutes
+  );
 
   const dominantSeverity = report.patterns[0]?.severity ?? report.level ?? 'none';
+
+  // Format today's date nicely
+  const todayFormatted = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
 
   return (
     <div className="procrastination-page">
 
-      {/* Header */}
+      {/* Header — centered title + date */}
       <div className="page-header">
-        <h1 className="page-title">APDIS Daily Output</h1>
+        <div className="page-header-center">
+          <h1 className="page-title">APDIS Daily Output</h1>
+          <p className="page-date">{todayFormatted}</p>
+        </div>
         <button onClick={loadReport} className="recalculate-btn">Recalculate</button>
       </div>
 
@@ -219,21 +227,46 @@ const rawGoalPct =
           )}
         </div>
 
-        {/* ACADEMIC TIME — col 1, row 2 */}
-        <div className="card academic-time-card">
-          <p className="section-label">Academic Time</p>
-          <div className="number-row">
-            <span className="big-number color-dark">{at.academicMinutes}</span>
-            <span className="unit-text">mins</span>
-          </div>
-        </div>
+        {/* PROGRESS IN THE FOCUS PERIOD — col 1-2, rows 2-3 */}
+        <div className="focus-period-section">
+          <p className="focus-period-title">Progress in the Focus Period</p>
+          <div className="focus-period-grid">
 
-        {/* NON ACADEMIC TIME — col 2, row 2 */}
-        <div className="card non-academic-card">
-          <p className="section-label">Non Academic Time</p>
-          <div className="number-row">
-            <span className="big-number color-dark">{at.nonAcademicMinutes}</span>
-            <span className="unit-text">mins</span>
+            {/* ACADEMIC TIME */}
+            <div className="card focus-card">
+              <p className="section-label focus-section-label">Academic Time</p>
+              <div className="focus-number-wrap">
+                <span className="big-number color-dark">{at.academicMinutes}</span>
+                <span className="unit-text">mins</span>
+              </div>
+            </div>
+
+            {/* NON ACADEMIC TIME */}
+            <div className="card focus-card">
+              <p className="section-label focus-section-label">Non Academic Time</p>
+              <div className="focus-number-wrap">
+                <span className="big-number color-dark">{at.nonAcademicMinutes}</span>
+                <span className="unit-text">mins</span>
+              </div>
+            </div>
+
+            {/* STUDY EFFICIENCY */}
+            <div className="card focus-card">
+              <p className="section-label focus-section-label">Study Efficiency</p>
+              <div className="focus-number-wrap">
+                <span className={`big-number ${efficiencyClass(academicPct)}`}>{academicPct}</span>
+                <span className={`efficiency-pct ${efficiencyClass(academicPct)}`}>%</span>
+              </div>
+            </div>
+
+            {/* APP SWITCHES */}
+            <div className="card focus-card">
+              <p className="section-label focus-section-label">App Switches</p>
+              <div className="focus-number-wrap">
+                <span className="big-number color-dark">{at.appSwitches}</span>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -278,21 +311,6 @@ const rawGoalPct =
           </div>
         </div>
 
-        {/* STUDY EFFICIENCY (focus efficiency) */}
-        <div className="card efficiency-card">
-          <p className="section-label">Study Efficiency</p>
-          <div className="number-row">
-            <span className={`big-number ${efficiencyClass(academicPct)}`}>{academicPct}</span>
-            <span className={`efficiency-pct ${efficiencyClass(academicPct)}`}>%</span>
-          </div>
-        </div>
-
-        {/* APP SWITCHES */}
-        <div className="card app-switches-card">
-          <p className="section-label">App Switches</p>
-          <span className="big-number color-dark">{at.appSwitches}</span>
-        </div>
-
         {/* TODAY SUMMARY — row 4, spans full width */}
         <div className="card today-summary-card">
           <p className="section-label">
@@ -304,19 +322,17 @@ const rawGoalPct =
               <span className="today-stat-value color-green">{at.fullDayAcademicMinutes}</span>
               <span className="today-stat-unit">mins</span>
               <p className="today-stat-label">Academic (Full Day)</p>
-              <p className="today-stat-sub">{at.fullDayAcademicAppSwitches} switches</p>
             </div>
             <div className="today-stat">
               <span className="today-stat-value color-red">{at.fullDayNonAcademicMinutes}</span>
               <span className="today-stat-unit">mins</span>
               <p className="today-stat-label">Non-Academic (Full Day)</p>
-              <p className="today-stat-sub">{at.fullDayNonAcademicAppSwitches} switches</p>
+              
             </div>
             <div className="today-stat">
               <span className="today-stat-value color-orange">{at.fullDayProductivityMinutes}</span>
               <span className="today-stat-unit">mins</span>
               <p className="today-stat-label">Productivity (Full Day)</p>
-              <p className="today-stat-sub">{at.fullDayProductivityAppSwitches} switches</p>
             </div>
             <div className="today-stat">
               <span className="today-stat-value color-dark">{at.fullDayTotalAppSwitches}</span>

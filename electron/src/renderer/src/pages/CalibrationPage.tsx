@@ -9,32 +9,18 @@ interface CalibrationData {
   study_duration_hours: number;
 }
 
-interface TaskInput {
-  task_name: string;
-  deadline: string;
-}
-
-interface Task {
-  id: number;
-  task_name: string;
-  deadline: string;
-}
-
 const CalibrationPage: React.FC = () => {
   const [calib, setCalib] = useState<CalibrationData>({
     focus_period: 'morning',
     study_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     study_duration_hours: 2,
   });
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [newTask, setNewTask] = useState<TaskInput>({ task_name: '', deadline: '' });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadCalibration();
-    loadTasks();
   }, []);
 
   async function loadCalibration() {
@@ -49,15 +35,6 @@ const CalibrationPage: React.FC = () => {
       }
     } catch {
       // not yet saved, use defaults
-    }
-  }
-
-  async function loadTasks() {
-    try {
-      const data = await window.electronAPI.getTasks() as Task[];
-      setTasks(data || []);
-    } catch {
-      setTasks([]);
     }
   }
 
@@ -85,29 +62,6 @@ const CalibrationPage: React.FC = () => {
       setError('Failed to save. Is the backend running?');
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function addTask() {
-    if (!newTask.task_name.trim() || !newTask.deadline) return;
-    try {
-      await window.electronAPI.addTask({
-        task_name: newTask.task_name.trim(),
-        deadline: new Date(newTask.deadline).toISOString(),
-      });
-      setNewTask({ task_name: '', deadline: '' });
-      await loadTasks();
-    } catch {
-      setError('Failed to add task.');
-    }
-  }
-
-  async function removeTask(taskId: number) {
-    try {
-      await window.electronAPI.deleteTask(taskId);
-      setTasks(prev => prev.filter(t => t.id !== taskId));
-    } catch {
-      setError('Failed to delete task.');
     }
   }
 
@@ -188,52 +142,6 @@ const CalibrationPage: React.FC = () => {
         <p className="text-xs text-red-500 bg-red-50 px-2 py-1 rounded">{error}</p>
       )}
 
-      {/* Tasks */}
-      <div className="border-t border-gray-200 pt-4">
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">Tasks</h3>
-        <div className="flex gap-2 mb-2">
-          <input
-            type="text"
-            placeholder="Task name"
-            value={newTask.task_name}
-            onChange={e => setNewTask(prev => ({ ...prev, task_name: e.target.value }))}
-            className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs"
-          />
-          <input
-            placeholder="Task name"
-            type="date"
-            value={newTask.deadline}
-            onChange={e => setNewTask(prev => ({ ...prev, deadline: e.target.value }))}
-            className="px-2 py-1 border border-gray-300 rounded text-xs"
-          />
-          <button
-            onClick={addTask}
-            className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-          >
-            Add
-          </button>
-        </div>
-        {tasks.length === 0 ? (
-          <p className="text-xs text-gray-400">No tasks yet.</p>
-        ) : (
-          <ul className="space-y-1">
-            {tasks.map(t => (
-              <li key={t.id} className="flex justify-between items-center text-xs bg-white border border-gray-200 rounded px-2 py-1">
-                <span className="text-gray-700">{t.task_name}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">{new Date(t.deadline).toLocaleDateString()}</span>
-                  <button
-                    onClick={() => removeTask(t.id)}
-                    className="text-red-400 hover:text-red-600 text-xs"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
     </div>
   );
 };
