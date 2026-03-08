@@ -102,12 +102,12 @@ const StatusPanel: React.FC<Props> = ({
                     <div className="flex items-center gap-2">
                       <div
                         className={`w-3 h-3 rounded ${category === 'academic'
-                            ? 'bg-green-500'
-                            : category === 'productivity'
-                              ? 'bg-blue-500'
-                              : category === 'non_academic'
-                                ? 'bg-red-500'
-                                : 'bg-gray-400'
+                          ? 'bg-green-500'
+                          : category === 'productivity'
+                            ? 'bg-blue-500'
+                            : category === 'non_academic'
+                              ? 'bg-red-500'
+                              : 'bg-gray-400'
                           }`}
                       />
                       <span className="text-sm capitalize">{category.replace('_', ' ')}</span>
@@ -124,7 +124,7 @@ const StatusPanel: React.FC<Props> = ({
       )}
 
       {/* Component Status */}
-      {componentStatus && (
+      {/* {componentStatus && (
         <div className="card">
           <h3 className="text-sm font-medium text-gray-500 mb-2">Classification Component</h3>
           <div className="text-sm">
@@ -144,10 +144,10 @@ const StatusPanel: React.FC<Props> = ({
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Quick Actions */}
-      <div className="card">
+      {/* <div className="card">
         <h3 className="text-sm font-medium text-gray-500 mb-3">Quick Actions</h3>
         <div className="flex gap-2">
           <button
@@ -164,7 +164,7 @@ const StatusPanel: React.FC<Props> = ({
             Restart Backend
           </button>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

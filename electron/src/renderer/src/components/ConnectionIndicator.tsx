@@ -48,12 +48,12 @@ const ConnectionIndicator: React.FC<Props> = ({ pythonRunning, extensionConnecte
 
       {/* Individual status items */}
       <div className="mt-4 space-y-2">
-        <div className="flex items-center justify-between text-sm">
+        {/* <div className="flex items-center justify-between text-sm">
           <span className="text-gray-600">Python Backend</span>
           <span className={pythonRunning ? 'text-green-600' : 'text-red-600'}>
             {pythonRunning ? 'Running' : 'Offline'}
           </span>
-        </div>
+        </div> */}
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-600">Browser Extension</span>
           <span className={extensionConnected ? 'text-green-600' : 'text-yellow-600'}>

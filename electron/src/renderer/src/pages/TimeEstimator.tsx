@@ -484,10 +484,6 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
       )}
 
       <div className="main-content">
-        <div className="page-header">
-          <h2>Adaptive Time Estimator</h2>
-          <p>Manage your tasks with calendar view and smart time estimation</p>
-        </div>
 
         <div className="dashboard-grid">
           {/* Left Column */}

@@ -225,6 +225,8 @@ const electronAPI: ElectronAPI = {
     getTasks: () => ipcRenderer.invoke('procrastination:get-tasks'),
     deleteTask: (taskId) => ipcRenderer.invoke('procrastination:delete-task', taskId),
 
+    getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
+
     // Idle Activity Prompt
     submitIdleActivity: (data) => ipcRenderer.invoke('submit-idle-activity', data),
     dismissIdlePrompt: () => ipcRenderer.invoke('dismiss-idle-prompt'),
@@ -255,7 +257,6 @@ const electronAPI: ElectronAPI = {
         updateTrayTimer: (label) => ipcRenderer.send('intervention:tray-update', { label }),
         clearTray: () => ipcRenderer.send('intervention:tray-clear'),
         showWindow: () => ipcRenderer.send('intervention:window-show'),
-        getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
     },
 };
 

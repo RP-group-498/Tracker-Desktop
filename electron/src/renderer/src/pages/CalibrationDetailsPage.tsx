@@ -249,7 +249,7 @@ function TimeBreakdownChart({ records }: { records: CalibrationDayRecord[] }) {
 
           return (
             <Tooltip key={r.date} content={tip}>
-              <BarCol opacity={r.status === 'low' ? 0.65 : 1} delay={idx * 20}>
+              <BarCol delay={idx * 20}>
                 <BarArea>
                   {noData ? <NoDataBar /> : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', borderRadius: '4px 4px 0 0', overflow: 'hidden' }}>
@@ -470,10 +470,10 @@ const CalibrationDetailsPage: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <SummaryCards records={records} />
           <TimeBreakdownChart records={records} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {/* <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <GoalCompletionChart records={records} />
             <AppSwitchesChart records={records} />
-          </div>
+          </div> */}
           <DailyDetailTable records={records} />
         </div>
       )}

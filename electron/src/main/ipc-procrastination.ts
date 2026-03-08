@@ -74,12 +74,12 @@ function mapMongoResultToReport(result: MongoRunResult) {
         },
         prediction: result.predicted_active_time
             ? {
-                  date: result.predicted_active_time.date,
-                  day: result.predicted_active_time.day,
-                  predictedActiveStart: result.predicted_active_time.predictedActiveStart,
-                  predictedActiveEnd: result.predicted_active_time.predictedActiveEnd,
-                  predictedAcademicMinutes: result.predicted_active_time.predictedAcademicMinutes,
-              }
+                date: result.predicted_active_time.date,
+                day: result.predicted_active_time.day,
+                predictedActiveStart: result.predicted_active_time.predictedActiveStart,
+                predictedActiveEnd: result.predicted_active_time.predictedActiveEnd,
+                predictedAcademicMinutes: result.predicted_active_time.predictedAcademicMinutes,
+            }
             : null,
     };
 }
@@ -87,16 +87,16 @@ function mapMongoResultToReport(result: MongoRunResult) {
 export function registerProcrastinationHandlers(pythonBridge: PythonBridge): void {
     // Full daily procrastination report — runs MongoDB analysis pipeline
     ipcMain.handle('procrastination:get-report', async () => {
-    const runResult = await pythonBridge.request('POST', '/analysis/run');
+        const runResult = await pythonBridge.request('POST', '/analysis/run', {}, 60000); // 60s timeout
 
-    if (!runResult.success || !runResult.data) {
-        // show the *actual* backend error / status / url if available
-        throw new Error(
-        `MongoDB analysis pipeline failed: ${runResult.error ?? 'unknown error'}`
-        );
-    }
+        if (!runResult.success || !runResult.data) {
+            // show the *actual* backend error / status / url if available
+            throw new Error(
+                `MongoDB analysis pipeline failed: ${runResult.error ?? 'unknown error'}`
+            );
+        }
 
-    return mapMongoResultToReport(runResult.data as MongoRunResult);
+        return mapMongoResultToReport(runResult.data as MongoRunResult);
     });
 
     // Historical reports (default last 7 days)

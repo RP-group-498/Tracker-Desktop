@@ -19,12 +19,12 @@ interface AppState {
 type Tab = 'dashboard' | 'tasks' | 'procrastination' | 'calibration' | 'intervention' | 'calibration-details';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'procrastination', label: 'Dashboard' },
   { id: 'tasks', label: 'Tasks' },
-  { id: 'procrastination', label: 'Analysis' },
-  { id: 'calibration', label: 'Settings' },
   { id: 'intervention', label: 'Interventions' },
   { id: 'calibration-details', label: 'Calibration Details' },
+  { id: 'dashboard', label: 'Activity' },
+  { id: 'calibration', label: 'Settings' },
 ];
 
 const App: React.FC = () => {
@@ -35,7 +35,7 @@ const App: React.FC = () => {
     eventCount: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [activeTab, setActiveTab] = useState<Tab>('procrastination');
 
   const { isAuthenticated, isLoading: authLoading, logout, user } = useAuth();
 
@@ -107,6 +107,7 @@ const App: React.FC = () => {
 
       {/* Tab Content */}
       <main className="flex-1 overflow-y-auto">
+        {activeTab === 'procrastination' && <ProcrastinationPage />}
         {activeTab === 'dashboard' && (
           <div className="p-4 space-y-4">
             <ConnectionIndicator
@@ -123,16 +124,10 @@ const App: React.FC = () => {
         )}
 
         {activeTab === 'tasks' && <TaskPrioritizationTab />}
-        {activeTab === 'procrastination' && <ProcrastinationPage />}
-        {activeTab === 'calibration' && <CalibrationPage />}
         {activeTab === 'intervention' && <SmartInterventionPage />}
         {activeTab === 'calibration-details' && <CalibrationDetailsPage />}
+        {activeTab === 'calibration' && <CalibrationPage />}
       </main>
-
-      {/* Footer */}
-      <footer className="px-4 py-2 text-center text-xs text-gray-400">
-        Focus App v1.0.0 | Research Project
-      </footer>
     </div>
   );
 };

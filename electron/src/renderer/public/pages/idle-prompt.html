@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>What were you doing?</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -101,9 +106,17 @@
             margin-left: auto;
         }
 
-        .category-dot.academic { background: #4ade80; }
-        .category-dot.non_academic { background: #f87171; }
-        .category-dot.neutral { background: #facc15; }
+        .category-dot.academic {
+            background: #4ade80;
+        }
+
+        .category-dot.non_academic {
+            background: #f87171;
+        }
+
+        .category-dot.neutral {
+            background: #facc15;
+        }
 
         .other-section {
             padding: 8px 16px;
@@ -195,6 +208,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="header">
         <h1>What were you doing?</h1>
@@ -227,16 +241,16 @@
     <script>
         // Predefined activities
         const ACTIVITIES = [
-            { id: 'reading_book',       icon: '📖', label: 'Reading a Book',           category: 'academic' },
-            { id: 'studying_notes',     icon: '📝', label: 'Studying / Reviewing Notes', category: 'academic' },
-            { id: 'attending_lecture',   icon: '🎓', label: 'Attending Lecture / Class', category: 'academic' },
-            { id: 'research_library',   icon: '🔬', label: 'Research / Library Work',   category: 'academic' },
-            { id: 'writing_notes',      icon: '✍️', label: 'Writing Notes by Hand',     category: 'academic' },
-            { id: 'break_relaxing',     icon: '☕', label: 'Taking a Break',            category: 'non_academic' },
-            { id: 'exercise_walk',      icon: '🏃', label: 'Exercise / Walk',           category: 'non_academic' },
-            { id: 'eating_meal',        icon: '🍽️', label: 'Eating / Meal',             category: 'non_academic' },
-            { id: 'personal_errands',   icon: '🏠', label: 'Personal Errands',          category: 'non_academic' },
-            { id: 'social_conversation',icon: '💬', label: 'Social / Conversation',     category: 'neutral' },
+            { id: 'reading_book', icon: '📖', label: 'Reading a Book', category: 'academic' },
+            { id: 'studying_notes', icon: '📝', label: 'Studying / Reviewing Notes', category: 'academic' },
+            { id: 'attending_lecture', icon: '🎓', label: 'Attending Lecture / Class', category: 'academic' },
+            { id: 'research_library', icon: '🔬', label: 'Research / Library Work', category: 'academic' },
+            { id: 'writing_notes', icon: '✍️', label: 'Writing Notes by Hand', category: 'academic' },
+            { id: 'break_relaxing', icon: '☕', label: 'Taking a Break', category: 'non_academic' },
+            { id: 'exercise_walk', icon: '🏃', label: 'Exercise / Walk', category: 'non_academic' },
+            { id: 'eating_meal', icon: '🍽️', label: 'Eating / Meal', category: 'non_academic' },
+            { id: 'personal_errands', icon: '🏠', label: 'Personal Errands', category: 'non_academic' },
+            { id: 'social_conversation', icon: '💬', label: 'Social / Conversation', category: 'non_academic' },
         ];
 
         let selectedActivityId = null;
@@ -329,10 +343,26 @@
         });
 
         // Skip
-        skipBtn.addEventListener('click', () => {
-            if (window.electronAPI && window.electronAPI.dismissIdlePrompt) {
-                window.electronAPI.dismissIdlePrompt();
+        skipBtn.addEventListener('click', async () => {
+            skipBtn.disabled = true;
+            skipBtn.textContent = 'Skipping...';
+
+            const payload = {
+                activityId: 'skipped',
+                customLabel: null,
+                idleDurationMs: idleDurationMs,
+                idleStart: idleStart,
+                idleEnd: idleEnd,
+            };
+
+            try {
+                if (window.electronAPI && window.electronAPI.submitIdleActivity) {
+                    await window.electronAPI.submitIdleActivity(payload);
+                }
+            } catch (err) {
+                console.error('Failed to submit skipped idle activity:', err);
             }
+
             window.close();
         });
 
@@ -346,4 +376,5 @@
         });
     </script>
 </body>
+
 </html>

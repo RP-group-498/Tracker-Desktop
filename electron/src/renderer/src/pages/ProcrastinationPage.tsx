@@ -61,22 +61,22 @@ function efficiencyClass(pct: number): string {
 function patternLabel(type: string): string {
   switch (type) {
     case 'frequent_task_switching': return 'Frequent Task Switching';
-    case 'prolonged_inactivity':    return 'Prolonged Inactivity';
-    case 'impulsive_browsing':      return 'Impulsive Browsing';
-    case 'deadline_rushing':        return 'Deadline Rushing';
-    case 'no_engagement':           return 'No Engagement';
+    case 'prolonged_inactivity': return 'Prolonged Inactivity';
+    case 'impulsive_browsing': return 'Impulsive Browsing';
+    case 'deadline_rushing': return 'Deadline Rushing';
+    case 'no_engagement': return 'No Engagement';
     default: return type.replace(/_/g, ' ');
   }
 }
 
 function severityClass(severity: string): string {
   switch (severity.toLowerCase()) {
-    case 'low':      return 'badge-low';
-    case 'medium':   return 'badge-medium';
-    case 'warning':  return 'badge-warning';
-    case 'high':     return 'badge-high';
+    case 'low': return 'badge-low';
+    case 'medium': return 'badge-medium';
+    case 'warning': return 'badge-warning';
+    case 'high': return 'badge-high';
     case 'critical': return 'badge-critical';
-    default:         return 'badge-default';
+    default: return 'badge-default';
   }
 }
 
@@ -99,8 +99,8 @@ const ProcrastinationPage: React.FC = () => {
     try {
       const data = await (window as any).electronAPI.getProcrastinationReport() as Report;
       setReport(data);
-    } catch {
-      setError('Failed to load report. Is the backend running?');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load report. Is the backend running?');
     } finally {
       setLoading(false);
     }
@@ -155,8 +155,8 @@ const ProcrastinationPage: React.FC = () => {
       {/* Header — centered title + date */}
       <div className="page-header">
         <div className="page-header-center">
-          <h1 className="page-title">APDIS Daily Output</h1>
-          <p className="page-date">{todayFormatted}</p>
+          <h1 className="page-title">Daily Summary</h1>
+          <p className="page-date">{report.date} · {at.day}</p>
         </div>
         <button onClick={loadReport} className="recalculate-btn">Recalculate</button>
       </div>
@@ -202,8 +202,8 @@ const ProcrastinationPage: React.FC = () => {
               {academicPct >= 70
                 ? `Great efficiency! You spent ${academicPct}% of your tracked time on academic work (${at.academicMinutes} mins). Keep it up.`
                 : academicPct >= 40
-                ? `Moderate efficiency — ${academicPct}% academic (${at.academicMinutes} mins). Try to reduce non-academic time (${at.nonAcademicMinutes} mins).`
-                : `Low efficiency — only ${academicPct}% academic (${at.academicMinutes} mins). Consider removing distractions.`}
+                  ? `Moderate efficiency — ${academicPct}% academic (${at.academicMinutes} mins). Try to reduce non-academic time (${at.nonAcademicMinutes} mins).`
+                  : `Low efficiency — only ${academicPct}% academic (${at.academicMinutes} mins). Consider removing distractions.`}
             </p>
           </div>
 
@@ -314,7 +314,7 @@ const ProcrastinationPage: React.FC = () => {
         {/* TODAY SUMMARY — row 4, spans full width */}
         <div className="card today-summary-card">
           <p className="section-label">
-            Today's Summary
+            Yesterday's Summary
             <span className="today-date-badge">{report.date} · {at.day}</span>
           </p>
           <div className="today-summary-grid">
@@ -327,7 +327,7 @@ const ProcrastinationPage: React.FC = () => {
               <span className="today-stat-value color-red">{at.fullDayNonAcademicMinutes}</span>
               <span className="today-stat-unit">mins</span>
               <p className="today-stat-label">Non-Academic (Full Day)</p>
-              
+
             </div>
             <div className="today-stat">
               <span className="today-stat-value color-orange">{at.fullDayProductivityMinutes}</span>
