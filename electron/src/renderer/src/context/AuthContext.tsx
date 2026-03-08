@@ -28,11 +28,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Check for existing token on load
         const checkAuthStatus = async () => {
             try {
-                const storedToken = await window.electronAPI.getAuthToken();
-                if (storedToken) {
-                    setToken(storedToken);
+                const result = await window.electronAPI.getAuthToken();
+                if (result && result.token) {
+                    setToken(result.token);
                     setIsAuthenticated(true);
-                    // Optionally fetch user profile with token here
+                    if (result.user) setUser(result.user);
                 }
             } catch (err) {
                 console.error('Failed to restore auth session:', err);

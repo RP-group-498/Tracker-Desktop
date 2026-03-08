@@ -230,7 +230,7 @@ Stores:
 Request:
 
 {
-"user_id": "u123",
+"user_id": "...",
 "x": [ ...context vector... ],
 "alpha": 1.0
 }
@@ -248,7 +248,7 @@ Response:
 Request:
 
 {
-"user_id": "u123",
+"user_id": "...",
 "x": [ ...context vector... ],
 "action": "POMODORO",
 "reward": 0.4,
