@@ -16,7 +16,7 @@ DEFAULT_ML_CONFIG: Dict[str, Any] = {
     "zero_shot": {
         "model_name": "facebook/bart-large-mnli",
         "device": "cpu",  # "cpu" or "cuda" (if GPU available)
-        "confidence_threshold": 0.80,  # Minimum confidence to accept ML result (raised — below this, delegate to Gemini AI)
+        "confidence_threshold": 0.55,  # Minimum confidence to accept ML result
         "batch_size": 1,  # Batch size for inference (1 for real-time)
     },
 

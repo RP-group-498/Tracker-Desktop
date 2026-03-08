@@ -53,7 +53,7 @@ PRODUCTIVITY_DOMAINS = {
     "stackoverflow.com", "stackexchange.com",
     # Developer Communities & Blogs
     "dev.to", "medium.com", "hashnode.dev", "hashnode.com",
-    "developer.mozilla.org", "css-tricks.com",
+    "developer.mozilla.org", "css-tricks.com", "linkedin.com",
     # Documentation
     "docs.google.com", "notion.so", "confluence",
     "readthedocs.io", "readthedocs.org",
@@ -71,7 +71,7 @@ NON_ACADEMIC_DOMAINS = {
     # Social media
     "facebook.com", "twitter.com", "x.com", "instagram.com",
     "tiktok.com", "snapchat.com", "reddit.com",
-    "linkedin.com", "pinterest.com", "tumblr.com", "threads.net",
+    "pinterest.com", "tumblr.com", "threads.net", "whatsapp.com",
     # Video entertainment
     "netflix.com", "hulu.com", "disneyplus.com", "twitch.tv",
     "primevideo.com", "dailymotion.com", "crunchyroll.com", "funimation.com",
@@ -358,7 +358,7 @@ class ClassificationComponent(ComponentBase):
                 domain=data.get("domain", "")
             )
 
-            if ml_result and ml_result["confidence"] >= 0.80:
+            if ml_result and ml_result["confidence"] >= 0.55:
                 # ML provided good classification
                 category = ml_result["category"]
                 confidence = ml_result["confidence"]
