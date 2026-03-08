@@ -5,7 +5,7 @@ import '../styles/pages.css'
 import '../styles/time-estimator.css'
 
 const API_BASE_URL = 'http://localhost:8000/api/tasks'
-const USER_ID = 'student_123'
+const USER_ID = '124804d8-40e0-4f90-af05-eeea5c2d7550'
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -323,10 +323,13 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     }
   }
 
-  function showTasksForDate(dateStr: string, tasksForDay: Task[], summaryForDay: ScheduledSummaryTask[] = []) {
+  const [modalDeadlines, setModalDeadlines] = useState<ScheduledSummaryTask[]>([])
+
+  function showTasksForDate(dateStr: string, tasksForDay: Task[], summaryForDay: ScheduledSummaryTask[] = [], deadlinesForDay: ScheduledSummaryTask[] = []) {
     setModalDate(dateStr)
     setModalTasks(tasksForDay)
     setModalSummaryTasks(summaryForDay)
+    setModalDeadlines(deadlinesForDay)
   }
 
   // Calendar computation
@@ -337,7 +340,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
   const daysInPrevMonth = new Date(year, month, 0).getDate()
   const today = new Date()
 
-  type CalDay = { day: number; year: number; month: number; isOtherMonth: boolean; isToday: boolean; dateStr: string; tasksForDay: Task[]; summaryForDay: ScheduledSummaryTask[] }
+  type CalDay = { day: number; year: number; month: number; isOtherMonth: boolean; isToday: boolean; dateStr: string; tasksForDay: Task[]; summaryForDay: ScheduledSummaryTask[]; deadlinesForDay: ScheduledSummaryTask[] }
   const calendarDays: CalDay[] = []
 
   for (let i = firstDay - 1; i >= 0; i--) {
@@ -346,7 +349,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     const y = m < 0 ? year - 1 : year
     const realMonth = ((m % 12) + 12) % 12
     const dateStr = `${y}-${String(realMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-    calendarDays.push({ day: d, year: y, month: realMonth, isOtherMonth: true, isToday: false, dateStr, tasksForDay: [], summaryForDay: [] })
+    calendarDays.push({ day: d, year: y, month: realMonth, isOtherMonth: true, isToday: false, dateStr, tasksForDay: [], summaryForDay: [], deadlinesForDay: [] })
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
@@ -354,7 +357,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
     const tasksForDay = tasks.filter(t => t.time_allocation_date && t.time_allocation_date.split('T')[0] === dateStr)
     const summaryForDay = scheduledSummaryTasks.filter(s => s.suggested_date && s.suggested_date.split('T')[0] === dateStr)
-    calendarDays.push({ day, year, month, isOtherMonth: false, isToday, dateStr, tasksForDay, summaryForDay })
+    const deadlinesForDay = scheduledSummaryTasks.filter(s => s.deadline && s.deadline.split('T')[0] === dateStr)
+    calendarDays.push({ day, year, month, isOtherMonth: false, isToday, dateStr, tasksForDay, summaryForDay, deadlinesForDay })
   }
 
   const remaining = 42 - calendarDays.length
@@ -363,7 +367,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     const y = m > 11 ? year + 1 : year
     const realMonth = m % 12
     const dateStr = `${y}-${String(realMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    calendarDays.push({ day, year: y, month: realMonth, isOtherMonth: true, isToday: false, dateStr, tasksForDay: [], summaryForDay: [] })
+    calendarDays.push({ day, year: y, month: realMonth, isOtherMonth: true, isToday: false, dateStr, tasksForDay: [], summaryForDay: [], deadlinesForDay: [] })
   }
 
   // Stats
@@ -506,6 +510,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                       const hasCompleted = cell.tasksForDay.every(t => t.status === 'completed') && cell.tasksForDay.length > 0
                       const hasTasks = cell.tasksForDay.length > 0
                       const hasSummary = cell.summaryForDay.length > 0
+                      const hasDeadline = cell.deadlinesForDay.length > 0
                       const hasAnyTask = hasTasks || hasSummary
                       const failedCount = cell.tasksForDay.filter(t => t.status === 'failed').length
                       const completedCount = cell.tasksForDay.filter(t => t.status === 'completed').length
@@ -513,13 +518,14 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                       if (cell.isOtherMonth) dayClass += ' other-month'
                       if (cell.isToday) dayClass += ' today'
                       if (hasAnyTask) dayClass += ' has-task'
+                      if (hasDeadline) dayClass += ' has-deadline'
                       if (hasFailed) dayClass += ' has-failed-task'
                       else if (hasCompleted) dayClass += ' has-completed-task'
                       return (
                         <div
                           key={i}
                           className={dayClass}
-                          onClick={() => hasAnyTask && showTasksForDate(cell.dateStr, cell.tasksForDay, cell.summaryForDay)}
+                          onClick={() => (hasAnyTask || cell.deadlinesForDay.length > 0) && showTasksForDate(cell.dateStr, cell.tasksForDay, cell.summaryForDay, cell.deadlinesForDay)}
                         >
                           <div className="day-number">{cell.day}</div>
                           {hasAnyTask && (
@@ -534,6 +540,11 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                                   completedCount === cell.tasksForDay.length ? `${completedCount} ✓` :
                                     cell.tasksForDay.length)
                                 : cell.summaryForDay.length}
+                            </div>
+                          )}
+                          {hasDeadline && (
+                            <div className="deadline-badge" title={cell.deadlinesForDay.map(d => d.main_task || d.subtask_name).join(', ')}>
+                              DL
                             </div>
                           )}
                         </div>
@@ -680,6 +691,31 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                   <div dangerouslySetInnerHTML={{ __html: modalTasks.map(renderModalTask).join('') }} />
                 </>
               )}
+              {/* Deadline Tasks */}
+              {modalDeadlines.length > 0 && (() => {
+                const uniqueDeadlines = modalDeadlines.filter(
+                  (d, idx, arr) => arr.findIndex(x => (x.main_task || x.subtask_name) === (d.main_task || d.subtask_name)) === idx
+                )
+                return (
+                  <>
+                    <h4 style={{ margin: '15px 0 5px 0', fontSize: '0.9em', color: '#f97316', display: 'flex', alignItems: 'center', gap: '6px' }}>Deadlines</h4>
+                    {uniqueDeadlines.map((d, idx) => (
+                      <div key={idx} style={{
+                        background: 'linear-gradient(135deg, #fff7ed, #ffedd5)',
+                        border: '2px solid #f97316',
+                        borderRadius: '8px',
+                        padding: '10px 14px',
+                        marginBottom: '8px'
+                      }}>
+                        <div style={{ fontWeight: 700, color: '#c2410c', fontSize: '0.95em' }}>{d.main_task || 'Assignment'}</div>
+                        <div style={{ color: '#9a3412', fontSize: '0.82em', marginTop: '4px' }}>Deadline: {d.deadline}</div>
+                      </div>
+                    ))}
+                  </>
+                )
+              })()}
+
+
               {/* System Suggested Tasks */}
               {(() => {
                 const uniqueSummary = modalSummaryTasks.filter(

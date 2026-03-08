@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
 # Fix Windows console encoding for emojis
@@ -36,7 +37,7 @@ SCHEDULE_TIME = os.getenv("SCHEDULER_TIME", "21:09")
 def allocate_user_tasks(student_id, active_time_id, start_date=None, days_ahead=90):
     """Triggers task allocation for a student based on their active time."""
     if start_date is None:
-        start_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        start_date = (datetime.now(ZoneInfo("Asia/Colombo")) - timedelta(days=1)).strftime("%Y-%m-%d")
 
     url = f"{API_BASE_URL}/allocate/{student_id}"
     payload = {
@@ -96,9 +97,9 @@ def fetch_active_time():
 
                 success_count += 1
 
-                # If 124804d8-40e0-4f90-af05-eeea5c2d7550 is synced, trigger allocation for student_123
+                # If 124804d8-40e0-4f90-af05-eeea5c2d7550 is synced, trigger allocation for that user
                 if user_id == "124804d8-40e0-4f90-af05-eeea5c2d7550":
-                    allocate_user_tasks("student_123", "124804d8-40e0-4f90-af05-eeea5c2d7550")
+                    allocate_user_tasks("124804d8-40e0-4f90-af05-eeea5c2d7550", "124804d8-40e0-4f90-af05-eeea5c2d7550")
 
             else:
                 logging.warning(f"FAILED: {user_id} | Status: {response.status_code} | Reason: {response.text[:100]}")

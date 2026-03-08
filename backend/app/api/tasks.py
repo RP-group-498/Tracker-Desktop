@@ -59,7 +59,7 @@ class AnalyzeRequest(BaseModel):
     deadline: str
     credits: int
     weight: int
-    user_id: Optional[str] = "student_123"
+    user_id: Optional[str] = "124804d8-40e0-4f90-af05-eeea5c2d7550"
 
 
 class PredictRequest(BaseModel):
@@ -394,7 +394,8 @@ def get_scheduled_summary(user_id: str):
             summary.append({
                 "subtask_name": sub_task.get('description', 'Unknown'),
                 "suggested_date": suggested_date_str,
-                "deadline": main_task.get('deadline', 'No Deadline')
+                "deadline": main_task.get('deadline', 'No Deadline'),
+                "main_task": main_task.get('name', 'Unknown')
             })
 
         return {

@@ -64,4 +64,5 @@ export interface ScheduledSummaryTask {
   subtask_name: string
   suggested_date: string
   deadline: string
+  main_task?: string
 }

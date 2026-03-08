@@ -119,6 +119,29 @@
     background: #10b981;
 }
 
+/* Deadline day indicator */
+.calendar-day.has-deadline {
+    border-color: #f97316;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.35);
+}
+
+/* Deadline badge (🔴 icon) */
+.deadline-badge {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    line-height: 1;
+    animation: deadlinePulse 1.8s ease-in-out infinite;
+    cursor: pointer;
+}
+
+@keyframes deadlinePulse {
+    0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+    50%       { opacity: 0.6; transform: translateX(-50%) scale(1.25); }
+}
+
 /* Task count badge */
 .task-count {
     position: absolute;
