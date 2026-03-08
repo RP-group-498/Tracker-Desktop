@@ -129,7 +129,14 @@ async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] =
     arms_list = await asyncio.gather(*[_load_arm(user_id, a) for a in allowed])
     arms = dict(zip(allowed, arms_list))
 
+    print(f"[Bandit Select] User: {user_id}")
+    print(f"[Bandit Select] Context Vector: {req.x}")
+    print(f"[Bandit Select] Allowed Actions: {allowed}")
+
     action = select_action(arms, x, req.alpha)
+    
+    print(f"[Bandit Select] Selected Action: {action}")
+
     return BanditSelectResponse(action=action, allowed_actions=allowed)
 
 
@@ -145,6 +152,9 @@ async def bandit_update(req: BanditUpdateRequest, current_user: Dict[str, Any] =
         raise HTTPException(status_code=400, detail=f"Unknown action: {req.action}")
 
     user_id = current_user["sub"]
+    
+    print(f"[Bandit Update] User: {user_id}, Action: {req.action}, Reward: {req.reward}")
+    print(f"[Bandit Update] Context Vector: {req.x}")
     x = np.array(req.x, dtype=float)
     arm = await _load_arm(user_id, req.action)
     arm.update(x, req.reward)

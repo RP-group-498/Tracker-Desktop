@@ -200,7 +200,7 @@ export function setupIpcHandlers(
             if (fs.existsSync(TOKEN_FILE)) {
                 const data = JSON.parse(fs.readFileSync(TOKEN_FILE, 'utf-8'));
                 pythonBridge.setAuthToken(data.access_token);
-                return data.access_token;
+                return { token: data.access_token, user: data.user ?? null };
             }
         } catch (e) {
             console.error('Failed to read auth token', e);

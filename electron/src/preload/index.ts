@@ -24,7 +24,7 @@ interface ElectronAPI {
     getCurrentSession: () => Promise<Session | null>;
 
     // Auth
-    getAuthToken: () => Promise<string | null>;
+    getAuthToken: () => Promise<{ token: string; user: any } | null>;
     onAuthSuccess: (callback: (authData: any) => void) => void;
     startOAuthLogin: () => Promise<void>;
     clearAuth: () => Promise<void>;

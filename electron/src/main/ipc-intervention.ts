@@ -60,8 +60,8 @@ export function registerInterventionHandlers(
         return result.data;
     });
 
-    ipcMain.handle('intervention:get-context', async (_event, userId: string) => {
-        const result = await pythonBridge.request('GET', `/intervention/context/${userId}`);
+    ipcMain.handle('intervention:get-context', async (_event, _userId: string) => {
+        const result = await pythonBridge.request('GET', '/intervention/context');
         return result.data;
     });
 
