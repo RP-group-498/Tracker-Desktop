@@ -59,7 +59,7 @@ class AnalyzeRequest(BaseModel):
     deadline: str
     credits: int
     weight: int
-    user_id: Optional[str] = "124804d8-40e0-4f90-af05-eeea5c2d7550"
+    user_id: Optional[str] = "student_123"
 
 
 class PredictRequest(BaseModel):
@@ -457,10 +457,24 @@ def allocate_tasks(user_id: str, req: AllocateRequest):
         incomplete_tasks = list(estimator.tasks.find({
             "user_id": user_id,
             "status": {"$ne": "completed"}
-        }).sort([("final_mcdm_score", -1)]))
+        }).sort([("final_mcdm_score", -1), ("sub_task.position", 1)]))
 
         if not incomplete_tasks:
             return {"message": "No incomplete tasks found for this user", "user_id": user_id}
+
+        # --- Console log: show full sorted task order before allocation ---
+        print("\n" + "="*60)
+        print(f"[ALLOCATE] Starting allocation for user: {user_id}")
+        print(f"[ALLOCATE] Total pending subtasks: {len(incomplete_tasks)}")
+        print(f"[ALLOCATE] Sorted order (MCDM DESC → Position ASC):")
+        for i, t in enumerate(incomplete_tasks, 1):
+            main = t.get('main_task', {}).get('name', 'Unknown')
+            sub = t.get('sub_task', {}).get('description', 'Unknown')
+            pos = t.get('sub_task', {}).get('position', '?')
+            score = t.get('final_mcdm_score', 0)
+            est = t['estimates'].get('user_estimate') or t['estimates'].get('system_estimate', 0)
+            print(f"  {i:2}. [MCDM={score}] [Pos={pos}] {main} → {sub} ({est} min)")
+        print("="*60)
 
         task_allocation_map = {}
         allocations = []
@@ -482,6 +496,13 @@ def allocate_tasks(user_id: str, req: AllocateRequest):
                     task_date = datetime.strptime(date_str, '%Y-%m-%d')
                     predicted_start = active_time.get('predictedActiveStart', '')
                     predicted_end = active_time.get('predictedActiveEnd', '')
+
+                    # Console log: what is being allocated to this day
+                    main = task.get('main_task', {}).get('name', 'Unknown')
+                    sub = task.get('sub_task', {}).get('description', 'Unknown')
+                    pos = task.get('sub_task', {}).get('position', '?')
+                    score = task.get('final_mcdm_score', 0)
+                    print(f"  [ALLOCATED] {date_str} | MCDM={score} Pos={pos} | {main} → {sub} ({estimated_time} min)")
 
                     estimator.tasks.update_one(
                         {"_id": task['_id']},
