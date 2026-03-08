@@ -22,40 +22,34 @@ async def _fetch_behavior_records(
       Pass 2 — fallback: fetch all user docs, filter in Python after coercion
                (works when start_time is stored as ISO string).
     """
-    # Pass 1 — fast path: BSON datetime range on start_time OR timestamp.
-    primary_cursor = (
+    # Single-pass optimized query: handles both BSON datetimes and ISO strings (Pass 1 + optimized fallback)
+    start_iso = start_dt.isoformat().replace("+00:00", "Z")
+    end_iso = end_dt.isoformat().replace("+00:00", "Z")
+
+    query = {
+        "user_id": user_id,
+        "$or": [
+            # BSON Datetime match (standard)
+            {"start_time": {"$gte": start_dt, "$lt": end_dt}},
+            {"timestamp": {"$gte": start_dt, "$lt": end_dt}},
+            # ISO String match (fallback for some clients)
+            {"start_time": {"$gte": start_iso, "$lt": end_iso}},
+            {"timestamp": {"$gte": start_iso, "$lt": end_iso}},
+        ],
+    }
+
+    _logger.info("[Pipeline] Fetching records for %s between %s and %s", user_id, start_dt, end_dt)
+    
+    cursor = (
         motor_db["activity_events"]
-        .find(
-            {
-                "user_id": user_id,
-                "$or": [
-                    {"start_time": {"$gte": start_dt, "$lt": end_dt}},
-                    {
-                        "start_time": {"$exists": False},
-                        "timestamp":  {"$gte": start_dt, "$lt": end_dt},
-                    },
-                ],
-            },
-            {"_id": 0},
-        )
+        .find(query, {"_id": 0})
         .sort("start_time", 1)
     )
-    docs = await primary_cursor.to_list(length=None)
+    docs = await cursor.to_list(length=2000)  # Safety limit
 
-    # Pass 2 — fallback: fetch all user docs and filter in Python.
     if not docs:
-        fallback_cursor = (
-            motor_db["activity_events"]
-            .find({"user_id": user_id}, {"_id": 0})
-            .sort("start_time", 1)
-        )
-        all_docs = await fallback_cursor.to_list(length=None)
-        docs = []
-        for d in all_docs:
-            raw_time = d.get("start_time") or d.get("timestamp")
-            coerced = _coerce_datetime(raw_time)
-            if coerced is not None and start_dt <= coerced < end_dt:
-                docs.append(d)
+        _logger.info("[Pipeline] No records found for user %s on %s", user_id, start_dt.date())
+        return []
 
     records: list[BehaviorRecord] = []
     prev_app: str | None = None

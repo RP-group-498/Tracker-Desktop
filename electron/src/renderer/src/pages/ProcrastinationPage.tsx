@@ -61,22 +61,22 @@ function efficiencyClass(pct: number): string {
 function patternLabel(type: string): string {
   switch (type) {
     case 'frequent_task_switching': return 'Frequent Task Switching';
-    case 'prolonged_inactivity':    return 'Prolonged Inactivity';
-    case 'impulsive_browsing':      return 'Impulsive Browsing';
-    case 'deadline_rushing':        return 'Deadline Rushing';
-    case 'no_engagement':           return 'No Engagement';
+    case 'prolonged_inactivity': return 'Prolonged Inactivity';
+    case 'impulsive_browsing': return 'Impulsive Browsing';
+    case 'deadline_rushing': return 'Deadline Rushing';
+    case 'no_engagement': return 'No Engagement';
     default: return type.replace(/_/g, ' ');
   }
 }
 
 function severityClass(severity: string): string {
   switch (severity.toLowerCase()) {
-    case 'low':      return 'badge-low';
-    case 'medium':   return 'badge-medium';
-    case 'warning':  return 'badge-warning';
-    case 'high':     return 'badge-high';
+    case 'low': return 'badge-low';
+    case 'medium': return 'badge-medium';
+    case 'warning': return 'badge-warning';
+    case 'high': return 'badge-high';
     case 'critical': return 'badge-critical';
-    default:         return 'badge-default';
+    default: return 'badge-default';
   }
 }
 
@@ -99,8 +99,8 @@ const ProcrastinationPage: React.FC = () => {
     try {
       const data = await (window as any).electronAPI.getProcrastinationReport() as Report;
       setReport(data);
-    } catch {
-      setError('Failed to load report. Is the backend running?');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load report. Is the backend running?');
     } finally {
       setLoading(false);
     }
@@ -130,26 +130,34 @@ const ProcrastinationPage: React.FC = () => {
   const academicPct = totalTracked > 0 ? Math.round((at.academicMinutes / totalTracked) * 100) : 0;
 
   // Goal completion: academic / expectedStudyMinutes
-const rawGoalPct =
-  at.expectedStudyMinutes > 0
-    ? Math.round((at.fullDayAcademicMinutes / at.expectedStudyMinutes) * 100)
-    : 0;
+  const rawGoalPct =
+    at.expectedStudyMinutes > 0
+      ? Math.round((at.fullDayAcademicMinutes / at.expectedStudyMinutes) * 100)
+      : 0;
 
-      const goalPct = Math.min(rawGoalPct, 100);
+  const goalPct = Math.min(rawGoalPct, 100);
 
-      const goalMinsRemaining = Math.max(
-        0,
-        at.expectedStudyMinutes - at.fullDayAcademicMinutes
-      );
+  const goalMinsRemaining = Math.max(
+    0,
+    at.expectedStudyMinutes - at.fullDayAcademicMinutes
+  );
 
   const dominantSeverity = report.patterns[0]?.severity ?? report.level ?? 'none';
+
+  // Format today's date nicely
+  const todayFormatted = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
 
   return (
     <div className="procrastination-page">
 
-      {/* Header */}
+      {/* Header — centered title + date */}
       <div className="page-header">
-        <h1 className="page-title">APDIS Daily Output</h1>
+        <div className="page-header-center">
+          <h1 className="page-title">Daily Summary</h1>
+          <p className="page-date">{report.date} · {at.day}</p>
+        </div>
         <button onClick={loadReport} className="recalculate-btn">Recalculate</button>
       </div>
 
@@ -194,8 +202,8 @@ const rawGoalPct =
               {academicPct >= 70
                 ? `Great efficiency! You spent ${academicPct}% of your tracked time on academic work (${at.academicMinutes} mins). Keep it up.`
                 : academicPct >= 40
-                ? `Moderate efficiency — ${academicPct}% academic (${at.academicMinutes} mins). Try to reduce non-academic time (${at.nonAcademicMinutes} mins).`
-                : `Low efficiency — only ${academicPct}% academic (${at.academicMinutes} mins). Consider removing distractions.`}
+                  ? `Moderate efficiency — ${academicPct}% academic (${at.academicMinutes} mins). Try to reduce non-academic time (${at.nonAcademicMinutes} mins).`
+                  : `Low efficiency — only ${academicPct}% academic (${at.academicMinutes} mins). Consider removing distractions.`}
             </p>
           </div>
 
@@ -219,21 +227,46 @@ const rawGoalPct =
           )}
         </div>
 
-        {/* ACADEMIC TIME — col 1, row 2 */}
-        <div className="card academic-time-card">
-          <p className="section-label">Academic Time</p>
-          <div className="number-row">
-            <span className="big-number color-dark">{at.academicMinutes}</span>
-            <span className="unit-text">mins</span>
-          </div>
-        </div>
+        {/* PROGRESS IN THE FOCUS PERIOD — col 1-2, rows 2-3 */}
+        <div className="focus-period-section">
+          <p className="focus-period-title">Progress in the Focus Period</p>
+          <div className="focus-period-grid">
 
-        {/* NON ACADEMIC TIME — col 2, row 2 */}
-        <div className="card non-academic-card">
-          <p className="section-label">Non Academic Time</p>
-          <div className="number-row">
-            <span className="big-number color-dark">{at.nonAcademicMinutes}</span>
-            <span className="unit-text">mins</span>
+            {/* ACADEMIC TIME */}
+            <div className="card focus-card">
+              <p className="section-label focus-section-label">Academic Time</p>
+              <div className="focus-number-wrap">
+                <span className="big-number color-dark">{at.academicMinutes}</span>
+                <span className="unit-text">mins</span>
+              </div>
+            </div>
+
+            {/* NON ACADEMIC TIME */}
+            <div className="card focus-card">
+              <p className="section-label focus-section-label">Non Academic Time</p>
+              <div className="focus-number-wrap">
+                <span className="big-number color-dark">{at.nonAcademicMinutes}</span>
+                <span className="unit-text">mins</span>
+              </div>
+            </div>
+
+            {/* STUDY EFFICIENCY */}
+            <div className="card focus-card">
+              <p className="section-label focus-section-label">Study Efficiency</p>
+              <div className="focus-number-wrap">
+                <span className={`big-number ${efficiencyClass(academicPct)}`}>{academicPct}</span>
+                <span className={`efficiency-pct ${efficiencyClass(academicPct)}`}>%</span>
+              </div>
+            </div>
+
+            {/* APP SWITCHES */}
+            <div className="card focus-card">
+              <p className="section-label focus-section-label">App Switches</p>
+              <div className="focus-number-wrap">
+                <span className="big-number color-dark">{at.appSwitches}</span>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -278,25 +311,10 @@ const rawGoalPct =
           </div>
         </div>
 
-        {/* STUDY EFFICIENCY (focus efficiency) */}
-        <div className="card efficiency-card">
-          <p className="section-label">Study Efficiency</p>
-          <div className="number-row">
-            <span className={`big-number ${efficiencyClass(academicPct)}`}>{academicPct}</span>
-            <span className={`efficiency-pct ${efficiencyClass(academicPct)}`}>%</span>
-          </div>
-        </div>
-
-        {/* APP SWITCHES */}
-        <div className="card app-switches-card">
-          <p className="section-label">App Switches</p>
-          <span className="big-number color-dark">{at.appSwitches}</span>
-        </div>
-
         {/* TODAY SUMMARY — row 4, spans full width */}
         <div className="card today-summary-card">
           <p className="section-label">
-            Today's Summary
+            Yesterday's Summary
             <span className="today-date-badge">{report.date} · {at.day}</span>
           </p>
           <div className="today-summary-grid">
@@ -304,19 +322,17 @@ const rawGoalPct =
               <span className="today-stat-value color-green">{at.fullDayAcademicMinutes}</span>
               <span className="today-stat-unit">mins</span>
               <p className="today-stat-label">Academic (Full Day)</p>
-              <p className="today-stat-sub">{at.fullDayAcademicAppSwitches} switches</p>
             </div>
             <div className="today-stat">
               <span className="today-stat-value color-red">{at.fullDayNonAcademicMinutes}</span>
               <span className="today-stat-unit">mins</span>
               <p className="today-stat-label">Non-Academic (Full Day)</p>
-              <p className="today-stat-sub">{at.fullDayNonAcademicAppSwitches} switches</p>
+
             </div>
             <div className="today-stat">
               <span className="today-stat-value color-orange">{at.fullDayProductivityMinutes}</span>
               <span className="today-stat-unit">mins</span>
               <p className="today-stat-label">Productivity (Full Day)</p>
-              <p className="today-stat-sub">{at.fullDayProductivityAppSwitches} switches</p>
             </div>
             <div className="today-stat">
               <span className="today-stat-value color-dark">{at.fullDayTotalAppSwitches}</span>

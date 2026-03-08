@@ -308,11 +308,6 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
       )}
 
       <div className="main-content">
-        <div className="page-header">
-          <h2>Task Analysis</h2>
-          <p>Upload a PDF or paste text to calculate task priority</p>
-        </div>
-
         {/* Input Mode Tabs */}
         <div className="tabs">
           <button

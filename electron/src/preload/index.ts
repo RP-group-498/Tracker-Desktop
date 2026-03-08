@@ -59,6 +59,7 @@ interface ElectronAPI {
     addTask: (data: unknown) => Promise<unknown>;
     getTasks: () => Promise<unknown>;
     deleteTask: (taskId: number) => Promise<unknown>;
+    getCalibrationHistory: (days?: number) => Promise<unknown>;
 
     // Idle Activity Prompt
     submitIdleActivity: (data: {
@@ -107,7 +108,6 @@ interface InterventionAPI {
     updateTrayTimer: (label: string) => void;
     clearTray: () => void;
     showWindow: () => void;
-    getCalibrationHistory: (days?: number) => Promise<unknown>;
     pomodoroStarted: () => void;
     pomodoroStopped: () => void;
     onPomodoroIdleResponse: (callback: (data: { action: string }) => void) => void;
@@ -229,6 +229,8 @@ const electronAPI: ElectronAPI = {
     getTasks: () => ipcRenderer.invoke('procrastination:get-tasks'),
     deleteTask: (taskId) => ipcRenderer.invoke('procrastination:delete-task', taskId),
 
+    getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
+
     // Idle Activity Prompt
     submitIdleActivity: (data) => ipcRenderer.invoke('submit-idle-activity', data),
     dismissIdlePrompt: () => ipcRenderer.invoke('dismiss-idle-prompt'),
@@ -260,7 +262,6 @@ const electronAPI: ElectronAPI = {
         updateTrayTimer: (label) => ipcRenderer.send('intervention:tray-update', { label }),
         clearTray: () => ipcRenderer.send('intervention:tray-clear'),
         showWindow: () => ipcRenderer.send('intervention:window-show'),
-        getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
         pomodoroStarted: () => ipcRenderer.send('intervention:pomodoro-started'),
         pomodoroStopped: () => ipcRenderer.send('intervention:pomodoro-stopped'),
         onPomodoroIdleResponse: (callback) => {

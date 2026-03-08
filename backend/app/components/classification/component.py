@@ -53,7 +53,7 @@ PRODUCTIVITY_DOMAINS = {
     "stackoverflow.com", "stackexchange.com",
     # Developer Communities & Blogs
     "dev.to", "medium.com", "hashnode.dev", "hashnode.com",
-    "developer.mozilla.org", "css-tricks.com",
+    "developer.mozilla.org", "css-tricks.com", "linkedin.com",
     # Documentation
     "docs.google.com", "notion.so", "confluence",
     "readthedocs.io", "readthedocs.org",
@@ -71,7 +71,7 @@ NON_ACADEMIC_DOMAINS = {
     # Social media
     "facebook.com", "twitter.com", "x.com", "instagram.com",
     "tiktok.com", "snapchat.com", "reddit.com",
-    "linkedin.com", "pinterest.com", "tumblr.com", "threads.net",
+    "pinterest.com", "tumblr.com", "threads.net", "whatsapp.com",
     # Video entertainment
     "netflix.com", "hulu.com", "disneyplus.com", "twitch.tv",
     "primevideo.com", "dailymotion.com", "crunchyroll.com", "funimation.com",
@@ -157,7 +157,8 @@ IDLE_ACTIVITY_CLASSIFICATIONS = {
     "exercise_walk":       ("non_academic", 0.85),
     "eating_meal":         ("non_academic", 0.90),
     "personal_errands":    ("non_academic", 0.85),
-    "social_conversation": ("neutral",      0.80),
+    "social_conversation": ("non_academic", 0.80),
+    "skipped":             ("non_academic", 1.00),
 }
 
 # Keywords for classifying custom idle activity text
@@ -357,7 +358,7 @@ class ClassificationComponent(ComponentBase):
                 domain=data.get("domain", "")
             )
 
-            if ml_result and ml_result["confidence"] >= 0.80:
+            if ml_result and ml_result["confidence"] >= 0.55:
                 # ML provided good classification
                 category = ml_result["category"]
                 confidence = ml_result["confidence"]
@@ -465,41 +466,16 @@ class ClassificationComponent(ComponentBase):
                 "matched_rule": f"idle_predefined:{activity_id}",
             }
 
-        # Custom text classification via keyword matching
+        # Custom text classification via Gemini (pending_ai)
         if custom_label:
-            label_lower = custom_label.lower()
-            words = set(label_lower.split())
-
-            # Check for academic keywords
-            if words & IDLE_ACADEMIC_KEYWORDS:
-                self._stats["total_classified"] += 1
-                self._stats["by_category"]["academic"] += 1
-                return {
-                    "category": "academic",
-                    "confidence": 0.70,
-                    "source": "user",
-                    "matched_rule": "idle_custom_academic_keywords",
-                }
-
-            # Check for non-academic keywords
-            if words & IDLE_NON_ACADEMIC_KEYWORDS:
-                self._stats["total_classified"] += 1
-                self._stats["by_category"]["non_academic"] += 1
-                return {
-                    "category": "non_academic",
-                    "confidence": 0.70,
-                    "source": "user",
-                    "matched_rule": "idle_custom_non_academic_keywords",
-                }
-
-            # Fallback for unknown custom text
             self._stats["total_classified"] += 1
+            self._stats["by_layer"]["pending_ai"] += 1
             self._stats["by_category"]["neutral"] += 1
             return {
-                "category": "neutral",
-                "confidence": 0.50,
-                "source": "user",
-                "matched_rule": "idle_custom_unknown",
+                "category": "neutral",  # Temporary placeholder
+                "confidence": 0.40,
+                "source": "pending_ai",
+                "matched_rule": "Awaiting batch Gemini classification",
             }
 
         # No activity specified

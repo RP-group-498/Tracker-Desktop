@@ -558,6 +558,104 @@ def allocate_tasks(req: AllocateRequest, current_user: Dict[str, Any] = Depends(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/allocate-internal/{user_id}")
+def allocate_tasks_internal(user_id: str, req: AllocateRequest):
+    """Internal endpoint for the background scheduler — no JWT auth required.
+    Uses user_id from the URL path instead of the token."""
+    if _apdis_collection is None:
+        raise HTTPException(status_code=503, detail="APDIS database not configured.")
+
+    try:
+        estimator = _get_estimator()
+
+        start_date = datetime.strptime(req.start_date, '%Y-%m-%d') if req.start_date else datetime.now()
+        end_date = start_date + timedelta(days=req.days_ahead)
+
+        active_times = list(_apdis_collection.find({
+            "userId": req.active_time_user_id,
+            "date": {
+                "$gte": start_date.strftime('%Y-%m-%d'),
+                "$lte": end_date.strftime('%Y-%m-%d')
+            }
+        }).sort("date", 1))
+
+        if not active_times:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No active time predictions found for {req.active_time_user_id}"
+            )
+
+        incomplete_tasks = list(estimator.tasks.find({
+            "user_id": user_id,
+            "status": {"$ne": "completed"}
+        }).sort([("final_mcdm_score", -1), ("sub_task.position", 1)]))
+
+        if not incomplete_tasks:
+            return {"message": "No incomplete tasks found for this user", "user_id": user_id}
+
+        allocations = []
+        allocated_task_ids = []
+        remaining_tasks = list(range(len(incomplete_tasks)))
+
+        for active_time in active_times:
+            date_str = active_time['date']
+            available_minutes = active_time.get('predictedAcademicMinutes', 0)
+            used_minutes = 0
+            day_tasks = []
+            tasks_to_remove = []
+
+            for task_idx in remaining_tasks:
+                task = incomplete_tasks[task_idx]
+                estimated_time = task['estimates'].get('user_estimate') or task['estimates'].get('system_estimate', 0)
+
+                if used_minutes + estimated_time <= available_minutes:
+                    task_date = datetime.strptime(date_str, '%Y-%m-%d')
+                    predicted_start = active_time.get('predictedActiveStart', '')
+                    predicted_end = active_time.get('predictedActiveEnd', '')
+
+                    estimator.tasks.update_one(
+                        {"_id": task['_id']},
+                        {"$set": {
+                            "time_allocation_date": task_date,
+                            "predictedActiveStart": predicted_start,
+                            "predictedActiveEnd": predicted_end
+                        }}
+                    )
+
+                    day_tasks.append({
+                        "task_id": str(task['_id']),
+                        "subtask": task['sub_task'].get('description', 'Unknown'),
+                        "estimated_time": estimated_time,
+                    })
+
+                    allocated_task_ids.append(str(task['_id']))
+                    used_minutes += estimated_time
+                    tasks_to_remove.append(task_idx)
+
+            for task_idx in reversed(tasks_to_remove):
+                remaining_tasks.remove(task_idx)
+
+            allocations.append({
+                "date": date_str,
+                "available_minutes": available_minutes,
+                "used_minutes": used_minutes,
+                "tasks_count": len(day_tasks),
+                "tasks": day_tasks
+            })
+
+        return {
+            "user_id": user_id,
+            "allocated_tasks": len(allocated_task_ids),
+            "unallocated_tasks": len(remaining_tasks),
+            "allocations": allocations,
+            "timestamp": datetime.now().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/active-time/debug")
 def debug_active_time():
