@@ -5,7 +5,7 @@ from typing import Optional, Literal
 
 
 CategoryType = Literal["academic", "productivity", "neutral", "non_academic"]
-SourceType = Literal["stub", "database", "rules", "model", "user", "api"]
+SourceType = Literal["stub", "database", "rules", "model", "user", "api", "fallback", "gemini", "pending_ai"]
 
 
 class ClassificationInput(BaseModel):

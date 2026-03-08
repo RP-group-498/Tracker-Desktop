@@ -127,7 +127,7 @@ class MLClassifier:
         self.model_name = config.get("model_name", "facebook/bart-large-mnli")
         self.device = config.get("device", "cpu")
         self.batch_size = config.get("batch_size", 1)
-        self.confidence_threshold = config.get("confidence_threshold", 0.55)
+        self.confidence_threshold = config.get("confidence_threshold", 0.80)
 
         self._classifier = None
         self._initialized = False

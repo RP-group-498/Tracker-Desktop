@@ -38,4 +38,13 @@ def load_all_components(config: Dict[str, Any]) -> None:
     except Exception as e:
         print(f"[Components] AdaptiveTimeEstimatorComponent skipped: {e}")
 
+    # Smart Intervention Engine component
+    try:
+        from app.components.smart_intervention_engine import SmartInterventionEngineComponent
+        sie = SmartInterventionEngineComponent()
+        sie.initialize(config.get("smart_intervention_engine", {}))
+        registry.register(sie)
+    except Exception as e:
+        print(f"[Components] SmartInterventionEngineComponent skipped: {e}")
+
     print(f"[Components] Loaded {len(registry.get_all())} component(s)")

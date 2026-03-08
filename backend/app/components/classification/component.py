@@ -14,7 +14,6 @@ Classification Categories:
 """
 
 from typing import Any, Dict, List, Optional
-import random
 import logging
 
 from app.components.base import ComponentBase
@@ -29,6 +28,11 @@ ACADEMIC_DOMAINS = {
     "scholar.google", "researchgate.net", "academia.edu",
     "arxiv.org", "pubmed.ncbi", "jstor.org", "ieee.org",
     "semanticscholar.org", "paperswithcode.com", "connectedpapers.com",
+    # Research Publishers & Databases
+    "springer.com", "sciencedirect.com", "wiley.com", "nature.com",
+    "elsevier.com", "acm.org", "scopus.com", "frontiersin.org",
+    "mdpi.com", "plos.org", "biomedcentral.com",
+    "nih.gov", "ncbi.nlm.nih.gov",
     # Learning platforms
     "coursera.org", "edx.org", "khanacademy.org", "udemy.com",
     "udacity.com", "brilliant.org", "duolingo.com",
@@ -67,9 +71,12 @@ NON_ACADEMIC_DOMAINS = {
     # Social media
     "facebook.com", "twitter.com", "x.com", "instagram.com",
     "tiktok.com", "snapchat.com", "reddit.com",
+    "linkedin.com", "pinterest.com", "tumblr.com", "threads.net",
     # Video entertainment
     "netflix.com", "hulu.com", "disneyplus.com", "twitch.tv",
-    "primevideo.com",
+    "primevideo.com", "dailymotion.com", "crunchyroll.com", "funimation.com",
+    # Memes / Viral content
+    "9gag.com", "buzzfeed.com", "imgur.com", "rumble.com",
     # Gaming
     "steampowered.com", "epicgames.com", "roblox.com",
     # Shopping
@@ -138,6 +145,35 @@ DESKTOP_NEUTRAL_APPS = {
     "settings", "control panel", "task manager", "activity monitor",
 }
 
+# Idle activity classifications for user-reported offline activities
+# Maps activity_id -> (category, confidence)
+IDLE_ACTIVITY_CLASSIFICATIONS = {
+    "reading_book":        ("academic",     0.90),
+    "studying_notes":      ("academic",     0.95),
+    "attending_lecture":    ("academic",     0.95),
+    "research_library":    ("academic",     0.90),
+    "writing_notes":       ("academic",     0.85),
+    "break_relaxing":      ("non_academic", 0.90),
+    "exercise_walk":       ("non_academic", 0.85),
+    "eating_meal":         ("non_academic", 0.90),
+    "personal_errands":    ("non_academic", 0.85),
+    "social_conversation": ("neutral",      0.80),
+}
+
+# Keywords for classifying custom idle activity text
+IDLE_ACADEMIC_KEYWORDS = {
+    "study", "research", "read", "reading", "lecture", "class", "course",
+    "homework", "assignment", "thesis", "paper", "exam", "review", "notes",
+    "library", "textbook", "learn", "learning", "tutor", "seminar", "lab",
+}
+
+IDLE_NON_ACADEMIC_KEYWORDS = {
+    "game", "gaming", "movie", "tv", "show", "nap", "sleep", "rest",
+    "shopping", "cook", "cooking", "clean", "cleaning", "laundry",
+    "exercise", "gym", "walk", "run", "eat", "lunch", "dinner", "breakfast",
+    "relax", "break", "chill", "hang out", "play",
+}
+
 
 class ClassificationComponent(ComponentBase):
     """
@@ -165,6 +201,8 @@ class ClassificationComponent(ComponentBase):
             "by_layer": {
                 "rules": 0,
                 "model": 0,
+                "gemini": 0,
+                "pending_ai": 0,
                 "fallback": 0,
             },
             "by_category": {
@@ -179,6 +217,11 @@ class ClassificationComponent(ComponentBase):
                 "failures": 0,
                 "avg_confidence": 0.0,
             },
+            "gemini_stats": {
+                "calls": 0,
+                "successes": 0,
+                "failures": 0,
+            },
         }
 
     @property
@@ -187,6 +230,8 @@ class ClassificationComponent(ComponentBase):
 
     @property
     def version(self) -> str:
+        if hasattr(self, '_gemini_classifier') and self._gemini_classifier:
+            return "0.3.0-gemini"
         return "0.2.0-ml" if self._ml_enabled else "0.1.0-rules"
 
     @property
@@ -210,18 +255,34 @@ class ClassificationComponent(ComponentBase):
         if self._ml_enabled:
             try:
                 from .ml_classifier import MLClassifier
+                from .gemini_classifier import GeminiClassifier
                 from .config import get_ml_config
 
                 ml_settings = get_ml_config(ml_config)
+                
+                # Zero-shot ML
                 model_config = ml_settings.get(ml_settings.get("model_type", "zero_shot"), {})
                 self._ml_classifier = MLClassifier(model_config)
+                
+                # Gemini Fallback
+                gemini_config = ml_settings.get("gemini", {})
+                self._gemini_classifier = GeminiClassifier(gemini_config)
 
                 # Lazy loading: don't initialize model here
                 if not ml_settings.get("lazy_loading", True):
-                    self._ml_classifier.initialize()
-                    logging.info("[Classification] ML model loaded (eager)")
+                    try:
+                        self._ml_classifier.initialize()
+                    except Exception as e:
+                        logging.warning(f"[Classification] ML model eager init failed: {e}")
+                    
+                    try:
+                        self._gemini_classifier.initialize()
+                    except Exception as e:
+                        logging.warning(f"[Classification] Gemini model eager init failed: {e}")
+                    
+                    logging.info("[Classification] ML and Gemini models loading attempt complete (eager)")
                 else:
-                    logging.info("[Classification] ML model configured (lazy loading)")
+                    logging.info("[Classification] ML and Gemini models configured (lazy loading)")
 
             except Exception as e:
                 logging.error(f"[Classification] Failed to initialize ML: {e}")
@@ -296,7 +357,7 @@ class ClassificationComponent(ComponentBase):
                 domain=data.get("domain", "")
             )
 
-            if ml_result and ml_result["confidence"] >= 0.55:
+            if ml_result and ml_result["confidence"] >= 0.80:
                 # ML provided good classification
                 category = ml_result["category"]
                 confidence = ml_result["confidence"]
@@ -304,29 +365,24 @@ class ClassificationComponent(ComponentBase):
                 source_type = "model"
                 self._stats["by_layer"]["model"] += 1
             else:
-                # ML failed or low confidence - use rule result or fallback
-                if confidence >= 0.50:
-                    source_type = "rules"
-                    self._stats["by_layer"]["rules"] += 1
-                else:
-                    # LAYER 3: Fallback to neutral
-                    category = "neutral"
-                    confidence = 0.50
-                    matched_rule = "fallback"
-                    source_type = "fallback"
-                    self._stats["by_layer"]["fallback"] += 1
+                # ML failed or low confidence - Mark as pending for batch Gemini classification
+                category = "neutral"  # Temporary placeholder
+                confidence = 0.40
+                matched_rule = "Awaiting batch Gemini classification"
+                source_type = "pending_ai"
+                self._stats["by_layer"]["pending_ai"] += 1
         else:
-            # No ML available, use rule result or fallback
+            # No ML available, use rule result or pending_ai handling
             if confidence >= 0.50:
                 source_type = "rules"
                 self._stats["by_layer"]["rules"] += 1
             else:
-                # LAYER 3: Fallback
-                category = "neutral"
-                confidence = 0.50
-                matched_rule = "fallback"
-                source_type = "fallback"
-                self._stats["by_layer"]["fallback"] += 1
+                # Mark as pending for batch Gemini classification
+                category = "neutral"  # Temporary placeholder
+                confidence = 0.40
+                matched_rule = "Awaiting batch Gemini classification"
+                source_type = "pending_ai"
+                self._stats["by_layer"]["pending_ai"] += 1
 
         # Update stats
         self._stats["total_classified"] += 1
@@ -383,6 +439,77 @@ class ClassificationComponent(ComponentBase):
         # Default to neutral for unknown apps
         return "neutral", 0.50, "desktop_unknown_app"
 
+    def classify_idle_activity(self, activity_id: str = None, custom_label: str = None) -> Dict[str, Any]:
+        """
+        Classify a user-reported idle/offline activity.
+
+        For predefined activities, uses the IDLE_ACTIVITY_CLASSIFICATIONS mapping.
+        For custom text, uses keyword matching with lower confidence.
+
+        Args:
+            activity_id: Predefined activity key (e.g. "reading_book")
+            custom_label: User-entered text for custom activities
+
+        Returns:
+            Dict with category, confidence, source, matched_rule
+        """
+        # Predefined activity lookup
+        if activity_id and activity_id in IDLE_ACTIVITY_CLASSIFICATIONS:
+            category, confidence = IDLE_ACTIVITY_CLASSIFICATIONS[activity_id]
+            self._stats["total_classified"] += 1
+            self._stats["by_category"][category] += 1
+            return {
+                "category": category,
+                "confidence": confidence,
+                "source": "user",
+                "matched_rule": f"idle_predefined:{activity_id}",
+            }
+
+        # Custom text classification via keyword matching
+        if custom_label:
+            label_lower = custom_label.lower()
+            words = set(label_lower.split())
+
+            # Check for academic keywords
+            if words & IDLE_ACADEMIC_KEYWORDS:
+                self._stats["total_classified"] += 1
+                self._stats["by_category"]["academic"] += 1
+                return {
+                    "category": "academic",
+                    "confidence": 0.70,
+                    "source": "user",
+                    "matched_rule": "idle_custom_academic_keywords",
+                }
+
+            # Check for non-academic keywords
+            if words & IDLE_NON_ACADEMIC_KEYWORDS:
+                self._stats["total_classified"] += 1
+                self._stats["by_category"]["non_academic"] += 1
+                return {
+                    "category": "non_academic",
+                    "confidence": 0.70,
+                    "source": "user",
+                    "matched_rule": "idle_custom_non_academic_keywords",
+                }
+
+            # Fallback for unknown custom text
+            self._stats["total_classified"] += 1
+            self._stats["by_category"]["neutral"] += 1
+            return {
+                "category": "neutral",
+                "confidence": 0.50,
+                "source": "user",
+                "matched_rule": "idle_custom_unknown",
+            }
+
+        # No activity specified
+        return {
+            "category": "neutral",
+            "confidence": 0.50,
+            "source": "user",
+            "matched_rule": "idle_no_activity",
+        }
+
     def _classify_by_rules(self, domain: str, url: str, title: str) -> tuple:
         """Apply rule-based classification for browser events."""
 
@@ -410,9 +537,8 @@ class ClassificationComponent(ComponentBase):
         if any(kw in title for kw in academic_keywords):
             return "academic", 0.65, "title_keywords"
 
-        # Default to neutral with some randomness
-        confidence = 0.5 + random.uniform(0, 0.15)
-        return "neutral", confidence, None
+        # Default to neutral for unknown domains
+        return "neutral", 0.50, None
 
     def _classify_youtube(self, context: dict, current_category: str) -> tuple:
         """Adjust classification for YouTube content."""
@@ -544,6 +670,47 @@ class ClassificationComponent(ComponentBase):
             self._stats["ml_stats"]["failures"] += 1
             return None
 
+    def _classify_with_gemini(self, url: str, title: str, domain: str) -> Optional[Dict]:
+        """
+        Classify using Gemini model fallback.
+
+        Args:
+            url: Full URL
+            title: Page or window title
+            domain: Domain name
+
+        Returns:
+            Gemini classification result or None if failed
+        """
+        if not hasattr(self, '_gemini_classifier') or not self._gemini_classifier:
+            return None
+
+        # Lazy initialization
+        if not self._gemini_classifier._initialized:
+            try:
+                logging.info("[Classification] Loading Gemini model (first use)...")
+                self._gemini_classifier.initialize()
+            except Exception as e:
+                logging.error(f"[Classification] Gemini init failed: {e}")
+                return None
+
+        try:
+            self._stats["gemini_stats"]["calls"] += 1
+
+            result = self._gemini_classifier.classify(url, title, domain)
+
+            if result:
+                self._stats["gemini_stats"]["successes"] += 1
+            else:
+                self._stats["gemini_stats"]["failures"] += 1
+
+            return result
+
+        except Exception as e:
+            logging.error(f"[Classification] Gemini classification error: {e}")
+            self._stats["gemini_stats"]["failures"] += 1
+            return None
+
     def _create_fallback_output(self, reason: str) -> Dict[str, Any]:
         """
         Create fallback classification output.
@@ -568,11 +735,17 @@ class ClassificationComponent(ComponentBase):
         Returns:
             Dict with component status, stats, and ML information
         """
+        comp_type = "rules_only"
+        if hasattr(self, '_gemini_classifier') and self._gemini_classifier:
+            comp_type = "enhanced_ml_and_gemini"
+        elif self._ml_enabled:
+            comp_type = "enhanced_ml"
+            
         status = {
             "name": self.name,
             "version": self.version,
             "initialized": self._initialized,
-            "type": "enhanced_ml" if self._ml_enabled else "rules_only",
+            "type": comp_type,
             "model_loaded": self._ml_classifier._initialized if self._ml_classifier else False,
             "stats": self._stats,
             "rules": {
@@ -589,7 +762,16 @@ class ClassificationComponent(ComponentBase):
         }
 
         # Add ML-specific status if enabled
-        if self._ml_enabled and self._ml_classifier:
-            status["ml_status"] = self._ml_classifier.get_stats()
+        if self._ml_enabled:
+            if self._ml_classifier:
+                status["ml_status"] = self._ml_classifier.get_stats()
+            if hasattr(self, '_gemini_classifier') and self._gemini_classifier:
+                status["gemini_status"] = self._gemini_classifier.get_stats()
 
         return status
+
+    def get_gemini_classifier(self) -> Optional[Any]:
+        """Get the Gemini classifier instance for batch processing."""
+        if hasattr(self, '_gemini_classifier'):
+            return self._gemini_classifier
+        return None

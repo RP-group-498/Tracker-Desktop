@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     tasks_collection_patterns: str = "patterns"
     tasks_collection_training_logs: str = "training_logs"
 
+    # Smart Intervention Engine DB
+    intervention_mongodb_uri: str = ""
+    intervention_mongodb_database: str = "intervention_db"
+
     # APDIS MongoDB (active time predictions)
     apdis_mongodb_uri: str = ""
     apdis_database_name: str = ""
@@ -66,7 +70,7 @@ class Settings(BaseSettings):
                 "zero_shot": {
                     "model_name": "facebook/bart-large-mnli",
                     "device": "cpu",  # "cpu" or "cuda" (if GPU available)
-                    "confidence_threshold": 0.60,  # Minimum confidence for ML
+                    "confidence_threshold": 0.80,  # Minimum confidence for ML (below this → Gemini)
                 },
             }
         },

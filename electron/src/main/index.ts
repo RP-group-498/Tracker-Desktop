@@ -10,9 +10,11 @@ import path from 'path';
 import { PythonBridge } from './python-bridge';
 import { NativeMessagingServer } from './native-messaging';
 import { DesktopActivityTracker } from './desktop-activity-tracker';
+import { IdleActivityPrompt } from './idle-prompt';
 import { TrayManager } from './tray';
 import { setupIpcHandlers } from './ipc-handlers';
 import { registerProcrastinationHandlers } from './ipc-procrastination';
+import { registerInterventionHandlers } from './ipc-intervention';
 
 // Prevent multiple instances
 const gotTheLock = app.requestSingleInstanceLock();
@@ -25,6 +27,7 @@ let mainWindow: BrowserWindow | null = null;
 let pythonBridge: PythonBridge | null = null;
 let nativeMessagingServer: NativeMessagingServer | null = null;
 let desktopActivityTracker: DesktopActivityTracker | null = null;
+let idleActivityPrompt: IdleActivityPrompt | null = null;
 let trayManager: TrayManager | null = null;
 
 // App state
@@ -51,10 +54,10 @@ const appState: AppState = {
  */
 function createWindow(): void {
     mainWindow = new BrowserWindow({
-        width: 400,
-        height: 500,
-        minWidth: 350,
-        minHeight: 400,
+        width: 1200,
+        height: 800,
+        minWidth: 800,
+        minHeight: 600,
         show: process.env.NODE_ENV === 'development', // Show in dev, hidden in production (tray)
         frame: true,
         resizable: true,
@@ -89,34 +92,34 @@ function createWindow(): void {
 }
 
 /**
- * Create the task prioritizer window (vanilla HTML pages with nodeIntegration enabled)
+ * Create a new session and share it with all tracking components.
+ * Ends the previous session if one exists.
  */
-function createTaskWindow(): BrowserWindow {
-    const taskWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        title: 'Task Prioritizer',
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-        },
-    });
+async function createAndShareSession(): Promise<void> {
+    // End old session if one exists
+    if (appState.currentSessionId) {
+        try {
+            await pythonBridge!.endSession(appState.currentSessionId);
+            console.log(`[Main] Ended previous session: ${appState.currentSessionId}`);
+        } catch (err) {
+            console.error('[Main] Failed to end previous session:', err);
+        }
+    }
 
-    // In dev, Vite doesn't write files to disk — load straight from source.
-    // In production, Vite copies public/ → dist/renderer/ verbatim.
-    const isDev = process.env.NODE_ENV === 'development';
-    const htmlPath = isDev
-        ? path.join(__dirname, '../../src/renderer/public/pages/pdf-analysis.html')
-        : path.join(__dirname, '../renderer/pages/pdf-analysis.html');
-
-    taskWindow.loadFile(htmlPath);
-
-    return taskWindow;
+    // Create new session
+    const result = await pythonBridge!.createSession();
+    if (result.success && result.data) {
+        const sessionId = (result.data as { session_id: string }).session_id;
+        appState.currentSessionId = sessionId;
+        desktopActivityTracker?.setSessionId(sessionId);
+        nativeMessagingServer?.setSessionId(sessionId);
+        updateTrayAndWindow();
+        console.log(`[Main] New session created: ${sessionId}`);
+    } else {
+        console.error('[Main] Failed to create session:', result.error);
+    }
 }
 
-/**
- * Initialize all services
- */
 async function initializeServices(): Promise<void> {
     console.log('[Main] Initializing services...');
 
@@ -137,6 +140,9 @@ async function initializeServices(): Promise<void> {
 
     await pythonBridge!.start();
 
+    // 1b. Auto-create a session immediately after backend is ready
+    await createAndShareSession();
+
     // 2. Start Native Messaging server (nativeMessagingServer already created in app.on('ready'))
     nativeMessagingServer!.on('extensionConnected', () => {
         appState.extensionConnected = true;
@@ -149,8 +155,9 @@ async function initializeServices(): Promise<void> {
         console.log('[Main] Browser extension disconnected');
     });
     nativeMessagingServer!.on('sessionCreated', (sessionId: string) => {
+        // This fires only when NativeMessagingServer had to create a session itself
+        // (shouldn't happen now that we auto-create, but keep for safety)
         appState.currentSessionId = sessionId;
-        // Also update desktop tracker with session ID
         desktopActivityTracker?.setSessionId(sessionId);
         updateTrayAndWindow();
     });
@@ -190,6 +197,19 @@ async function initializeServices(): Promise<void> {
 
         await desktopActivityTracker.start();
         console.log('[Main] Desktop Activity Tracker started successfully');
+
+        // 3b. Start Idle Activity Prompt (depends on desktop tracker)
+        idleActivityPrompt = new IdleActivityPrompt(pythonBridge!, desktopActivityTracker);
+        idleActivityPrompt.start();
+        idleActivityPrompt.on('activitySubmitted', () => {
+            console.log('[Main] Idle activity submitted by user');
+        });
+        // When user returns from idle → end old session, start new one
+        idleActivityPrompt.on('sessionRotate', async () => {
+            console.log('[Main] Session rotation triggered (idle return)');
+            await createAndShareSession();
+        });
+        console.log('[Main] Idle Activity Prompt initialized');
     } catch (error) {
         console.error('[Main] Failed to start Desktop Activity Tracker:', error);
         // Don't throw - allow app to continue without desktop tracking
@@ -226,9 +246,24 @@ function updateTrayAndWindow(): void {
 async function cleanup(): Promise<void> {
     console.log('[Main] Cleaning up...');
 
-    // Stop desktop activity tracker first (before backend)
+    // Close idle prompt first
+    if (idleActivityPrompt) {
+        idleActivityPrompt.close();
+    }
+
+    // Stop desktop activity tracker (before backend)
     if (desktopActivityTracker) {
         await desktopActivityTracker.stop();
+    }
+
+    // End the current session before shutting down
+    if (appState.currentSessionId && pythonBridge) {
+        try {
+            await pythonBridge.endSession(appState.currentSessionId);
+            console.log(`[Main] Ended session on quit: ${appState.currentSessionId}`);
+        } catch (err) {
+            console.error('[Main] Failed to end session on quit:', err);
+        }
     }
 
     if (nativeMessagingServer) {
@@ -252,25 +287,12 @@ app.on('ready', async () => {
     // Set up IPC handlers BEFORE creating window so they're ready when renderer loads
     setupIpcHandlers(ipcMain, () => appState, pythonBridge, nativeMessagingServer);
     registerProcrastinationHandlers(pythonBridge);
+    registerInterventionHandlers(
+        pythonBridge,
+        () => mainWindow,
+        () => trayManager ? (trayManager as any)['tray'] : null,
+    );
 
-    // Open task prioritizer window
-    ipcMain.handle('open-task-prioritizer', () => {
-        createTaskWindow();
-    });
-
-    // Navigate between task-prioritization pages (pdf-analysis ↔ time-estimator)
-    ipcMain.on('navigate', (_event, page: string) => {
-        const senderWindow = BrowserWindow.fromWebContents(_event.sender);
-        if (!senderWindow) return;
-
-        const isDev = process.env.NODE_ENV === 'development';
-        const basePath = isDev
-            ? path.join(__dirname, '../../src/renderer/public/pages')
-            : path.join(__dirname, '../renderer/pages');
-
-        const htmlFile = `${page}.html`;
-        senderWindow.loadFile(path.join(basePath, htmlFile));
-    });
 
     // Now create window
     createWindow();

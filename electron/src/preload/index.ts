@@ -53,6 +53,48 @@ interface ElectronAPI {
     addTask: (data: unknown) => Promise<unknown>;
     getTasks: () => Promise<unknown>;
     deleteTask: (taskId: number) => Promise<unknown>;
+
+    // Idle Activity Prompt
+    submitIdleActivity: (data: {
+        activityId: string | null;
+        customLabel: string | null;
+        idleDurationMs: number;
+        idleStart: string;
+        idleEnd: string;
+    }) => Promise<unknown>;
+    dismissIdlePrompt: () => Promise<unknown>;
+
+    // Intervention
+    intervention: InterventionAPI;
+}
+
+interface ContextSignals {
+    total_transitions: number;
+    non_academic_transitions: number;
+    completed_tasks_last_7_days: number;
+    assigned_tasks_last_7_days: number;
+    task_priority: number;
+    grade_weight_normalized: number;
+    time_spent_on_task: number;
+    assigned_time: number;
+    task_deadline_time: string | null;
+    has_data: boolean;
+}
+
+interface InterventionAPI {
+    banditSelect: (req: { user_id: string; x: number[]; alpha?: number }) => Promise<{ action: string; allowed_actions: string[] }>;
+    banditUpdate: (req: { user_id: string; x: number[]; action: string; reward: number; button: string; alpha?: number }) => Promise<{ status: string; n_updates: number }>;
+    getEvents: (userId: string) => Promise<unknown[]>;
+    logMotivation: (entry: { user_id: string; motivation: number; scenario: string }) => Promise<void>;
+    getMotivationHistory: (userId: string, since?: number) => Promise<unknown[]>;
+    getUserGoal: () => Promise<{ life_goal: string }>;
+    saveUserGoal: (goal: string) => Promise<{ status: string }>;
+    getContext: (userId: string) => Promise<ContextSignals>;
+    notifyActions: (data: { title: string; body: string; strategy: string }) => void;
+    onNotificationResponse: (callback: (data: { strategy: string; action: string }) => void) => void;
+    updateTrayTimer: (label: string) => void;
+    clearTray: () => void;
+    showWindow: () => void;
     getCalibrationHistory: (days?: number) => Promise<unknown>;
 }
 
@@ -157,6 +199,29 @@ const electronAPI: ElectronAPI = {
     getTasks: () => ipcRenderer.invoke('procrastination:get-tasks'),
     deleteTask: (taskId) => ipcRenderer.invoke('procrastination:delete-task', taskId),
     getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
+
+    // Idle Activity Prompt
+    submitIdleActivity: (data) => ipcRenderer.invoke('submit-idle-activity', data),
+    dismissIdlePrompt: () => ipcRenderer.invoke('dismiss-idle-prompt'),
+
+    // Intervention
+    intervention: {
+        banditSelect: (req) => ipcRenderer.invoke('intervention:bandit-select', req),
+        banditUpdate: (req) => ipcRenderer.invoke('intervention:bandit-update', req),
+        getEvents: (userId) => ipcRenderer.invoke('intervention:get-events', userId),
+        logMotivation: (entry) => ipcRenderer.invoke('intervention:log-motivation', entry),
+        getMotivationHistory: (userId, since) => ipcRenderer.invoke('intervention:get-motivation-history', userId, since),
+        getUserGoal: () => ipcRenderer.invoke('intervention:get-user-goal'),
+        saveUserGoal: (goal) => ipcRenderer.invoke('intervention:save-user-goal', goal),
+        getContext: (userId) => ipcRenderer.invoke('intervention:get-context', userId),
+        notifyActions: (data) => ipcRenderer.send('intervention:notify-actions', data),
+        onNotificationResponse: (callback) => {
+            ipcRenderer.on('notification-action-response', (_event, data) => callback(data));
+        },
+        updateTrayTimer: (label) => ipcRenderer.send('intervention:tray-update', { label }),
+        clearTray: () => ipcRenderer.send('intervention:tray-clear'),
+        showWindow: () => ipcRenderer.send('intervention:window-show'),
+    },
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);
@@ -164,6 +229,6 @@ contextBridge.exposeInMainWorld('electronAPI', electronAPI);
 // Type declaration for renderer
 declare global {
     interface Window {
-        electronAPI: ElectronAPI;
+        electronAPI: ElectronAPI & { intervention: InterventionAPI };
     }
 }

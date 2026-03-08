@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>What were you doing?</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 20px 10px;
+        }
+
+        .header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .header .idle-duration {
+            font-size: 0.85rem;
+            color: #8b8fad;
+        }
+
+        .header .idle-duration span {
+            color: #7c83ff;
+            font-weight: 600;
+        }
+
+        .section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #6b6f8d;
+            padding: 6px 20px 4px;
+            font-weight: 600;
+        }
+
+        .activities-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 6px 16px;
+        }
+
+        .activity-card {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .activity-card:hover {
+            background: rgba(124, 131, 255, 0.1);
+            border-color: rgba(124, 131, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .activity-card.selected {
+            background: rgba(124, 131, 255, 0.15);
+            border-color: #7c83ff;
+            box-shadow: 0 0 12px rgba(124, 131, 255, 0.15);
+        }
+
+        .activity-card .icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            width: 28px;
+            text-align: center;
+        }
+
+        .activity-card .label {
+            font-size: 0.78rem;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        .activity-card .category-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+
+        .category-dot.academic { background: #4ade80; }
+        .category-dot.non_academic { background: #f87171; }
+        .category-dot.neutral { background: #facc15; }
+
+        .other-section {
+            padding: 8px 16px;
+        }
+
+        .other-input-wrapper {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .other-input-wrapper input {
+            flex: 1;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #e0e0e0;
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .other-input-wrapper input:focus {
+            border-color: #7c83ff;
+        }
+
+        .other-input-wrapper input::placeholder {
+            color: #555;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            padding: 12px 16px 16px;
+            margin-top: auto;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #7c83ff, #6366f1);
+            color: #fff;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            background: linear-gradient(135deg, #8b91ff, #7c7ff7);
+            box-shadow: 0 4px 14px rgba(124, 131, 255, 0.3);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-skip {
+            background: rgba(255, 255, 255, 0.06);
+            color: #8b8fad;
+        }
+
+        .btn-skip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #c0c0c0;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            padding: 2px 16px 6px;
+            font-size: 0.65rem;
+            color: #6b6f8d;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>What were you doing?</h1>
+        <div class="idle-duration">You were away for <span id="idle-time">—</span></div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><span class="category-dot academic"></span> Academic</div>
+        <div class="legend-item"><span class="category-dot non_academic"></span> Non-Academic</div>
+        <div class="legend-item"><span class="category-dot neutral"></span> Neutral</div>
+    </div>
+
+    <div class="section-label">Choose an activity</div>
+    <div class="activities-grid" id="activities-grid">
+        <!-- Populated by JS -->
+    </div>
+
+    <div class="section-label" style="margin-top:4px;">Or describe it</div>
+    <div class="other-section">
+        <div class="other-input-wrapper">
+            <input type="text" id="other-input" placeholder="e.g. Attending a meeting, phone call..." maxlength="100" />
+        </div>
+    </div>
+
+    <div class="actions">
+        <button class="btn btn-skip" id="btn-skip">Skip</button>
+        <button class="btn btn-submit" id="btn-submit" disabled>Submit</button>
+    </div>
+
+    <script>
+        // Predefined activities
+        const ACTIVITIES = [
+            { id: 'reading_book',       icon: '📖', label: 'Reading a Book',           category: 'academic' },
+            { id: 'studying_notes',     icon: '📝', label: 'Studying / Reviewing Notes', category: 'academic' },
+            { id: 'attending_lecture',   icon: '🎓', label: 'Attending Lecture / Class', category: 'academic' },
+            { id: 'research_library',   icon: '🔬', label: 'Research / Library Work',   category: 'academic' },
+            { id: 'writing_notes',      icon: '✍️', label: 'Writing Notes by Hand',     category: 'academic' },
+            { id: 'break_relaxing',     icon: '☕', label: 'Taking a Break',            category: 'non_academic' },
+            { id: 'exercise_walk',      icon: '🏃', label: 'Exercise / Walk',           category: 'non_academic' },
+            { id: 'eating_meal',        icon: '🍽️', label: 'Eating / Meal',             category: 'non_academic' },
+            { id: 'personal_errands',   icon: '🏠', label: 'Personal Errands',          category: 'non_academic' },
+            { id: 'social_conversation',icon: '💬', label: 'Social / Conversation',     category: 'neutral' },
+        ];
+
+        let selectedActivityId = null;
+
+        // Parse query params (idleDurationMs, idleStart, idleEnd passed by main process)
+        const params = new URLSearchParams(window.location.search);
+        const idleDurationMs = parseInt(params.get('idleDurationMs') || '0', 10);
+        const idleStart = params.get('idleStart') || '';
+        const idleEnd = params.get('idleEnd') || '';
+
+        // Display idle duration
+        function formatDuration(ms) {
+            const totalSec = Math.floor(ms / 1000);
+            const mins = Math.floor(totalSec / 60);
+            const secs = totalSec % 60;
+            if (mins >= 60) {
+                const hrs = Math.floor(mins / 60);
+                const remMins = mins % 60;
+                return `${hrs}h ${remMins}m`;
+            }
+            if (mins > 0) return `${mins}m ${secs}s`;
+            return `${secs}s`;
+        }
+
+        document.getElementById('idle-time').textContent = formatDuration(idleDurationMs);
+
+        // Render activity cards
+        const grid = document.getElementById('activities-grid');
+        ACTIVITIES.forEach(act => {
+            const card = document.createElement('div');
+            card.className = 'activity-card';
+            card.dataset.id = act.id;
+            card.innerHTML = `
+                <span class="icon">${act.icon}</span>
+                <span class="label">${act.label}</span>
+                <span class="category-dot ${act.category}"></span>
+            `;
+            card.addEventListener('click', () => selectActivity(act.id, card));
+            grid.appendChild(card);
+        });
+
+        // Selection logic
+        const otherInput = document.getElementById('other-input');
+        const submitBtn = document.getElementById('btn-submit');
+        const skipBtn = document.getElementById('btn-skip');
+
+        function selectActivity(id, cardEl) {
+            // Deselect all
+            document.querySelectorAll('.activity-card').forEach(c => c.classList.remove('selected'));
+            // Select this one
+            cardEl.classList.add('selected');
+            selectedActivityId = id;
+            otherInput.value = '';
+            submitBtn.disabled = false;
+        }
+
+        otherInput.addEventListener('input', () => {
+            if (otherInput.value.trim()) {
+                // Deselect all cards
+                document.querySelectorAll('.activity-card').forEach(c => c.classList.remove('selected'));
+                selectedActivityId = null;
+                submitBtn.disabled = false;
+            } else if (!selectedActivityId) {
+                submitBtn.disabled = true;
+            }
+        });
+
+        // Submit
+        submitBtn.addEventListener('click', async () => {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            const payload = {
+                activityId: selectedActivityId,
+                customLabel: otherInput.value.trim() || null,
+                idleDurationMs: idleDurationMs,
+                idleStart: idleStart,
+                idleEnd: idleEnd,
+            };
+
+            try {
+                if (window.electronAPI && window.electronAPI.submitIdleActivity) {
+                    await window.electronAPI.submitIdleActivity(payload);
+                }
+            } catch (err) {
+                console.error('Failed to submit idle activity:', err);
+            }
+
+            window.close();
+        });
+
+        // Skip
+        skipBtn.addEventListener('click', () => {
+            if (window.electronAPI && window.electronAPI.dismissIdlePrompt) {
+                window.electronAPI.dismissIdlePrompt();
+            }
+            window.close();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                skipBtn.click();
+            } else if (e.key === 'Enter' && !submitBtn.disabled) {
+                submitBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>

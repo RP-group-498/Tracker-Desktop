@@ -161,7 +161,8 @@ class AdaptiveTimeEstimator:
                 "final_mcdm_score": main_task.get('final_mcdm_score'),
                 "status": "scheduled",
                 "created_date": datetime.now(),
-                "time_allocation_date": pred.get('time_allocation_date', None)
+                "suggested_date": pred.get('suggested_date'), # New separate field
+                "time_allocation_date": pred.get('time_allocation_date', None) # Kept for other functions
             }
 
             self.tasks.insert_one(doc)

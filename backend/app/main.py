@@ -29,6 +29,7 @@ from app.api import api_router
 from app.services.user_manager import init_user_manager
 from app.services.mongodb_sync import init_mongodb_sync
 from services.scheduler.active_time_sync import start_scheduler, stop_scheduler
+from app.services.gemini_batch_worker import start_gemini_worker, stop_gemini_worker
 
 
 @asynccontextmanager
@@ -62,12 +63,16 @@ async def lifespan(app: FastAPI):
     # Start background scheduler (daily active time sync + task allocation)
     start_scheduler()
 
+    # Start Gemini Batch Worker
+    start_gemini_worker()
+
     print("[Backend] Ready to accept connections")
 
     yield
 
     # Shutdown
     print("[Backend] Shutting down...")
+    stop_gemini_worker()
     stop_scheduler()
     if mongo_sync:
         await mongo_sync.close()

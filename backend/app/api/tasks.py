@@ -59,7 +59,7 @@ class AnalyzeRequest(BaseModel):
     deadline: str
     credits: int
     weight: int
-    user_id: Optional[str] = "student_123"
+    user_id: Optional[str] = "124804d8-40e0-4f90-af05-eeea5c2d7550"
 
 
 class PredictRequest(BaseModel):
@@ -356,6 +356,52 @@ def get_user_tasks(
             "tasks": formatted_tasks,
             "task_count": len(formatted_tasks),
             "total_estimated_time": total_estimated_time,
+            "timestamp": datetime.now().isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/scheduled-summary/{user_id}")
+def get_scheduled_summary(user_id: str):
+    """
+    Get a summary of scheduled tasks including suggested_date, subtask name, and deadline.
+    Used for calendar view.
+    """
+    try:
+        estimator = _get_estimator()
+
+        # Query for only scheduled tasks for this user
+        query = {"user_id": user_id, "status": "scheduled"}
+        tasks_cursor = estimator.tasks.find(query).sort("suggested_date", 1)
+
+        tasks = list(tasks_cursor)
+        summary = []
+
+        for task in tasks:
+            sub_task = task.get('sub_task', {})
+            main_task = task.get('main_task', {})
+
+            # Format suggested_date
+            suggested_date = task.get('suggested_date')
+            if suggested_date and isinstance(suggested_date, datetime):
+                suggested_date_str = suggested_date.isoformat()
+            else:
+                suggested_date_str = suggested_date
+
+            summary.append({
+                "subtask_name": sub_task.get('description', 'Unknown'),
+                "suggested_date": suggested_date_str,
+                "deadline": main_task.get('deadline', 'No Deadline'),
+                "main_task": main_task.get('name', 'Unknown')
+            })
+
+        return {
+            "user_id": user_id,
+            "tasks": summary,
+            "count": len(summary),
             "timestamp": datetime.now().isoformat()
         }
     except HTTPException:
