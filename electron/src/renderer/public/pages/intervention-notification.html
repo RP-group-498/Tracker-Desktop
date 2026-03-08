@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Focus App Intervention</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        /* ── Notification mode ─────────────────────────────────── */
+        .notification-view {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 16px;
+        }
+
+        .notification-view .title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .notification-view .body {
+            font-size: 0.8rem;
+            color: #a0a3bd;
+            line-height: 1.4;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .notification-view .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 8px 4px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #7c83ff, #6366f1);
+            color: #fff;
+        }
+        .btn-start:hover {
+            background: linear-gradient(135deg, #8b91ff, #7c7ff7);
+            box-shadow: 0 2px 10px rgba(124, 131, 255, 0.3);
+        }
+
+        .btn-skip {
+            background: rgba(255, 255, 255, 0.08);
+            color: #8b8fad;
+        }
+        .btn-skip:hover {
+            background: rgba(255, 255, 255, 0.14);
+            color: #c0c0c0;
+        }
+
+        .btn-notnow {
+            background: rgba(255, 255, 255, 0.04);
+            color: #6b6f8d;
+        }
+        .btn-notnow:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #a0a3bd;
+        }
+
+        /* ── Timer mode ────────────────────────────────────────── */
+        .timer-view {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #1a1a2e;
+        }
+
+        .timer-label {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #7c83ff;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Hidden ────────────────────────────────────────────── */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Notification mode -->
+    <div id="notification-view" class="notification-view hidden">
+        <div class="title" id="notif-title"></div>
+        <div class="body" id="notif-body"></div>
+        <div class="actions">
+            <button class="btn btn-start" id="btn-start">Start</button>
+            <button class="btn btn-skip" id="btn-skip">Skip</button>
+            <button class="btn btn-notnow" id="btn-notnow">Not Now</button>
+        </div>
+    </div>
+
+    <!-- Timer mode -->
+    <div id="timer-view" class="timer-view hidden">
+        <div class="timer-label" id="timer-label">--:--</div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode');
+        const strategy = params.get('strategy') || '';
+
+        function sendAction(action) {
+            if (window.electronAPI && window.electronAPI.interventionPopupAction) {
+                window.electronAPI.interventionPopupAction({ strategy: strategy, action: action });
+            }
+        }
+
+        if (mode === 'notification') {
+            document.getElementById('notification-view').classList.remove('hidden');
+            document.getElementById('notif-title').textContent = params.get('title') || '';
+            document.getElementById('notif-body').textContent = params.get('body') || '';
+
+            document.getElementById('btn-start').addEventListener('click', () => sendAction('start'));
+            document.getElementById('btn-skip').addEventListener('click', () => sendAction('skip'));
+            document.getElementById('btn-notnow').addEventListener('click', () => sendAction('not_now'));
+        }
+
+        if (mode === 'timer') {
+            document.getElementById('timer-view').classList.remove('hidden');
+            const labelEl = document.getElementById('timer-label');
+
+            // Set initial label from query param
+            const initLabel = params.get('label');
+            if (initLabel) labelEl.textContent = initLabel;
+
+            // Listen for updates from main process
+            if (window.electronAPI && window.electronAPI.onInterventionTimerUpdate) {
+                window.electronAPI.onInterventionTimerUpdate((label) => {
+                    labelEl.textContent = label;
+                });
+            }
+
+            if (window.electronAPI && window.electronAPI.onInterventionTimerClear) {
+                window.electronAPI.onInterventionTimerClear(() => {
+                    window.close();
+                });
+            }
+        }
+
+        // Escape to dismiss
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (mode === 'notification') {
+                    sendAction('not_now');
+                } else {
+                    window.close();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
