@@ -449,57 +449,14 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
             </div>
             <div className="card-body">
               <div className="results-container">
-                {/* Task Info */}
+
+                {/* 1st — Task Description */}
                 <div className="result-section">
-                  <h4>Task Information</h4>
-                  <div className="info-grid">
-                    <div className="info-item">
-                      <span className="info-label">Task Name:</span>
-                      <span className="info-value">{taskData.task_name || 'N/A'}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">Priority:</span>
-                      <span className={`info-value priority-badge ${taskData.priority}`}>{taskData.priority}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">Days Left:</span>
-                      <span className="info-value">{taskData.metrics.days_left} days</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">Difficulty Rating:</span>
-                      <span className="info-value">{taskData.metrics.difficulty_rating}/5</span>
-                    </div>
-                  </div>
+                  <h4>Task Description</h4>
+                  <p className="task-description">{taskData.task_description || 'No description available'}</p>
                 </div>
 
-                {/* MCDM Scores */}
-                <div className="result-section">
-                  <h4>MCDM Scores</h4>
-                  <div className="scores-container">
-                    {[
-                      { label: 'Urgency (50%)', key: 'urgency_score', cls: 'urgency' },
-                      { label: 'Impact (30%)', key: 'impact_score', cls: 'impact' },
-                      { label: 'Difficulty (20%)', key: 'difficulty_score', cls: 'difficulty' },
-                    ].map(({ label, key, cls }) => {
-                      const val = taskData.mcdm_calculation[key as keyof typeof taskData.mcdm_calculation] as number
-                      return (
-                        <div className="score-item" key={key}>
-                          <div className="score-label">{label}</div>
-                          <div className="score-bar">
-                            <div className={`score-fill ${cls}`} style={{ width: `${val}%` }} />
-                          </div>
-                          <div className="score-value">{val}</div>
-                        </div>
-                      )
-                    })}
-                    <div className="score-item final-score">
-                      <div className="score-label">Final MCDM Score</div>
-                      <div className="score-value large">{taskData.mcdm_calculation.final_weighted_score.toFixed(1)}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Subtasks */}
+                {/* 2nd — Subtasks */}
                 <div className="result-section">
                   <h4>Subtasks</h4>
                   {taskData.sub_tasks && taskData.sub_tasks.length > 0 ? (
@@ -579,15 +536,61 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
                   )}
                 </div>
 
-                {/* Description */}
+                {/* 3rd — Task Information */}
                 <div className="result-section">
-                  <h4>Task Description</h4>
-                  <p className="task-description">{taskData.task_description || 'No description available'}</p>
+                  <h4>Task Information</h4>
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <span className="info-label">Task Name:</span>
+                      <span className="info-value">{taskData.task_name || 'N/A'}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Priority:</span>
+                      <span className={`info-value priority-badge ${taskData.priority}`}>{taskData.priority}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Days Left:</span>
+                      <span className="info-value">{taskData.metrics.days_left} days</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Difficulty Rating:</span>
+                      <span className="info-value">{taskData.metrics.difficulty_rating}/5</span>
+                    </div>
+                  </div>
                 </div>
+
+                {/* 4th — Priority Scores (no MCDM word) */}
+                <div className="result-section">
+                  <h4>Priority Scores</h4>
+                  <div className="scores-container">
+                    {[
+                      { label: 'Urgency (50%)', key: 'urgency_score', cls: 'urgency' },
+                      { label: 'Impact (30%)', key: 'impact_score', cls: 'impact' },
+                      { label: 'Difficulty (20%)', key: 'difficulty_score', cls: 'difficulty' },
+                    ].map(({ label, key, cls }) => {
+                      const val = taskData.mcdm_calculation[key as keyof typeof taskData.mcdm_calculation] as number
+                      return (
+                        <div className="score-item" key={key}>
+                          <div className="score-label">{label}</div>
+                          <div className="score-bar">
+                            <div className={`score-fill ${cls}`} style={{ width: `${val}%` }} />
+                          </div>
+                          <div className="score-value">{val}</div>
+                        </div>
+                      )
+                    })}
+                    <div className="score-item final-score">
+                      <div className="score-label">Overall Score</div>
+                      <div className="score-value large">{taskData.mcdm_calculation.final_weighted_score.toFixed(1)}</div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
         )}
+
       </div>
     </div>
   )
