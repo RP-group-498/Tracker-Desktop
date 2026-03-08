@@ -99,6 +99,34 @@
             letter-spacing: 0.5px;
         }
 
+        /* ── Idle prompt mode ─────────────────────────────────── */
+        .idle-view {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 16px;
+            justify-content: center;
+        }
+
+        .idle-view .title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .idle-view .body {
+            font-size: 0.8rem;
+            color: #a0a3bd;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .idle-view .actions {
+            display: flex;
+            gap: 8px;
+        }
+
         /* ── Hidden ────────────────────────────────────────────── */
         .hidden { display: none !important; }
     </style>
@@ -121,6 +149,16 @@
         <div class="timer-label" id="timer-label">--:--</div>
     </div>
 
+    <!-- Idle prompt mode -->
+    <div id="idle-view" class="idle-view hidden">
+        <div class="title">Are you there?</div>
+        <div class="body">You've been idle for 5 minutes during your Pomodoro session.</div>
+        <div class="actions">
+            <button class="btn btn-start" id="btn-idle-continue">Yes, I'm here</button>
+            <button class="btn btn-skip" id="btn-idle-stop">No, stop timer</button>
+        </div>
+    </div>
+
     <script>
         const params = new URLSearchParams(window.location.search);
         const mode = params.get('mode');
@@ -140,6 +178,29 @@
             document.getElementById('btn-start').addEventListener('click', () => sendAction('start'));
             document.getElementById('btn-skip').addEventListener('click', () => sendAction('skip'));
             document.getElementById('btn-notnow').addEventListener('click', () => sendAction('not_now'));
+        }
+
+        if (mode === 'idle_prompt') {
+            document.getElementById('idle-view').classList.remove('hidden');
+
+            function sendIdleResponse(action) {
+                if (window.electronAPI && window.electronAPI.interventionPopupAction) {
+                    // Use the idle-response channel
+                    window.electronAPI.interventionPopupAction({ strategy: 'idle_prompt', action: action });
+                }
+                // Also send via dedicated idle response channel
+                if (window.require) {
+                    // fallback
+                }
+                window.close();
+            }
+
+            document.getElementById('btn-idle-continue').addEventListener('click', () => {
+                sendIdleResponse('continue');
+            });
+            document.getElementById('btn-idle-stop').addEventListener('click', () => {
+                sendIdleResponse('stop');
+            });
         }
 
         if (mode === 'timer') {

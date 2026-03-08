@@ -7,7 +7,10 @@ import SmartInterventionPage from './pages/SmartInterventionPage';
 import TaskPrioritizationTab from './pages/TaskPrioritizationTab';
 import CalibrationDetailsPage from './pages/CalibrationDetailsPage';
 import LoginPage from './pages/LoginPage';
+import BreathingModal from './components/BreathingModal';
+import VisualizationModal from './components/VisualizationModal';
 import { useAuth } from './context/AuthContext';
+import { InterventionProvider, useInterventionContext } from './context/InterventionContext';
 
 interface AppState {
   pythonRunning: boolean;
@@ -69,6 +72,33 @@ const App: React.FC = () => {
   if (!isAuthenticated) {
     return <LoginPage />;
   }
+
+  return (
+    <InterventionProvider>
+      <AppContent
+        state={state}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        user={user}
+        logout={logout}
+      />
+    </InterventionProvider>
+  );
+};
+
+/** Inner component that can use InterventionContext */
+const AppContent: React.FC<{
+  state: AppState;
+  activeTab: Tab;
+  setActiveTab: (tab: Tab) => void;
+  user: any;
+  logout: () => void;
+}> = ({ state, activeTab, setActiveTab, user, logout }) => {
+  const {
+    showBreathing, setShowBreathing,
+    showVisualization, setShowVisualization,
+    abortBreathing, abortVisualization,
+  } = useInterventionContext();
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -133,6 +163,20 @@ const App: React.FC = () => {
       <footer className="px-4 py-2 text-center text-xs text-gray-400">
         Focus App v1.0.0 | Research Project
       </footer>
+
+      {/* Modals — rendered at app level so they survive tab switches */}
+      {showBreathing && (
+        <BreathingModal
+          onClose={() => setShowBreathing(false)}
+          onAbort={abortBreathing}
+        />
+      )}
+      {showVisualization && (
+        <VisualizationModal
+          onClose={() => setShowVisualization(false)}
+          onAbort={abortVisualization}
+        />
+      )}
     </div>
   );
 };

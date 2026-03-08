@@ -107,6 +107,9 @@ interface InterventionAPI {
     clearTray: () => void;
     showWindow: () => void;
     getCalibrationHistory: (days?: number) => Promise<unknown>;
+    pomodoroStarted: () => void;
+    pomodoroStopped: () => void;
+    onPomodoroIdleResponse: (callback: (data: { action: string }) => void) => void;
 }
 
 // Additional API for intervention popup windows (used by intervention-notification.html)
@@ -256,6 +259,11 @@ const electronAPI: ElectronAPI = {
         clearTray: () => ipcRenderer.send('intervention:tray-clear'),
         showWindow: () => ipcRenderer.send('intervention:window-show'),
         getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
+        pomodoroStarted: () => ipcRenderer.send('intervention:pomodoro-started'),
+        pomodoroStopped: () => ipcRenderer.send('intervention:pomodoro-stopped'),
+        onPomodoroIdleResponse: (callback) => {
+            ipcRenderer.on('intervention:pomodoro-idle', (_event, data) => callback(data));
+        },
     },
 };
 

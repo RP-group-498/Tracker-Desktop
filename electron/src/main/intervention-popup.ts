@@ -19,6 +19,8 @@ export class InterventionPopup {
     private getMainWindow: () => BrowserWindow | null;
     private notificationWindow: BrowserWindow | null = null;
     private timerWindow: BrowserWindow | null = null;
+    private timerReady = false;
+    private pendingTimerLabel: string | null = null;
     private autoDismissTimer: ReturnType<typeof setTimeout> | null = null;
     private actionTaken = false;
     private currentStrategy = '';
@@ -100,17 +102,25 @@ export class InterventionPopup {
 
     /**
      * Show or update the timer popup with a countdown label.
+     * Uses ready-state buffering to prevent blinking on first show.
      */
     updateTimer(label: string): void {
         if (this.timerWindow && !this.timerWindow.isDestroyed()) {
-            this.timerWindow.webContents.send('intervention-popup:timer-update', label);
+            if (this.timerReady) {
+                this.timerWindow.webContents.send('intervention-popup:timer-update', label);
+            } else {
+                this.pendingTimerLabel = label;
+            }
             return;
         }
+
+        this.timerReady = false;
+        this.pendingTimerLabel = label;
 
         const htmlPath = this.resolveHtmlPath();
         const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
-        this.timerWindow = new BrowserWindow({
+        const win = new BrowserWindow({
             width: 160,
             height: 50,
             x: width - 160 - 16,
@@ -131,14 +141,27 @@ export class InterventionPopup {
             },
         });
 
-        this.timerWindow.loadFile(htmlPath, { query: { mode: 'timer', label } });
+        this.timerWindow = win;
 
-        this.timerWindow.once('ready-to-show', () => {
-            this.timerWindow?.showInactive();
+        win.loadFile(htmlPath, { query: { mode: 'timer', label } });
+
+        win.once('ready-to-show', () => {
+            win.showInactive();
+            win.webContents.once('did-finish-load', () => {
+                this.timerReady = true;
+                if (this.pendingTimerLabel) {
+                    win.webContents.send('intervention-popup:timer-update', this.pendingTimerLabel);
+                    this.pendingTimerLabel = null;
+                }
+            });
         });
 
-        this.timerWindow.on('closed', () => {
-            this.timerWindow = null;
+        win.on('closed', () => {
+            // Only nullify if this is still the current timer window
+            if (this.timerWindow === win) {
+                this.timerWindow = null;
+                this.timerReady = false;
+            }
         });
     }
 
@@ -146,6 +169,8 @@ export class InterventionPopup {
      * Close the timer popup.
      */
     clearTimer(): void {
+        this.timerReady = false;
+        this.pendingTimerLabel = null;
         if (this.timerWindow && !this.timerWindow.isDestroyed()) {
             this.timerWindow.close();
         }
@@ -153,10 +178,69 @@ export class InterventionPopup {
     }
 
     /**
+     * Show an "Are you there?" idle prompt popup (Windows only).
+     */
+    showIdlePrompt(): void {
+        const htmlPath = this.resolveHtmlPath();
+        const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+
+        const win = new BrowserWindow({
+            width: 300,
+            height: 140,
+            x: width - 300 - 16,
+            y: height - 140 - 16,
+            resizable: false,
+            movable: true,
+            minimizable: false,
+            maximizable: false,
+            alwaysOnTop: true,
+            skipTaskbar: true,
+            frame: false,
+            transparent: false,
+            show: false,
+            webPreferences: {
+                preload: path.join(__dirname, '../preload/index.js'),
+                nodeIntegration: false,
+                contextIsolation: true,
+            },
+        });
+
+        win.loadFile(htmlPath, { query: { mode: 'idle_prompt' } });
+
+        win.once('ready-to-show', () => {
+            win.showInactive();
+        });
+
+        // Auto-dismiss after 15s — treat as stop
+        const autoDismiss = setTimeout(() => {
+            if (!win.isDestroyed()) {
+                const mainWindow = this.getMainWindow();
+                mainWindow?.webContents.send('intervention:pomodoro-idle', { action: 'stop' });
+                win.close();
+            }
+        }, 15_000);
+
+        win.on('closed', () => {
+            clearTimeout(autoDismiss);
+        });
+    }
+
+    /**
      * Register IPC handler for popup button clicks.
      */
     private registerIpc(): void {
         ipcMain.on('intervention-popup:action', (_event, data: { strategy: string; action: string }) => {
+            if (data.strategy === 'idle_prompt') {
+                // Route idle prompt responses to the pomodoro idle channel
+                const mainWindow = this.getMainWindow();
+                mainWindow?.webContents.send('intervention:pomodoro-idle', { action: data.action });
+                if (data.action === 'continue') {
+                    // Tell main process to reset idle check
+                    ipcMain.emit('intervention:idle-continue');
+                }
+                return;
+            }
+
             this.actionTaken = true;
             const mainWindow = this.getMainWindow();
             mainWindow?.webContents.send('notification-action-response', {
