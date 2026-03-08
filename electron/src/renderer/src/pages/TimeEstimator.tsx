@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Task, TimerState, ScheduledSummaryTask } from '../types/tasks'
 import { formatElapsed } from '../hooks/useTaskTimer'
+import { useAuth } from '../context/AuthContext'
 import '../styles/pages.css'
 import '../styles/time-estimator.css'
 
 const API_BASE_URL = 'http://localhost:8000/api/tasks'
-const USER_ID = '124804d8-40e0-4f90-af05-eeea5c2d7550'
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -55,6 +55,10 @@ interface TimeEstimatorProps {
 }
 
 const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
+  const { token, user } = useAuth()
+  const authHeaders: Record<string, string> = token
+    ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+    : { 'Content-Type': 'application/json' }
   const [currentDate, setCurrentDate] = useState(new Date())
   const [tasks, setTasks] = useState<Task[]>([])
   const [scheduledSummaryTasks, setScheduledSummaryTasks] = useState<ScheduledSummaryTask[]>([])
@@ -106,8 +110,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
 
       // Fetch both endpoints in parallel
       const [tasksResponse, summaryResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/tasks/${USER_ID}`),
-        fetch(`${API_BASE_URL}/scheduled-summary/${USER_ID}`),
+        fetch(`${API_BASE_URL}/tasks`, { headers: authHeaders }),
+        fetch(`${API_BASE_URL}/scheduled-summary`, { headers: authHeaders }),
       ])
 
       if (!tasksResponse.ok) throw new Error(`Tasks API error! status: ${tasksResponse.status}`)
@@ -170,7 +174,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
       console.error('Failed to load tasks from API:', error)
       if (!silent) showNotification('Failed to load tasks. Make sure the API is running at ' + API_BASE_URL, 'error')
     }
-  }, [showNotification])
+  }, [showNotification, token])
 
   // Initial load + polling
   useEffect(() => {
@@ -181,11 +185,12 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
 
   // Available time
   useEffect(() => {
-    fetch(`${API_BASE_URL}/active-time/user/user_003`)
+    if (!user?.id) return
+    fetch(`${API_BASE_URL}/active-time/user/${user.id}`)
       .then(r => r.json())
       .then(data => setAvailableTime(formatTime(data.total_predicted_minutes || 0)))
       .catch(() => setAvailableTime('Unavailable'))
-  }, [])
+  }, [user?.id])
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -209,8 +214,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/start-task`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subtask: taskName, user_id: USER_ID }),
+        headers: authHeaders,
+        body: JSON.stringify({ subtask: taskName }),
       })
       if (!response.ok) throw new Error(`API error: ${response.status}`)
 
@@ -243,8 +248,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     try {
       await fetch(`${API_BASE_URL}/pause-task`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subtask: taskName, user_id: USER_ID }),
+        headers: authHeaders,
+        body: JSON.stringify({ subtask: taskName }),
       })
     } catch (error) { console.error('Error updating pause status:', error) }
 
@@ -273,8 +278,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     try {
       await fetch(`${API_BASE_URL}/resume-task`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subtask: taskName, user_id: USER_ID }),
+        headers: authHeaders,
+        body: JSON.stringify({ subtask: taskName }),
       })
     } catch (error) { console.error('Error updating resume status:', error) }
 
@@ -302,8 +307,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/complete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subtask: taskName, user_id: USER_ID, actual_time: actualTimeMinutes }),
+        headers: authHeaders,
+        body: JSON.stringify({ subtask: taskName, actual_time: actualTimeMinutes }),
       })
       const result = await response.json()
 

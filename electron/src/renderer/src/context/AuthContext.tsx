@@ -47,6 +47,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         window.electronAPI.onAuthSuccess((authData: any) => {
             setToken(authData.token);
             setIsAuthenticated(true);
+            setIsLoading(false); // ← clear the spinner
             if (authData.user) {
                 setUser(authData.user);
             }
@@ -71,6 +72,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setToken(null);
         setUser(null);
         setIsAuthenticated(false);
+        setIsLoading(false); // ← ensure clean state for next login
     };
 
     return (

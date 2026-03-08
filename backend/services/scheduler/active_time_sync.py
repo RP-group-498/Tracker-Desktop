@@ -30,7 +30,8 @@ logging.basicConfig(
 
 # Configuration — FastAPI backend (configurable via .env)
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api/tasks")
-USERS_TO_SYNC = os.getenv("SCHEDULER_USERS","124804d8-40e0-4f90-af05-eeea5c2d7550,user_001").split(",")
+USERS_TO_SYNC = [u for u in os.getenv("SCHEDULER_USERS", "").split(",") if u.strip()]
+ALLOCATION_USERS = [u for u in os.getenv("ALLOCATION_USERS", "").split(",") if u.strip()]
 SCHEDULE_TIME = os.getenv("SCHEDULER_TIME", "21:09")
 
 
@@ -97,9 +98,9 @@ def fetch_active_time():
 
                 success_count += 1
 
-                # If 124804d8-40e0-4f90-af05-eeea5c2d7550 is synced, trigger allocation for that user
-                if user_id == "124804d8-40e0-4f90-af05-eeea5c2d7550":
-                    allocate_user_tasks("124804d8-40e0-4f90-af05-eeea5c2d7550", "124804d8-40e0-4f90-af05-eeea5c2d7550")
+                # If this user is in the allocation list, trigger task allocation
+                if user_id in ALLOCATION_USERS:
+                    allocate_user_tasks(user_id, user_id)
 
             else:
                 logging.warning(f"FAILED: {user_id} | Status: {response.status_code} | Reason: {response.text[:100]}")

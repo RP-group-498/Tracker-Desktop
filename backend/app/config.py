@@ -65,7 +65,8 @@ class Settings(BaseSettings):
     # Scheduler (active_time_sync — runs in background on startup)
     api_base_url: str = "http://localhost:8000/api/tasks"
     scheduler_time: str = "21:09"
-    scheduler_users: str = "user_003,user_001"
+    scheduler_users: str = ""
+    allocation_users: str = ""
 
     # Component configuration
     component_config: dict = {

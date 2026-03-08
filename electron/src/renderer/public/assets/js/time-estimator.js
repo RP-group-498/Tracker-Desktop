@@ -2,7 +2,7 @@ const { ipcRenderer } = require('electron');
 
 // Configuration — updated to point at FastAPI backend on port 8000
 const API_BASE_URL = 'http://localhost:8001/api/tasks';
-const USER_ID = '124804d8-40e0-4f90-af05-eeea5c2d7550';
+let USER_ID = '';
 
 // State
 let currentDate = new Date();
@@ -38,7 +38,14 @@ const modalDate = document.getElementById('modalDate');
 const modalTaskList = document.getElementById('modalTaskList');
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch authenticated user ID from main process
+    try {
+        const authUserId = await ipcRenderer.invoke('get-auth-user-id');
+        if (authUserId) USER_ID = authUserId;
+    } catch (err) {
+        console.warn('Could not fetch auth user ID:', err);
+    }
     setupEventListeners();
     setupNavigation();
     loadTasksFromAPI();
@@ -785,7 +792,7 @@ async function updateAvailableTime() {
     if (!availableTimeElement) return;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/active-time/user/user_003`);
+        const response = await fetch(`${API_BASE_URL}/active-time/user/${USER_ID}`);
 
         if (!response.ok) throw new Error('Failed to fetch available time');
 

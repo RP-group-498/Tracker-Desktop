@@ -9,10 +9,11 @@ settings.intervention_mongodb_uri instead of a hardcoded connection string.
 import asyncio
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Dict, Any
 
 import numpy as np
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from app.api.deps import get_current_user
 
 from app.components.smart_intervention_engine.bandit import (
     LinUCBArm,
@@ -89,19 +90,19 @@ async def _save_arm(user_id: str, action: str, arm: LinUCBArm) -> None:
 
 
 @router.get("/user/goal")
-async def get_user_goal():
+async def get_user_goal(current_user: Dict[str, Any] = Depends(get_current_user)):
     db = _get_db()
-    user = await db.User.find_one({"type": "settings"})
+    user = await db.User.find_one({"type": "settings", "user_id": current_user["sub"]})
     if user:
         return {"life_goal": user.get("life_goal", "")}
     return {"life_goal": ""}
 
 
 @router.post("/user/goal")
-async def set_user_goal(goal: UserGoal):
+async def set_user_goal(goal: UserGoal, current_user: Dict[str, Any] = Depends(get_current_user)):
     db = _get_db()
     await db.User.update_one(
-        {"type": "settings"},
+        {"type": "settings", "user_id": current_user["sub"]},
         {"$set": {"life_goal": goal.life_goal}},
         upsert=True,
     )
@@ -114,7 +115,7 @@ async def set_user_goal(goal: UserGoal):
 
 
 @router.post("/bandit/select", response_model=BanditSelectResponse)
-async def bandit_select(req: BanditSelectRequest):
+async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Select the best intervention given the user's context vector."""
     if len(req.x) != 12:
         raise HTTPException(
@@ -124,7 +125,8 @@ async def bandit_select(req: BanditSelectRequest):
     allowed = get_allowed_actions(req.x)
     x = np.array(req.x, dtype=float)
 
-    arms_list = await asyncio.gather(*[_load_arm(req.user_id, a) for a in allowed])
+    user_id = current_user["sub"]
+    arms_list = await asyncio.gather(*[_load_arm(user_id, a) for a in allowed])
     arms = dict(zip(allowed, arms_list))
 
     action = select_action(arms, x, req.alpha)
@@ -132,7 +134,7 @@ async def bandit_select(req: BanditSelectRequest):
 
 
 @router.post("/bandit/update")
-async def bandit_update(req: BanditUpdateRequest):
+async def bandit_update(req: BanditUpdateRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Update the LinUCB model after observing a user reward."""
     if len(req.x) != 12:
         raise HTTPException(
@@ -142,14 +144,15 @@ async def bandit_update(req: BanditUpdateRequest):
     if req.action not in ACTIONS:
         raise HTTPException(status_code=400, detail=f"Unknown action: {req.action}")
 
+    user_id = current_user["sub"]
     x = np.array(req.x, dtype=float)
-    arm = await _load_arm(req.user_id, req.action)
+    arm = await _load_arm(user_id, req.action)
     arm.update(x, req.reward)
-    await _save_arm(req.user_id, req.action, arm)
+    await _save_arm(user_id, req.action, arm)
 
     db = _get_db()
     await db.bandit_events.insert_one({
-        "user_id": req.user_id,
+        "user_id": user_id,
         "context": req.x,
         "action": req.action,
         "reward": req.reward,
@@ -163,11 +166,11 @@ async def bandit_update(req: BanditUpdateRequest):
 
 
 @router.get("/bandit/events")
-async def bandit_events(user_id: str):
-    """Return all logged bandit events for a user (most recent first)."""
+async def bandit_events(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Return all logged bandit events for the current user (most recent first)."""
     db = _get_db()
     cursor = db.bandit_events.find(
-        {"user_id": user_id},
+        {"user_id": current_user["sub"]},
         {"_id": 0},
     ).sort("timestamp", -1).limit(100)
     return await cursor.to_list(length=100)
@@ -179,11 +182,11 @@ async def bandit_events(user_id: str):
 
 
 @router.post("/motivation/log")
-async def log_motivation(entry: MotivationLogEntry):
+async def log_motivation(entry: MotivationLogEntry, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Store a motivation snapshot for the user."""
     db = _get_db()
     await db.motivation_logs.insert_one({
-        "user_id": entry.user_id,
+        "user_id": current_user["sub"],
         "motivation": entry.motivation,
         "scenario": entry.scenario,
         "timestamp": entry.timestamp if entry.timestamp is not None else time.time(),
@@ -191,18 +194,13 @@ async def log_motivation(entry: MotivationLogEntry):
     return {"status": "ok"}
 
 
-@router.get("/context/{user_id}")
-async def get_context(user_id: str):
+@router.get("/context")
+async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
     """
-    Fetch raw context signals for a user from Component 1 and Component 4.
-
-    Component 1 — focus_app_research DB, active_time collection:
-      - totalAppSwitches, nonAcademicAppSwitches (today's document)
-
-    Component 4 — adaptive_time_estimation DB, completed_tasks collection:
-      - task counts (last 7 days), current task fields
+    Fetch raw context signals for the current user from Component 1 and Component 4.
     """
     import motor.motor_asyncio
+    user_id = current_user["sub"]
 
     _default = {
         "total_transitions": 0,
@@ -322,7 +320,7 @@ async def get_context(user_id: str):
 
 
 @router.get("/motivation/history")
-async def motivation_history(user_id: str, since: float = 3600.0):
+async def motivation_history(since: float = 3600.0, current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Return motivation snapshots within the last `since` seconds.
     Sorted oldest-first for left-to-right chart rendering.
@@ -330,7 +328,7 @@ async def motivation_history(user_id: str, since: float = 3600.0):
     db = _get_db()
     cutoff = time.time() - since
     cursor = db.motivation_logs.find(
-        {"user_id": user_id, "timestamp": {"$gte": cutoff}},
+        {"user_id": current_user["sub"], "timestamp": {"$gte": cutoff}},
         {"_id": 0},
     ).sort("timestamp", 1).limit(500)
     return await cursor.to_list(length=500)

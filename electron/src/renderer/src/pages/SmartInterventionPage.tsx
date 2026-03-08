@@ -4,10 +4,9 @@ import './SmartInterventionPage.css';
 import { getContext } from '../../../utils/contextBuilder';
 import { MonitoringLoop } from '../utils/monitoringLoop';
 import { CooldownManager } from '../utils/cooldownManager';
+import { useAuth } from '../context/AuthContext';
 
 Chart.register(...registerables);
-
-const BANDIT_USER_ID = 'u123';
 
 const ACTION_TO_STRATEGY: Record<string, string> = {
     FIVE_SECOND_RULE: '5_second_rule',
@@ -192,6 +191,8 @@ function formatTick(ts: number, sinceSeconds: number): string {
 }
 
 const SmartInterventionPage: React.FC = () => {
+    const { user } = useAuth();
+    const userId = user?.id ?? '';
     const [suggestStatus, setSuggestStatus] = useState('');
     const [suggestDisabled, setSuggestDisabled] = useState(false);
     const [lifeGoal, setLifeGoal] = useState('');
@@ -221,7 +222,7 @@ const SmartInterventionPage: React.FC = () => {
     const logMotivation = useCallback(async (vector: number[], scenario: string = 'live') => {
         try {
             await window.electronAPI.intervention.logMotivation({
-                user_id: BANDIT_USER_ID,
+                user_id: userId,
                 motivation: vector[6],
                 scenario,
             });
@@ -233,7 +234,7 @@ const SmartInterventionPage: React.FC = () => {
     const fetchAndRenderChart = useCallback(async (seconds: number) => {
         try {
             const data = (await window.electronAPI.intervention.getMotivationHistory(
-                BANDIT_USER_ID,
+                userId,
                 seconds,
             )) as Array<{ motivation: number; scenario: string; timestamp: number }>;
 
@@ -407,7 +408,7 @@ const SmartInterventionPage: React.FC = () => {
     ) => {
         try {
             const data = await window.electronAPI.intervention.banditUpdate({
-                user_id: BANDIT_USER_ID,
+                user_id: userId,
                 x: vector,
                 action,
                 reward,
@@ -443,14 +444,14 @@ const SmartInterventionPage: React.FC = () => {
         setSuggestDisabled(true);
         setSuggestStatus('Fetching context...');
         try {
-            const vector = await getContext(BANDIT_USER_ID);
+            const vector = await getContext(userId);
 
             // Log the motivation (as live — will be re-logged with intervention below)
             await logMotivation(vector);
 
             setSuggestStatus('Asking the model...');
             const result = await window.electronAPI.intervention.banditSelect({
-                user_id: BANDIT_USER_ID,
+                user_id: userId,
                 x: vector,
                 alpha: 1.0,
             });
@@ -477,7 +478,7 @@ const SmartInterventionPage: React.FC = () => {
             cooldownRef.current.setActiveIntervention('pending');
 
             const result = await window.electronAPI.intervention.banditSelect({
-                user_id: BANDIT_USER_ID,
+                user_id: userId,
                 x: vector,
                 alpha: 1.0,
             });
@@ -611,7 +612,7 @@ const SmartInterventionPage: React.FC = () => {
             .then(data => { if ((data as any)?.life_goal) setLifeGoal((data as any).life_goal); })
             .catch(() => { });
 
-        getContext(BANDIT_USER_ID)
+        getContext(userId)
             .then(vector => logMotivation(vector))
             .then(() => fetchAndRenderChart(filterSeconds))
             .catch(() => fetchAndRenderChart(filterSeconds));

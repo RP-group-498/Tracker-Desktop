@@ -3,7 +3,7 @@ const path = require('path');
 
 // Configuration — API calls for time predictions go to FastAPI backend
 const API_BASE_URL = 'http://localhost:8001/api/tasks';
-const USER_ID = '124804d8-40e0-4f90-af05-eeea5c2d7550';
+let USER_ID = '';
 
 // DOM Elements
 const uploadArea = document.getElementById('uploadArea');
@@ -49,7 +49,14 @@ function formatTime(minutes) {
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch authenticated user ID from main process
+    try {
+        const authUserId = await ipcRenderer.invoke('get-auth-user-id');
+        if (authUserId) USER_ID = authUserId;
+    } catch (err) {
+        console.warn('Could not fetch auth user ID:', err);
+    }
     setupEventListeners();
     setupNavigation();
     setMinDate();

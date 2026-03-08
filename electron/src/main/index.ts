@@ -6,6 +6,7 @@
  */
 
 import { app, BrowserWindow, ipcMain } from 'electron';
+import fs from 'fs';
 import path from 'path';
 import { PythonBridge } from './python-bridge';
 import { NativeMessagingServer } from './native-messaging';
@@ -282,6 +283,21 @@ app.on('ready', async () => {
     // Initialize services first (creates pythonBridge and nativeMessagingServer)
     // but don't wait for them to fully start yet
     pythonBridge = new PythonBridge();
+
+    // Restore saved auth token BEFORE services start so the desktop tracker
+    // never sends unauthenticated requests on startup (fixes 401 race condition).
+    const TOKEN_FILE = path.join(app.getPath('userData'), 'auth_token.json');
+    if (fs.existsSync(TOKEN_FILE)) {
+        try {
+            const tokenData = JSON.parse(fs.readFileSync(TOKEN_FILE, 'utf-8'));
+            if (tokenData.access_token) {
+                pythonBridge.setAuthToken(tokenData.access_token);
+                console.log('[Main] Restored auth token from disk');
+            }
+        } catch (e) {
+            console.error('[Main] Failed to restore auth token:', e);
+        }
+    }
     nativeMessagingServer = new NativeMessagingServer(pythonBridge);
 
     // Set up IPC handlers BEFORE creating window so they're ready when renderer loads

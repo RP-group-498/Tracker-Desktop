@@ -11,9 +11,11 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from bson.objectid import ObjectId
+from typing import Dict, Any
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
@@ -59,12 +61,10 @@ class AnalyzeRequest(BaseModel):
     deadline: str
     credits: int
     weight: int
-    user_id: Optional[str] = "student_123"
 
 
 class PredictRequest(BaseModel):
     subtask: str
-    user_id: str
     difficulty: Optional[int] = 3
 
 
@@ -81,17 +81,14 @@ class PredictBatchRequest(BaseModel):
 
 class CompleteRequest(BaseModel):
     subtask: str
-    user_id: str
     actual_time: int
 
 
 class StartPauseResumeRequest(BaseModel):
     subtask: str
-    user_id: str
 
 
 class SaveTasksRequest(BaseModel):
-    user_id: str
     main_task: dict
     predictions: list
 
@@ -107,19 +104,20 @@ class AllocateRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.post("/analyze")
-def analyze_task(req: AnalyzeRequest):
+def analyze_task(req: AnalyzeRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Analyze a PDF or text content and return MCDM task priority result.
     Replaces the Electron subprocess that previously called main.py --input.
     """
     from app.core.component_registry import ComponentRegistry
     registry = ComponentRegistry.get_instance()
+    user_id = current_user["sub"]
 
     data = {
         "deadline": req.deadline,
         "credits": req.credits,
         "weight": req.weight,
-        "user_id": req.user_id,
+        "user_id": user_id,
     }
     if req.pdf_path:
         data["pdf_path"] = req.pdf_path
@@ -134,13 +132,13 @@ def analyze_task(req: AnalyzeRequest):
 
 
 @router.post("/predict")
-def predict(req: PredictRequest):
+def predict(req: PredictRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Predict time for a single subtask."""
     try:
         estimator = _get_estimator()
         prediction = estimator.predict_time(
             req.subtask,
-            req.user_id,
+            current_user["sub"],
             ai_suggested_time=None
         )
         prediction['timestamp'] = datetime.now().isoformat()
@@ -152,10 +150,11 @@ def predict(req: PredictRequest):
 
 
 @router.post("/predict-batch")
-def predict_batch(req: PredictBatchRequest):
+def predict_batch(req: PredictBatchRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Predict time for multiple subtasks at once."""
     try:
         estimator = _get_estimator()
+        user_id = current_user["sub"]
 
         predictions = []
         total_time = 0
@@ -167,7 +166,7 @@ def predict_batch(req: PredictBatchRequest):
             if not subtask_text:
                 continue
 
-            pred = estimator.predict_time(subtask_text, req.user_id, ai_suggested_time)
+            pred = estimator.predict_time(subtask_text, user_id, ai_suggested_time)
             pred['subtask_number'] = i
             pred['subtask_text'] = subtask_text
             predictions.append(pred)
@@ -187,11 +186,11 @@ def predict_batch(req: PredictBatchRequest):
 
 
 @router.post("/complete")
-def complete(req: CompleteRequest):
+def complete(req: CompleteRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Mark a task as complete and record actual time."""
     try:
         estimator = _get_estimator()
-        task_marked = estimator.mark_complete(req.subtask, req.user_id, req.actual_time)
+        task_marked = estimator.mark_complete(req.subtask, current_user["sub"], req.actual_time)
 
         if task_marked:
             return {
@@ -208,13 +207,13 @@ def complete(req: CompleteRequest):
 
 
 @router.post("/start-task")
-def start_task(req: StartPauseResumeRequest):
+def start_task(req: StartPauseResumeRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Mark task as started (in_progress)."""
     try:
         estimator = _get_estimator()
         result = estimator.tasks.update_one(
             {
-                "user_id": req.user_id,
+                "user_id": current_user["sub"],
                 "sub_task.description": req.subtask,
                 "status": "scheduled"
             },
@@ -232,13 +231,13 @@ def start_task(req: StartPauseResumeRequest):
 
 
 @router.post("/pause-task")
-def pause_task(req: StartPauseResumeRequest):
+def pause_task(req: StartPauseResumeRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Mark task as paused."""
     try:
         estimator = _get_estimator()
         result = estimator.tasks.update_one(
             {
-                "user_id": req.user_id,
+                "user_id": current_user["sub"],
                 "sub_task.description": req.subtask,
                 "status": "in_progress"
             },
@@ -256,13 +255,13 @@ def pause_task(req: StartPauseResumeRequest):
 
 
 @router.post("/resume-task")
-def resume_task(req: StartPauseResumeRequest):
+def resume_task(req: StartPauseResumeRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Mark task as resumed (back to in_progress)."""
     try:
         estimator = _get_estimator()
         result = estimator.tasks.update_one(
             {
-                "user_id": req.user_id,
+                "user_id": current_user["sub"],
                 "sub_task.description": req.subtask,
                 "status": "paused"
             },
@@ -279,12 +278,12 @@ def resume_task(req: StartPauseResumeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/accuracy/{user_id}")
-def get_accuracy(user_id: str):
-    """Get model accuracy for a specific user."""
+@router.get("/accuracy")
+def get_accuracy(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Get model accuracy for the current user."""
     try:
         estimator = _get_estimator()
-        accuracy = estimator.get_accuracy(user_id)
+        accuracy = estimator.get_accuracy(current_user["sub"])
 
         if accuracy:
             return accuracy
@@ -296,15 +295,16 @@ def get_accuracy(user_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/tasks/{user_id}")
+@router.get("/tasks")
 def get_user_tasks(
-    user_id: str,
     status: Optional[str] = Query(None),
-    limit: Optional[int] = Query(None)
+    limit: Optional[int] = Query(None),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Get all tasks for a specific user."""
     try:
         estimator = _get_estimator()
+        user_id = current_user["sub"]
 
         query = {"user_id": user_id}
         if status:
@@ -364,14 +364,15 @@ def get_user_tasks(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/scheduled-summary/{user_id}")
-def get_scheduled_summary(user_id: str):
+@router.get("/scheduled-summary")
+def get_scheduled_summary(current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Get a summary of scheduled tasks including suggested_date, subtask name, and deadline.
     Used for calendar view.
     """
     try:
         estimator = _get_estimator()
+        user_id = current_user["sub"]
 
         # Query for only scheduled tasks for this user
         query = {"user_id": user_id, "status": "scheduled"}
@@ -411,11 +412,11 @@ def get_scheduled_summary(user_id: str):
 
 
 @router.post("/save-tasks")
-def save_tasks(req: SaveTasksRequest):
+def save_tasks(req: SaveTasksRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Save tasks to database."""
     try:
         estimator = _get_estimator()
-        estimator.save_task(req.main_task, req.predictions, req.user_id)
+        estimator.save_task(req.main_task, req.predictions, current_user["sub"])
 
         return {
             "status": "saved",
@@ -428,14 +429,15 @@ def save_tasks(req: SaveTasksRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/allocate/{user_id}")
-def allocate_tasks(user_id: str, req: AllocateRequest):
+@router.post("/allocate")
+def allocate_tasks(req: AllocateRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Allocate tasks to days based on active time predictions."""
     if _apdis_collection is None:
         raise HTTPException(status_code=503, detail="APDIS database not configured.")
 
     try:
         estimator = _get_estimator()
+        user_id = current_user["sub"]
 
         start_date = datetime.strptime(req.start_date, '%Y-%m-%d') if req.start_date else datetime.now()
         end_date = start_date + timedelta(days=req.days_ahead)

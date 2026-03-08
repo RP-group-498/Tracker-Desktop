@@ -2,7 +2,8 @@
 
 from typing import Dict, Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from app.api.deps import get_current_user
 
 from app.core.component_registry import ComponentRegistry
 
@@ -29,7 +30,7 @@ async def get_component_status(name: str):
 
 
 @router.post("/{name}/process")
-async def process_with_component(name: str, data: Dict[str, Any]):
+async def process_with_component(name: str, data: Dict[str, Any], current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Invoke a component's process method directly.
 
