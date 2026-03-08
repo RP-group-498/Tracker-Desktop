@@ -100,6 +100,7 @@ interface InterventionAPI {
     getMotivationHistory: (userId: string, since?: number) => Promise<unknown[]>;
     getUserGoal: () => Promise<{ life_goal: string }>;
     saveUserGoal: (goal: string) => Promise<{ status: string }>;
+    generateReframeText: (goal: string) => Promise<{ text: string }>;
     getContext: (userId: string) => Promise<ContextSignals>;
     notifyActions: (data: { title: string; body: string; strategy: string }) => void;
     onNotificationResponse: (callback: (data: { strategy: string; action: string }) => void) => void;
@@ -250,6 +251,7 @@ const electronAPI: ElectronAPI = {
         getMotivationHistory: (userId, since) => ipcRenderer.invoke('intervention:get-motivation-history', userId, since),
         getUserGoal: () => ipcRenderer.invoke('intervention:get-user-goal'),
         saveUserGoal: (goal) => ipcRenderer.invoke('intervention:save-user-goal', goal),
+        generateReframeText: (goal) => ipcRenderer.invoke('intervention:generate-reframe-text', goal),
         getContext: (userId) => ipcRenderer.invoke('intervention:get-context', userId),
         notifyActions: (data) => ipcRenderer.send('intervention:notify-actions', data),
         onNotificationResponse: (callback) => {

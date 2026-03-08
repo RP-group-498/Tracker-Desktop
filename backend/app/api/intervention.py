@@ -342,3 +342,30 @@ async def motivation_history(since: float = 3600.0, current_user: Dict[str, Any]
         {"_id": 0},
     ).sort("timestamp", 1).limit(500)
     return await cursor.to_list(length=500)
+
+
+@router.post("/reframe-text")
+async def generate_reframe_text(goal: UserGoal, current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Generate a short reframing notification text using Gemini AI based on user goal."""
+    try:
+        import google.generativeai as genai
+        # settings is available in the module scope
+        if not settings.gemini_api_key:
+            return {"text": f"I choose to do this because it helps me {goal.life_goal}."}
+        
+        genai.configure(api_key=settings.gemini_api_key)
+        
+        # Use a minimal prompt for short generation
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        prompt = f"Write a very short, encouraging, and highly personal 1-sentence notification reminding the user to reframe their task because it helps them achieve their life goal: '{goal.life_goal}'. Make it a first-person statement, e.g. 'I choose to do this because it helps me...'. Make it no more than 15 words."
+        
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+        
+        # Remove markdown quotes or formatting if any
+        text = text.replace('"', '').replace("'", '').replace('*', '').strip()
+        
+        return {"text": text}
+    except Exception as e:
+        print(f"[Intervention] AI Reframe Error: {e}")
+        return {"text": f"I choose to do this because it helps me {goal.life_goal}."}

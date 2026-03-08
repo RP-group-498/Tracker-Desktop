@@ -225,7 +225,13 @@ const SmartInterventionPage: React.FC = () => {
                     console.warn('Could not fetch life goal:', e);
                 }
                 title = 'Reframe Your Perspective';
-                body = `I choose to do this because it helps me ${goal}.`;
+                try {
+                    const reframeData = await window.electronAPI.intervention.generateReframeText(goal);
+                    body = (reframeData as any).text || `I choose to do this because it helps me ${goal}.`;
+                } catch (e) {
+                    console.warn('Could not generate AI text:', e);
+                    body = `I choose to do this because it helps me ${goal}.`;
+                }
             } else {
                 const notif: Record<string, { title: string; body: string }> = {
                     FIVE_SECOND_RULE: { title: '5-Second Rule', body: 'Count down 5-4-3-2-1 and move!' },
@@ -282,9 +288,16 @@ const SmartInterventionPage: React.FC = () => {
             } catch (e) {
                 console.warn('Could not fetch life goal:', e);
             }
+            let aiText = `I choose to do this because it helps me ${goal}.`;
+            try {
+                const reframeData = await window.electronAPI.intervention.generateReframeText(goal);
+                if ((reframeData as any)?.text) aiText = (reframeData as any).text;
+            } catch (e) {
+                console.warn('Could not generate AI text:', e);
+            }
             window.electronAPI.intervention.notifyActions({
                 title: 'Reframe Your Perspective',
-                body: `I choose to do this because it helps me ${goal}.`,
+                body: aiText,
                 strategy: 'reframe',
             });
         }

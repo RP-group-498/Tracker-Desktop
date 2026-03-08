@@ -73,6 +73,12 @@ export function registerInterventionHandlers(
         return result.data;
     });
 
+    ipcMain.handle('intervention:generate-reframe-text', async (_event, goal: string) => {
+        const result = await pythonBridge.request('POST', '/intervention/reframe-text', { life_goal: goal });
+        if (!result.success) throw new Error(result.error ?? 'generate-reframe-text failed');
+        return result.data;
+    });
+
     ipcMain.handle('intervention:get-context', async (_event, _userId: string) => {
         const result = await pythonBridge.request('GET', '/intervention/context');
         return result.data;
