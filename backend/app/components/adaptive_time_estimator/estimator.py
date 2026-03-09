@@ -29,9 +29,10 @@ class AdaptiveTimeEstimator:
         print("Initializing Adaptive Time Estimator...")
 
         # Connect to MongoDB using TASKS_* env vars
+        # Defaults must match config.py to avoid collection mismatches
         self.client = MongoClient(os.getenv('TASKS_MONGODB_URI'))
-        self.db = self.client[os.getenv('TASKS_MONGODB_DATABASE', 'research_task_db')]
-        self.tasks = self.db[os.getenv('TASKS_COLLECTION_TASKS', 'tasks')]
+        self.db = self.client[os.getenv('TASKS_MONGODB_DATABASE', 'adaptive_time_estimation')]
+        self.tasks = self.db[os.getenv('TASKS_COLLECTION_TASKS', 'completed_tasks')]
         self.patterns = self.db[os.getenv('TASKS_COLLECTION_PATTERNS', 'patterns')]
         self.logs = self.db[os.getenv('TASKS_COLLECTION_TRAINING_LOGS', 'training_logs')]
 

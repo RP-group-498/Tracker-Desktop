@@ -5,7 +5,7 @@
  *
  * Context vector layout (d = 12):
  *   [0]  bias               = 1 (constant)
- *   [1]  expectancy         = completed_tasks_last_7_days / (assigned_tasks_last_7_days + 1)
+ *   [1]  expectancy         = clamp(completed/assigned + recent_completion_boost, 0, 1)
  *   [2]  value              = 0.5*task_priority + 0.3*grade_weight_normalized + 0.2*value_time
  *   [3]  impulsiveness      = 0.5*switching_score + 0.5*non_academic_ratio
  *   [4]  delay              = hours_to_deadline / (1 + hours_to_deadline)
@@ -28,6 +28,7 @@ export interface ContextSignals {
     time_spent_on_task: number;
     assigned_time: number;
     task_deadline_time: string | null;
+    recent_completion_boost: number;
     has_data: boolean;
 }
 
@@ -46,10 +47,15 @@ export function buildVector(signals: ContextSignals): number[] {
         time_spent_on_task,
         assigned_time,
         task_deadline_time,
+        recent_completion_boost = 0,
     } = signals;
 
-    // Expectancy
-    const expectancy = completed_tasks_last_7_days / (assigned_tasks_last_7_days + 1);
+    // Expectancy — use ratio of completed to assigned (7-day window)
+    // Add 0.1 base so expectancy is never zero when user has tasks
+    const baseExpectancy = assigned_tasks_last_7_days > 0
+        ? completed_tasks_last_7_days / assigned_tasks_last_7_days
+        : 0;
+    const expectancy = clamp(baseExpectancy + recent_completion_boost, 0, 1);
 
     // Value
     const value_time = assigned_time > 0
