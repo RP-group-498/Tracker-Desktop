@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import '../styles/pages.css'
 import '../styles/time-estimator.css'
 
-const API_BASE_URL = 'http://localhost:8000/api/tasks'
+const API_BASE_URL = 'https://backend-production-2547.up.railway.app/api/tasks'
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',

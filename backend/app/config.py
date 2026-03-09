@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     apdis_collection_active_time: str = ""
 
     # Scheduler (active_time_sync — runs in background on startup)
-    api_base_url: str = "http://localhost:8000/api/tasks"
+    api_base_url: str = "https://backend-production-2547.up.railway.app//api/tasks"
     scheduler_time: str = "21:09"
     scheduler_users: str = ""
     allocation_users: str = ""

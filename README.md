@@ -236,7 +236,7 @@ npm run package
 ### Electron not finding backend
 
 1. Ensure backend is running on port 8000
-2. Check health endpoint: `http://localhost:8000/api/health`
+2. Check health endpoint: `https://your-app.up.railway.app/api/health`
 
 ## Related Documentation
 

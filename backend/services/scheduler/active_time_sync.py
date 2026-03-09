@@ -29,7 +29,7 @@ logging.basicConfig(
 )
 
 # Configuration — FastAPI backend (configurable via .env)
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api/tasks")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://backend-production-2547.up.railway.app/api/tasks")
 USERS_TO_SYNC = [u for u in os.getenv("SCHEDULER_USERS", "").split(",") if u.strip()]
 ALLOCATION_USERS = [u for u in os.getenv("ALLOCATION_USERS", "").split(",") if u.strip()]
 SCHEDULE_TIME = os.getenv("SCHEDULER_TIME", "21:09")
