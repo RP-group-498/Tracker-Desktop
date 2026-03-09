@@ -9,10 +9,12 @@ interface User {
 
 interface AuthContextType {
     isAuthenticated: boolean;
+    justLoggedIn: boolean;
     token: string | null;
     user: User | null;
     login: () => void;
     logout: () => void;
+    clearJustLoggedIn: () => void;
     isLoading: boolean;
 }
 
@@ -22,6 +24,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [token, setToken] = useState<string | null>(null);
     const [user, setUser] = useState<User | null>(null);
+    const [justLoggedIn, setJustLoggedIn] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     useEffect(() => {
@@ -47,6 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         window.electronAPI.onAuthSuccess((authData: any) => {
             setToken(authData.token);
             setIsAuthenticated(true);
+            setJustLoggedIn(true); // ← fresh OAuth login
             setIsLoading(false); // ← clear the spinner
             if (authData.user) {
                 setUser(authData.user);
@@ -72,11 +76,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setToken(null);
         setUser(null);
         setIsAuthenticated(false);
+        setJustLoggedIn(false);
         setIsLoading(false); // ← ensure clean state for next login
     };
 
+    const clearJustLoggedIn = () => setJustLoggedIn(false);
+
     return (
-        <AuthContext.Provider value={{ isAuthenticated, token, user, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ isAuthenticated, justLoggedIn, token, user, login, logout, clearJustLoggedIn, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

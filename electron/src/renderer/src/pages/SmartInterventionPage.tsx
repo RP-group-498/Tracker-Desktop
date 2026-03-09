@@ -2,9 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Chart, registerables } from 'chart.js';
 import './SmartInterventionPage.css';
 import { getContext } from '../../../utils/contextBuilder';
-import { MonitoringLoop } from '../utils/monitoringLoop';
-import { CooldownManager } from '../utils/cooldownManager';
 import { useAuth } from '../context/AuthContext';
+import { useInterventionContext } from '../context/InterventionContext';
 
 Chart.register(...registerables);
 
@@ -14,14 +13,6 @@ const ACTION_TO_STRATEGY: Record<string, string> = {
     BREATHING: 'breathing',
     VISUALIZATION: 'visualization',
     REFRAME: 'reframe',
-};
-
-const ACTION_NOTIFICATIONS: Record<string, { title: string; body: string | null }> = {
-    FIVE_SECOND_RULE: { title: '5-Second Rule', body: 'Count down 5-4-3-2-1 and move!' },
-    POMODORO: { title: 'Pomodoro Session', body: 'Ready to focus for 25 minutes?' },
-    BREATHING: { title: 'Time for a Breath', body: 'Take a moment to calm your mind.' },
-    VISUALIZATION: { title: 'Visualize Completion', body: 'Close your eyes and imagine finishing this task.' },
-    REFRAME: { title: 'Reframe Your Perspective', body: null },
 };
 
 const INTERVENTION_COLORS: Record<string, string> = {
@@ -51,133 +42,6 @@ const TIME_FILTERS = [
     { label: '3mo', seconds: 7776000 },
 ];
 
-// ─── Breathing Modal ──────────────────────────────────────────────────────────
-
-const BREATHING_STATES = [
-    { text: 'Breathe In', instruction: 'Slowly inhale through your nose', duration: 4000 },
-    { text: 'Hold', instruction: 'Hold your breath', duration: 2000 },
-    { text: 'Breathe Out', instruction: 'Slowly exhale through your mouth', duration: 4000 },
-    { text: 'Hold', instruction: 'Hold your breath', duration: 2000 },
-];
-
-const BreathingModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-    const [breathText, setBreathText] = useState('Breathe In');
-    const [breathInstruction, setBreathInstruction] = useState('Slowly inhale through your nose');
-    const [cycleLabel, setCycleLabel] = useState('Cycle 1 of 3');
-    const [done, setDone] = useState(false);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const stateRef = useRef(0);
-    const cycleRef = useRef(0);
-    const TOTAL_CYCLES = 3;
-
-    const step = useCallback(() => {
-        const state = BREATHING_STATES[stateRef.current];
-        setBreathText(state.text);
-        setBreathInstruction(state.instruction);
-        stateRef.current++;
-        if (stateRef.current >= BREATHING_STATES.length) {
-            stateRef.current = 0;
-            cycleRef.current++;
-            if (cycleRef.current >= TOTAL_CYCLES) {
-                setCycleLabel('Complete!');
-                setDone(true);
-                return;
-            }
-            setCycleLabel(`Cycle ${cycleRef.current + 1} of ${TOTAL_CYCLES}`);
-        }
-        timerRef.current = setTimeout(step, BREATHING_STATES[stateRef.current].duration);
-    }, []);
-
-    useEffect(() => {
-        timerRef.current = setTimeout(step, BREATHING_STATES[0].duration);
-        return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-    }, [step]);
-
-    return (
-        <div className="sie-breathing-modal">
-            <div className="sie-breathing-container">
-                <div className="sie-breathing-circle" />
-                <div className="sie-breathing-text">{breathText}</div>
-                <div className="sie-breathing-instruction">{breathInstruction}</div>
-                <div className="sie-breathing-counter">{cycleLabel}</div>
-                <div style={{ marginTop: 20, display: 'flex', gap: 10, justifyContent: 'center' }}>
-                    {!done && (
-                        <button className="sie-modal-btn" onClick={onClose}>Cancel</button>
-                    )}
-                    {done && (
-                        <button className="sie-modal-btn" onClick={onClose}>Complete</button>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// ─── Visualization Modal ──────────────────────────────────────────────────────
-
-const VisualizationModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-    const [timeLeft, setTimeLeft] = useState(30);
-    const [vizText, setVizText] = useState('Focus');
-    const [vizInstruction, setVizInstruction] = useState('Imagine the exact steps to finish your task.');
-    const [done, setDone] = useState(false);
-    const particleContainerRef = useRef<HTMLDivElement>(null);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-    useEffect(() => {
-        // Generate particles
-        if (particleContainerRef.current) {
-            for (let i = 0; i < 50; i++) {
-                const p = document.createElement('div');
-                p.className = 'sie-viz-particle';
-                p.style.left = Math.random() * 100 + '%';
-                p.style.top = Math.random() * 100 + '%';
-                const size = (Math.random() * 3 + 1) + 'px';
-                p.style.width = size;
-                p.style.height = size;
-                p.style.animationDelay = (Math.random() * 5) + 's';
-                particleContainerRef.current.appendChild(p);
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        if (done) return;
-        timerRef.current = setTimeout(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    setVizText('Well Done');
-                    setVizInstruction('Hold onto that feeling of relief and satisfaction.');
-                    setDone(true);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-    }, [timeLeft, done]);
-
-    return (
-        <div className="sie-viz-modal">
-            <div className="sie-viz-background" ref={particleContainerRef} />
-            <div className="sie-viz-container">
-                <div className="sie-viz-portal">
-                    <div className="sie-viz-text">{vizText}</div>
-                </div>
-                <div className="sie-viz-instruction">{vizInstruction}</div>
-                <div className="sie-viz-counter">
-                    {done ? 'Visualization Complete' : `${timeLeft}s remaining`}
-                </div>
-                <div className="sie-viz-actions">
-                    {!done && <button className="sie-modal-btn" onClick={onClose}>Cancel</button>}
-                    {done && <button className="sie-modal-btn" onClick={onClose}>Complete</button>}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
 function formatTick(ts: number, sinceSeconds: number): string {
     const d = new Date(ts * 1000);
     if (sinceSeconds <= 21600) {
@@ -193,29 +57,18 @@ function formatTick(ts: number, sinceSeconds: number): string {
 const SmartInterventionPage: React.FC = () => {
     const { user } = useAuth();
     const userId = user?.id ?? '';
+    const {
+        monitorEnabled, monitorStatus, toggleMonitor,
+        lastInterventionTs,
+    } = useInterventionContext();
+
     const [suggestStatus, setSuggestStatus] = useState('');
     const [suggestDisabled, setSuggestDisabled] = useState(false);
     const [lifeGoal, setLifeGoal] = useState('');
     const [filterSeconds, setFilterSeconds] = useState(3600);
-    const [showBreathing, setShowBreathing] = useState(false);
-    const [showVisualization, setShowVisualization] = useState(false);
-
-    // ── Monitoring Loop State ─────────────────────────────────────────────
-    const [monitorEnabled, setMonitorEnabled] = useState(false);
-    const [monitorStatus, setMonitorStatus] = useState('Monitoring stopped');
 
     const chartCanvasRef = useRef<HTMLCanvasElement>(null);
     const chartInstanceRef = useRef<Chart | null>(null);
-    const pendingBanditRef = useRef<{ action: string; vector: number[] } | null>(null);
-
-    // Monitoring refs (persist across renders)
-    const cooldownRef = useRef<CooldownManager>(new CooldownManager());
-    const monitorRef = useRef<MonitoringLoop | null>(null);
-
-    // Pomodoro / 5-second timer refs
-    const pomodoroIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const breakIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const fiveSecIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     // ── API helpers ───────────────────────────────────────────────────────
 
@@ -229,7 +82,7 @@ const SmartInterventionPage: React.FC = () => {
         } catch (e) {
             console.warn('[Motivation] Log failed:', e);
         }
-    }, []);
+    }, [userId]);
 
     const fetchAndRenderChart = useCallback(async (seconds: number) => {
         try {
@@ -335,118 +188,15 @@ const SmartInterventionPage: React.FC = () => {
         } catch (e) {
             console.warn('[Motivation] Chart refresh failed:', e);
         }
-    }, []);
+    }, [userId]);
 
-    // ── Timer helpers ─────────────────────────────────────────────────────
-
-    const startFiveSecondCountdown = useCallback(() => {
-        let timeLeft = 5;
-        window.electronAPI.intervention.updateTrayTimer(`Go in ${timeLeft}...`);
-
-        fiveSecIntervalRef.current = setInterval(() => {
-            timeLeft--;
-            if (timeLeft > 0) {
-                window.electronAPI.intervention.updateTrayTimer(`Go in ${timeLeft}...`);
-            } else {
-                clearInterval(fiveSecIntervalRef.current!);
-                window.electronAPI.intervention.updateTrayTimer("Let's Go!");
-                setTimeout(() => window.electronAPI.intervention.clearTray(), 3000);
-            }
-        }, 1000);
-    }, []);
-
-    const startBreakTimer = useCallback(() => {
-        let timeLeft = 5 * 60;
-        const update = () => {
-            const m = Math.floor(timeLeft / 60);
-            const s = timeLeft % 60;
-            window.electronAPI.intervention.updateTrayTimer(`Break: ${m}:${s.toString().padStart(2, '0')}`);
-        };
-        update();
-        breakIntervalRef.current = setInterval(() => {
-            timeLeft--;
-            update();
-            if (timeLeft <= 0) {
-                clearInterval(breakIntervalRef.current!);
-                window.electronAPI.intervention.clearTray();
-            }
-        }, 1000);
-    }, []);
-
-    const startPomodoroTimer = useCallback(() => {
-        let timeLeft = 25 * 60;
-        const update = () => {
-            const m = Math.floor(timeLeft / 60);
-            const s = timeLeft % 60;
-            window.electronAPI.intervention.updateTrayTimer(`${m}:${s.toString().padStart(2, '0')}`);
-        };
-        update();
-        pomodoroIntervalRef.current = setInterval(() => {
-            timeLeft--;
-            update();
-            if (timeLeft <= 0) {
-                clearInterval(pomodoroIntervalRef.current!);
-                window.electronAPI.intervention.clearTray();
-                startBreakTimer();
-            }
-        }, 1000);
-    }, [startBreakTimer]);
-
-    // ── Bandit helpers ────────────────────────────────────────────────────
-
-    const computeReward = (button: string): number => {
-        if (button === 'start') return 1.0;
-        if (button === 'not_now' || button === 'reject') return 0.4;
-        return 0.2;
-    };
-
-    const sendBanditUpdate = useCallback(async (
-        action: string,
-        vector: number[],
-        reward: number,
-        button: string,
-    ) => {
-        try {
-            const data = await window.electronAPI.intervention.banditUpdate({
-                user_id: userId,
-                x: vector,
-                action,
-                reward,
-                button,
-                alpha: 1.0,
-            });
-            console.log(`[Bandit] Updated — action=${action} reward=${reward} n_updates=${(data as any)?.n_updates}`);
-        } catch (err) {
-            console.warn('[Bandit] Update error:', err);
-        }
-    }, []);
-
-    const triggerBanditNotification = useCallback(async (action: string, vector: number[]) => {
-        const strategy = ACTION_TO_STRATEGY[action];
-        let { title, body } = ACTION_NOTIFICATIONS[action];
-
-        if (action === 'REFRAME') {
-            let goal = 'your goals';
-            try {
-                const data = await window.electronAPI.intervention.getUserGoal();
-                if ((data as any)?.life_goal) goal = (data as any).life_goal;
-            } catch (e) {
-                console.warn('[Bandit] Could not fetch life goal for reframe:', e);
-            }
-            body = `I choose to do this because it helps me ${goal}.`;
-        }
-
-        pendingBanditRef.current = { action, vector };
-        window.electronAPI.intervention.notifyActions({ title, body: body ?? '', strategy });
-    }, []);
+    // ── Suggest handler ───────────────────────────────────────────────────
 
     const handleSuggest = useCallback(async () => {
         setSuggestDisabled(true);
         setSuggestStatus('Fetching context...');
         try {
             const vector = await getContext(userId);
-
-            // Log the motivation (as live — will be re-logged with intervention below)
             await logMotivation(vector);
 
             setSuggestStatus('Asking the model...');
@@ -458,69 +208,50 @@ const SmartInterventionPage: React.FC = () => {
             const { action, allowed_actions } = result as { action: string; allowed_actions: string[] };
             setSuggestStatus(`Model chose: ${action} (from ${allowed_actions.join(', ')})`);
 
-            // Log a second motivation point tagged with the intervention type
             await logMotivation(vector, action);
             fetchAndRenderChart(filterSeconds);
 
-            await triggerBanditNotification(action, vector);
+            // Trigger notification
+            const strategy = ACTION_TO_STRATEGY[action];
+            let title = action;
+            let body = '';
+
+            if (action === 'REFRAME') {
+                let goal = 'your goals';
+                try {
+                    const data = await window.electronAPI.intervention.getUserGoal();
+                    if ((data as any)?.life_goal) goal = (data as any).life_goal;
+                } catch (e) {
+                    console.warn('Could not fetch life goal:', e);
+                }
+                title = 'Reframe Your Perspective';
+                try {
+                    const reframeData = await window.electronAPI.intervention.generateReframeText(goal);
+                    body = (reframeData as any).text || `I choose to do this because it helps me ${goal}.`;
+                } catch (e) {
+                    console.warn('Could not generate AI text:', e);
+                    body = `I choose to do this because it helps me ${goal}.`;
+                }
+            } else {
+                const notif: Record<string, { title: string; body: string }> = {
+                    FIVE_SECOND_RULE: { title: '5-Second Rule', body: 'Count down 5-4-3-2-1 and move!' },
+                    POMODORO: { title: 'Pomodoro Session', body: 'Ready to focus for 25 minutes?' },
+                    BREATHING: { title: 'Time for a Breath', body: 'Take a moment to calm your mind.' },
+                    VISUALIZATION: { title: 'Visualize Completion', body: 'Close your eyes and imagine finishing this task.' },
+                };
+                if (notif[action]) {
+                    title = notif[action].title;
+                    body = notif[action].body;
+                }
+            }
+
+            window.electronAPI.intervention.notifyActions({ title, body, strategy });
         } catch (err: any) {
             setSuggestStatus(`Error: ${err?.message ?? 'unknown error'}`);
         } finally {
             setSuggestDisabled(false);
         }
-    }, [triggerBanditNotification, logMotivation, fetchAndRenderChart, filterSeconds]);
-
-    // ── Monitoring loop: auto-suggest callback ────────────────────────────
-
-    const onSuggestIntervention = useCallback(async (vector: number[], _allowedActions: string[]) => {
-        try {
-            // Mark the cooldown manager as having an active intervention
-            cooldownRef.current.setActiveIntervention('pending');
-
-            const result = await window.electronAPI.intervention.banditSelect({
-                user_id: userId,
-                x: vector,
-                alpha: 1.0,
-            });
-            const { action } = result as { action: string; allowed_actions: string[] };
-            console.log(`[MonitoringLoop] Bandit selected: ${action}`);
-            setMonitorStatus(`Triggered → ${action}`);
-
-            // Log motivation tagged with the intervention type
-            await logMotivation(vector, action);
-            fetchAndRenderChart(filterSeconds);
-
-            cooldownRef.current.setActiveIntervention(action);
-            await triggerBanditNotification(action, vector);
-        } catch (err) {
-            console.warn('[MonitoringLoop] Bandit select error:', err);
-            cooldownRef.current.setActiveIntervention(null);
-            setMonitorStatus(`Error: ${(err as Error)?.message ?? 'unknown'}`);
-        }
-    }, [triggerBanditNotification, logMotivation, fetchAndRenderChart, filterSeconds]);
-
-    // ── Toggle monitoring loop on/off ─────────────────────────────────────
-
-    const handleToggleMonitor = useCallback(() => {
-        if (monitorRef.current?.isRunning()) {
-            monitorRef.current.stop();
-            monitorRef.current = null;
-            setMonitorEnabled(false);
-            setMonitorStatus('Monitoring stopped');
-        } else {
-            const loop = new MonitoringLoop(cooldownRef.current, {
-                onSuggestIntervention,
-                onLogMotivation: (vector) => {
-                    logMotivation(vector);
-                    fetchAndRenderChart(filterSeconds);
-                },
-                onStatusUpdate: (status) => setMonitorStatus(status),
-            });
-            monitorRef.current = loop;
-            loop.start();
-            setMonitorEnabled(true);
-        }
-    }, [onSuggestIntervention, logMotivation, fetchAndRenderChart, filterSeconds]);
+    }, [logMotivation, fetchAndRenderChart, filterSeconds, userId]);
 
     // ── Demo button handlers ──────────────────────────────────────────────
 
@@ -557,53 +288,20 @@ const SmartInterventionPage: React.FC = () => {
             } catch (e) {
                 console.warn('Could not fetch life goal:', e);
             }
+            let aiText = `I choose to do this because it helps me ${goal}.`;
+            try {
+                const reframeData = await window.electronAPI.intervention.generateReframeText(goal);
+                if ((reframeData as any)?.text) aiText = (reframeData as any).text;
+            } catch (e) {
+                console.warn('Could not generate AI text:', e);
+            }
             window.electronAPI.intervention.notifyActions({
                 title: 'Reframe Your Perspective',
-                body: `I choose to do this because it helps me ${goal}.`,
+                body: aiText,
                 strategy: 'reframe',
             });
         }
     }, []);
-
-    // ── Notification response handler ─────────────────────────────────────
-
-    useEffect(() => {
-        window.electronAPI.intervention.onNotificationResponse(async ({ strategy, action }) => {
-            const logAction = action === 'reject' ? 'not_now' : action;
-
-            if (pendingBanditRef.current && ACTION_TO_STRATEGY[pendingBanditRef.current.action] === strategy) {
-                const reward = computeReward(logAction);
-                await sendBanditUpdate(
-                    pendingBanditRef.current.action,
-                    pendingBanditRef.current.vector,
-                    reward,
-                    logAction,
-                );
-
-                // Apply cooldown from the monitoring loop
-                const banditAction = pendingBanditRef.current.action;
-                cooldownRef.current.applyCooldown(
-                    banditAction,
-                    logAction as 'start' | 'skip' | 'not_now',
-                );
-
-                pendingBanditRef.current = null;
-                fetchAndRenderChart(filterSeconds);
-            }
-
-            if (strategy === 'pomodoro' && action === 'start') {
-                startPomodoroTimer();
-            } else if (strategy === '5_second_rule' && action === 'start') {
-                startFiveSecondCountdown();
-            } else if (strategy === 'breathing' && action === 'start') {
-                window.electronAPI.intervention.showWindow();
-                setShowBreathing(true);
-            } else if (strategy === 'visualization' && action === 'start') {
-                window.electronAPI.intervention.showWindow();
-                setShowVisualization(true);
-            }
-        });
-    }, [sendBanditUpdate, fetchAndRenderChart, filterSeconds, startPomodoroTimer, startFiveSecondCountdown]);
 
     // ── Mount: load goal + initial log + chart ────────────────────────────
 
@@ -618,25 +316,28 @@ const SmartInterventionPage: React.FC = () => {
             .catch(() => fetchAndRenderChart(filterSeconds));
     }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
+    // ── Refresh chart when context signals an intervention happened ─────
+
+    useEffect(() => {
+        if (lastInterventionTs > 0) {
+            fetchAndRenderChart(filterSeconds);
+        }
+    }, [lastInterventionTs, fetchAndRenderChart, filterSeconds]);
+
     // ── Auto-refresh chart every 30 seconds ───────────────────────────────
 
     useEffect(() => {
         const intervalId = setInterval(() => {
             fetchAndRenderChart(filterSeconds);
         }, 30_000);
-
         return () => clearInterval(intervalId);
     }, [filterSeconds, fetchAndRenderChart]);
 
-    // ── Cleanup timers + monitoring loop on unmount ─────────────────────────
+    // ── Cleanup chart on unmount ──────────────────────────────────────────
 
     useEffect(() => {
         return () => {
-            if (pomodoroIntervalRef.current) clearInterval(pomodoroIntervalRef.current);
-            if (breakIntervalRef.current) clearInterval(breakIntervalRef.current);
-            if (fiveSecIntervalRef.current) clearInterval(fiveSecIntervalRef.current);
             if (chartInstanceRef.current) { chartInstanceRef.current.destroy(); chartInstanceRef.current = null; }
-            if (monitorRef.current?.isRunning()) monitorRef.current.stop();
         };
     }, []);
 
@@ -711,7 +412,7 @@ const SmartInterventionPage: React.FC = () => {
                     </div>
                     <button
                         className={`sie-monitor-toggle ${monitorEnabled ? 'active' : ''}`}
-                        onClick={handleToggleMonitor}
+                        onClick={toggleMonitor}
                     >
                         {monitorEnabled ? 'ON' : 'OFF'}
                     </button>
@@ -768,10 +469,6 @@ const SmartInterventionPage: React.FC = () => {
                     <button className="sie-save-btn" onClick={handleSaveGoal}>Save</button>
                 </div>
             </div>
-
-            {/* Modals */}
-            {showBreathing && <BreathingModal onClose={() => setShowBreathing(false)} />}
-            {showVisualization && <VisualizationModal onClose={() => setShowVisualization(false)} />}
         </div>
     );
 };

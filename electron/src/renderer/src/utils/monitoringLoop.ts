@@ -23,7 +23,6 @@ import { CooldownManager } from './cooldownManager';
 import { hashContext, isDuplicateContext, updateHash, resetHash } from './contextHasher';
 
 const MONITORING_INTERVAL_MS = 60_000; // 60 seconds
-const BANDIT_USER_ID = 'u123';
 
 export interface MonitoringCallbacks {
     /** Called to request a bandit selection + show notification. */
@@ -39,11 +38,13 @@ export class MonitoringLoop {
     private _running = false;
     private cooldown: CooldownManager;
     private callbacks: MonitoringCallbacks;
+    private userId: string;
     private tickCount = 0;
 
-    constructor(cooldown: CooldownManager, callbacks: MonitoringCallbacks) {
+    constructor(cooldown: CooldownManager, callbacks: MonitoringCallbacks, userId: string) {
         this.cooldown = cooldown;
         this.callbacks = callbacks;
+        this.userId = userId;
     }
 
     /** Start the monitoring loop (runs every 60 seconds). */
@@ -108,7 +109,7 @@ export class MonitoringLoop {
             // 3. Fetch context vector
             console.log(`[MonitoringLoop] Tick #${tickId}: Fetching context...`);
             this.callbacks.onStatusUpdate('Fetching context...');
-            const vector = await getContext(BANDIT_USER_ID);
+            const vector = await getContext(this.userId);
 
             // Log motivation at every tick
             this.callbacks.onLogMotivation(vector);

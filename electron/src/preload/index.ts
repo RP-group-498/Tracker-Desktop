@@ -101,12 +101,16 @@ interface InterventionAPI {
     getMotivationHistory: (userId: string, since?: number) => Promise<unknown[]>;
     getUserGoal: () => Promise<{ life_goal: string }>;
     saveUserGoal: (goal: string) => Promise<{ status: string }>;
+    generateReframeText: (goal: string) => Promise<{ text: string }>;
     getContext: (userId: string) => Promise<ContextSignals>;
     notifyActions: (data: { title: string; body: string; strategy: string }) => void;
     onNotificationResponse: (callback: (data: { strategy: string; action: string }) => void) => void;
     updateTrayTimer: (label: string) => void;
     clearTray: () => void;
     showWindow: () => void;
+    pomodoroStarted: () => void;
+    pomodoroStopped: () => void;
+    onPomodoroIdleResponse: (callback: (data: { action: string }) => void) => void;
 }
 
 // Additional API for intervention popup windows (used by intervention-notification.html)
@@ -249,6 +253,7 @@ const electronAPI: ElectronAPI = {
         getMotivationHistory: (userId, since) => ipcRenderer.invoke('intervention:get-motivation-history', userId, since),
         getUserGoal: () => ipcRenderer.invoke('intervention:get-user-goal'),
         saveUserGoal: (goal) => ipcRenderer.invoke('intervention:save-user-goal', goal),
+        generateReframeText: (goal) => ipcRenderer.invoke('intervention:generate-reframe-text', goal),
         getContext: (userId) => ipcRenderer.invoke('intervention:get-context', userId),
         notifyActions: (data) => ipcRenderer.send('intervention:notify-actions', data),
         onNotificationResponse: (callback) => {
@@ -257,6 +262,11 @@ const electronAPI: ElectronAPI = {
         updateTrayTimer: (label) => ipcRenderer.send('intervention:tray-update', { label }),
         clearTray: () => ipcRenderer.send('intervention:tray-clear'),
         showWindow: () => ipcRenderer.send('intervention:window-show'),
+        pomodoroStarted: () => ipcRenderer.send('intervention:pomodoro-started'),
+        pomodoroStopped: () => ipcRenderer.send('intervention:pomodoro-stopped'),
+        onPomodoroIdleResponse: (callback) => {
+            ipcRenderer.on('intervention:pomodoro-idle', (_event, data) => callback(data));
+        },
     },
 };
 

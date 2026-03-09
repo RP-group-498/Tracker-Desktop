@@ -10,7 +10,7 @@
  * and native Notification on macOS.
  */
 
-import { ipcMain, Notification, BrowserWindow, Tray } from 'electron';
+import { ipcMain, Notification, BrowserWindow, Tray, dialog, powerMonitor } from 'electron';
 import { PythonBridge } from './python-bridge';
 import { InterventionPopup } from './intervention-popup';
 
@@ -70,6 +70,12 @@ export function registerInterventionHandlers(
     ipcMain.handle('intervention:save-user-goal', async (_event, goal: string) => {
         const result = await pythonBridge.request('POST', '/intervention/user/goal', { life_goal: goal });
         if (!result.success) throw new Error(result.error ?? 'save-user-goal failed');
+        return result.data;
+    });
+
+    ipcMain.handle('intervention:generate-reframe-text', async (_event, goal: string) => {
+        const result = await pythonBridge.request('POST', '/intervention/reframe-text', { life_goal: goal });
+        if (!result.success) throw new Error(result.error ?? 'generate-reframe-text failed');
         return result.data;
     });
 
@@ -160,5 +166,66 @@ export function registerInterventionHandlers(
         const mainWindow = getMainWindow();
         mainWindow?.show();
         mainWindow?.focus();
+    });
+
+    // ── Pomodoro idle detection ───────────────────────────────────────────
+
+    let pomodoroIdleInterval: ReturnType<typeof setInterval> | null = null;
+    let idlePromptShown = false;
+
+    ipcMain.on('intervention:pomodoro-started', () => {
+        idlePromptShown = false;
+        if (pomodoroIdleInterval) clearInterval(pomodoroIdleInterval);
+
+        pomodoroIdleInterval = setInterval(() => {
+            const idleSeconds = powerMonitor.getSystemIdleTime();
+            if (idleSeconds >= 300 && !idlePromptShown) {
+                idlePromptShown = true;
+                const mainWindow = getMainWindow();
+
+                if (isMac) {
+                    // macOS: use native dialog
+                    dialog.showMessageBox({
+                        type: 'question',
+                        title: 'Are you there?',
+                        message: 'You\'ve been idle for 5 minutes during your Pomodoro session.',
+                        buttons: ['Yes, I\'m here', 'No, stop timer'],
+                        defaultId: 0,
+                    }).then(({ response }) => {
+                        if (response === 0) {
+                            // Continue — reset idle check
+                            idlePromptShown = false;
+                        } else {
+                            // Stop
+                            mainWindow?.webContents.send('intervention:pomodoro-idle', { action: 'stop' });
+                        }
+                    });
+
+                    // Auto-dismiss after 15s by treating as stop
+                    setTimeout(() => {
+                        if (idlePromptShown) {
+                            mainWindow?.webContents.send('intervention:pomodoro-idle', { action: 'stop' });
+                            idlePromptShown = false;
+                        }
+                    }, 15_000);
+                } else {
+                    // Windows: use custom popup
+                    interventionPopup?.showIdlePrompt();
+                }
+            }
+        }, 10_000);
+    });
+
+    ipcMain.on('intervention:pomodoro-stopped', () => {
+        if (pomodoroIdleInterval) {
+            clearInterval(pomodoroIdleInterval);
+            pomodoroIdleInterval = null;
+        }
+        idlePromptShown = false;
+    });
+
+    // Handle idle prompt continue action (reset idle check)
+    ipcMain.on('intervention:idle-continue', () => {
+        idlePromptShown = false;
     });
 }
