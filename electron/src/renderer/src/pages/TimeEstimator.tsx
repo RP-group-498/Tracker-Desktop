@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Task, TimerState, ScheduledSummaryTask } from '../types/tasks'
 import { formatElapsed } from '../hooks/useTaskTimer'
 import { useAuth } from '../context/AuthContext'
@@ -44,7 +44,7 @@ function getStatusBadge(status: string): string {
     scheduled: '<span class="status-badge scheduled">Scheduled</span>',
     in_progress: '<span class="status-badge in-progress">In Progress</span>',
     completed: '<span class="status-badge completed">Completed</span>',
-    failed: '<span class="status-badge failed">⚠️ Failed - Time Expired</span>',
+    failed: '<span class="status-badge failed">Failed - Time Expired</span>',
     paused: '<span class="status-badge in-progress">Paused</span>',
   }
   return badges[status] || '<span class="status-badge">Unknown</span>'
@@ -69,7 +69,16 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
   const [timerTick, setTimerTick] = useState(0)
   const [availableTime, setAvailableTime] = useState<string>('-')
   const [notification, setNotification] = useState<{ message: string; type: string } | null>(null)
+  const [mainTaskFilter, setMainTaskFilter] = useState<string>('All')
   const taskTimersRef = useRef<Record<string, TimerState>>({})
+
+  // Compute unique main tasks for filtering
+  const uniqueMainTasks = useMemo(() => {
+    const names = tasks
+      .map(t => t.description)
+      .filter((n): n is string => !!n && n.trim() !== '')
+    return ['All', ...Array.from(new Set(names))]
+  }, [tasks])
 
   const showNotification = useCallback((message: string, type: string) => {
     setNotification({ message, type })
@@ -79,6 +88,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
   const getTaskValidationStatus = useCallback((task: Task) => {
     if (task.status === 'completed') return { isValid: true, message: 'Completed' }
     if (task.status === 'failed') return { isValid: false, message: 'Window Expired' }
+    if (task.status === 'paused') return { isValid: true, message: 'Paused' }
+    if (task.status === 'in_progress') return { isValid: true, message: 'In Progress' }
 
     if (!task.time_allocation_date || !task.predictedActiveStart || !task.predictedActiveEnd) {
       return { isValid: false, message: 'No time window allocated' }
@@ -148,19 +159,33 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
           priority,
           predictedActiveStart: task.predictedActiveStart as string | undefined,
           predictedActiveEnd: task.predictedActiveEnd as string | undefined,
-        }
+          rescheduledActiveStart: task.rescheduledActiveStart as string | undefined,
+          rescheduledActiveEnd: task.rescheduledActiveEnd as string | undefined,
+          rescheduled_date: task.rescheduled_date as string | undefined,
+          // Extract the new persistent timer fields from API
+          started_date: task.started_date as string | undefined,
+          accumulated_time: (task.accumulated_time as number) || 0,
+           is_history: !!task.is_history,
+           rescheduled: !!task.rescheduled,
+           original_allocation_date: task.original_allocation_date as string | undefined,
+         }
       })
 
       // Sync timers
       loaded.forEach(task => {
+        const tAny = task as any; // Ignore TS warnings if Task interface lacks these fields
         if (task.status === 'in_progress' && !taskTimersRef.current[task.id]) {
           const interval = setInterval(() => setTimerTick(t => t + 1), 1000)
+          const sysStart = tAny.started_date ? new Date(tAny.started_date).getTime() : Date.now()
+          const sysAcc = tAny.accumulated_time || 0
+
           taskTimersRef.current[task.id] = {
-            segmentStart: Date.now(), accumulated: 0, isPaused: false, timerInterval: interval,
+            segmentStart: sysStart, accumulated: sysAcc, isPaused: false, timerInterval: interval,
           }
         } else if (task.status === 'paused' && !taskTimersRef.current[task.id]) {
+          const sysAcc = tAny.accumulated_time || 0
           taskTimersRef.current[task.id] = {
-            segmentStart: null, accumulated: 0, isPaused: true, timerInterval: null,
+            segmentStart: null, accumulated: sysAcc, isPaused: true, timerInterval: null,
           }
         } else if (task.status === 'completed' && taskTimersRef.current[task.id]) {
           const timer = taskTimersRef.current[task.id]
@@ -186,7 +211,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
   // Available time
   useEffect(() => {
     if (!user?.id) return
-    fetch(`${API_BASE_URL}/active-time/user/${user.id}`)
+    const todayStr = new Date().toISOString().split('T')[0]
+    fetch(`${API_BASE_URL}/active-time/user/${user.id}?date=${todayStr}`)
       .then(r => r.json())
       .then(data => setAvailableTime(formatTime(data.total_predicted_minutes || 0)))
       .catch(() => setAvailableTime('Unavailable'))
@@ -201,8 +227,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     }
   }, [])
 
-  async function startTask(taskName: string) {
-    const task = tasks.find(t => t.name === taskName)
+  async function startTask(taskId: string) {
+    const task = tasks.find(t => t.id === taskId)
     if (!task) { showNotification('Task not found.', 'error'); return }
 
     const validation = getTaskValidationStatus(task)
@@ -215,7 +241,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
       const response = await fetch(`${API_BASE_URL}/start-task`, {
         method: 'POST',
         headers: authHeaders,
-        body: JSON.stringify({ subtask: taskName }),
+        body: JSON.stringify({ subtask: task.name, task_id: taskId }),
       })
       if (!response.ok) throw new Error(`API error: ${response.status}`)
 
@@ -233,8 +259,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     }
   }
 
-  async function pauseTask(taskName: string) {
-    const task = tasks.find(t => t.name === taskName)
+  async function pauseTask(taskId: string) {
+    const task = tasks.find(t => t.id === taskId)
     if (!task) return
     const timer = taskTimersRef.current[task.id]
     if (!timer || timer.isPaused) return
@@ -249,7 +275,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
       await fetch(`${API_BASE_URL}/pause-task`, {
         method: 'POST',
         headers: authHeaders,
-        body: JSON.stringify({ subtask: taskName }),
+        body: JSON.stringify({ subtask: task.name, task_id: taskId, accumulated_time: timer.accumulated }),
       })
     } catch (error) { console.error('Error updating pause status:', error) }
 
@@ -258,8 +284,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     showNotification('Task paused.', 'info')
   }
 
-  async function resumeTask(taskName: string) {
-    const task = tasks.find(t => t.name === taskName)
+  async function resumeTask(taskId: string) {
+    const task = tasks.find(t => t.id === taskId)
     if (!task) return
     const timer = taskTimersRef.current[task.id]
     if (!timer || !timer.isPaused) return
@@ -279,7 +305,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
       await fetch(`${API_BASE_URL}/resume-task`, {
         method: 'POST',
         headers: authHeaders,
-        body: JSON.stringify({ subtask: taskName }),
+        body: JSON.stringify({ subtask: task.name, task_id: taskId }),
       })
     } catch (error) { console.error('Error updating resume status:', error) }
 
@@ -288,8 +314,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     showNotification('Task resumed.', 'info')
   }
 
-  async function markTaskComplete(taskName: string) {
-    const task = tasks.find(t => t.name === taskName)
+  async function markTaskComplete(taskId: string) {
+    const task = tasks.find(t => t.id === taskId)
     if (!task) { showNotification('Task not found.', 'error'); return }
 
     const timer = taskTimersRef.current[task.id]
@@ -308,7 +334,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
       const response = await fetch(`${API_BASE_URL}/complete`, {
         method: 'POST',
         headers: authHeaders,
-        body: JSON.stringify({ subtask: taskName, actual_time: actualTimeMinutes }),
+        body: JSON.stringify({ subtask: task.name, task_id: taskId, actual_time: actualTimeMinutes }),
       })
       const result = await response.json()
 
@@ -360,9 +386,16 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
     const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
-    const tasksForDay = tasks.filter(t => t.time_allocation_date && t.time_allocation_date.split('T')[0] === dateStr)
-    const summaryForDay = scheduledSummaryTasks.filter(s => s.suggested_date && s.suggested_date.split('T')[0] === dateStr)
-    const deadlinesForDay = scheduledSummaryTasks.filter(s => s.deadline && s.deadline.split('T')[0] === dateStr)
+    let tasksForDay = tasks.filter(t => t.time_allocation_date && t.time_allocation_date.split('T')[0] === dateStr)
+    let summaryForDay = scheduledSummaryTasks.filter(s => s.suggested_date && s.suggested_date.split('T')[0] === dateStr)
+    let deadlinesForDay = scheduledSummaryTasks.filter(s => s.deadline && s.deadline.split('T')[0] === dateStr)
+
+    if (mainTaskFilter !== 'All') {
+      tasksForDay = tasksForDay.filter(t => t.description === mainTaskFilter)
+      summaryForDay = summaryForDay.filter(s => s.main_task === mainTaskFilter)
+      deadlinesForDay = deadlinesForDay.filter(s => s.main_task === mainTaskFilter)
+    }
+
     calendarDays.push({ day, year, month, isOtherMonth: false, isToday, dateStr, tasksForDay, summaryForDay, deadlinesForDay })
   }
 
@@ -380,10 +413,13 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
   const high = incompleteTasks.filter(t => t.priority === 'High').length
   const medium = incompleteTasks.filter(t => t.priority === 'Medium').length
   const low = incompleteTasks.filter(t => t.priority === 'Low').length
-  const totalEstimatedTime = incompleteTasks.reduce((sum, t) => sum + (t.user_estimate || t.predicted_time || 0), 0)
 
-  // Filtered todo list
-  let filteredTasks = tasks.filter(t => t.status !== 'completed')
+  const todayStr = new Date().toISOString().split('T')[0]
+  const todaysTasks = tasks.filter(t => t.time_allocation_date && t.time_allocation_date.split('T')[0] === todayStr)
+  const todaysLoggedTime = todaysTasks.reduce((sum, t) => sum + (t.actual_time || 0), 0)
+
+  // Filtered todo list - only show non-completed, non-failed, non-historical tasks
+  let filteredTasks = tasks.filter(t => t.status !== 'completed' && t.status !== 'failed' && !t.is_history)
   if (currentFilter !== 'all') filteredTasks = filteredTasks.filter(t => t.priority === currentFilter)
   filteredTasks = [...filteredTasks].sort((a, b) => {
     if (!a.time_allocation_date) return 1
@@ -398,62 +434,113 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     const isFailed = task.status === 'failed'
     const isCompleted = task.status === 'completed'
     const estimatedTime = task.user_estimate || task.predicted_time
-    const activeWindowHtml = task.predictedActiveStart && task.predictedActiveEnd
-      ? `<div class="modal-meta-item"><span class="meta-label">Active Window:</span><span class="meta-value">${task.predictedActiveStart} - ${task.predictedActiveEnd}</span></div>`
-      : ''
 
     const validation = getTaskValidationStatus(task)
-    const validationHtml = `<div class="modal-meta-item"><span class="meta-label">Status:</span><span class="meta-value" style="color: ${validation.isValid ? '#10b981' : '#ef4444'}">${validation.message}</span></div>`
 
-    let buttonHTML = ''
-    let timerHTML = ''
+    const isRescheduled = !!(task.rescheduled || (task.rescheduledActiveStart && task.rescheduledActiveEnd))
 
-    if (isCompleted) {
-      buttonHTML = '<button class="btn-sm btn-success" disabled style="background-color:#10b981;border:none;color:white;cursor:default;">✓ Completed</button>'
-    } else if (isFailed) {
-      buttonHTML = '<button class="btn-sm btn-danger" disabled style="background-color:#ef4444;border:none;color:white;cursor:default;">✗ Failed</button>'
-    } else if (!timer) {
-      buttonHTML = `<button class="btn-sm btn-primary start-task-btn" data-task-name="${task.name}" ${!validation.isValid ? 'disabled style="opacity:0.6;cursor:not-allowed;"' : ''}>▶ Start</button>`
-    } else if (timer.isPaused) {
-      timerHTML = `<span id="timer-${task.id}" style="font-size:0.85em;color:#f59e0b;font-weight:600;">${formatElapsed(elapsed)}</span>`
-      buttonHTML = `<button class="btn-sm resume-task-btn" data-task-name="${task.name}" style="background-color:#f59e0b;border:none;color:white;padding:4px 10px;border-radius:4px;cursor:pointer;">▶ Resume</button>
-        <button class="btn-sm mark-complete-btn" data-task-name="${task.name}" style="background-color:#10b981;border:none;color:white;padding:4px 10px;border-radius:4px;cursor:pointer;">✓ Complete</button>`
-    } else {
-      timerHTML = `<span id="timer-${task.id}" style="font-size:0.85em;color:#10b981;font-weight:600;">${formatElapsed(elapsed)}</span>`
-      buttonHTML = `<button class="btn-sm pause-task-btn" data-task-name="${task.name}" style="background-color:#f59e0b;border:none;color:white;padding:4px 10px;border-radius:4px;cursor:pointer;">Pause</button>
-        <button class="btn-sm mark-complete-btn" data-task-name="${task.name}" style="background-color:#10b981;border:none;color:white;padding:4px 10px;border-radius:4px;cursor:pointer;">✓ Complete</button>`
-    }
+    return (
+      <div key={task.id} className={`modal-task-item ${task.priority}${isFailed ? ' failed' : ''}`} data-task-id={task.id}>
+        <div className="modal-task-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={`modal-task-title${isFailed ? ' failed-title' : ''}`}>{task.name}</div>
+            {isRescheduled && (
+              <span style={{
+                fontSize: '0.65rem', fontWeight: 900, backgroundColor: '#ffedd5', color: '#9a3412',
+                padding: '2px 8px', borderRadius: '4px', border: '1px solid #fed7aa', textTransform: 'uppercase'
+              }}>
+                Re-Scheduled
+              </span>
+            )}
+          </div>
 
-    return `
-      <div class="modal-task-item ${task.priority}${isFailed ? ' failed' : ''}" data-task-id="${task.id}">
-        <div class="modal-task-header">
-          <div class="modal-task-title${isFailed ? ' failed-title' : ''}">${task.name}</div>
-          ${timerHTML}
-          ${buttonHTML}
-          ${getStatusBadge(task.status)}
+          {/* Timer Display */}
+          {timer && timer.isPaused && <span style={{ fontSize: '0.85em', color: '#f59e0b', fontWeight: 600 }}>{formatElapsed(elapsed)}</span>}
+          {timer && !timer.isPaused && <span style={{ fontSize: '0.85em', color: '#10b981', fontWeight: 600 }}>{formatElapsed(elapsed)}</span>}
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {isCompleted ? (
+              <button className="btn-sm" disabled style={{ backgroundColor: '#10b981', border: 'none', color: 'white', cursor: 'default', padding: '4px 10px', borderRadius: '4px' }}>✓ Completed</button>
+            ) : isFailed ? (
+              <button className="btn-sm" disabled style={{ backgroundColor: '#ef4444', border: 'none', color: 'white', cursor: 'default', padding: '4px 10px', borderRadius: '4px' }}>✗ Failed</button>
+            ) : !timer ? (
+              <button className="btn-sm" onClick={(e) => { e.stopPropagation(); startTask(task.id) }} disabled={!validation.isValid} style={{ backgroundColor: '#4f46e5', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', cursor: validation.isValid ? 'pointer' : 'not-allowed', opacity: validation.isValid ? 1 : 0.6 }}>▶ Start</button>
+            ) : timer.isPaused ? (
+              <>
+                <button className="btn-sm" onClick={(e) => { e.stopPropagation(); resumeTask(task.id) }} style={{ backgroundColor: '#f59e0b', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>▶ Resume</button>
+                <button className="btn-sm" onClick={(e) => { e.stopPropagation(); markTaskComplete(task.id) }} style={{ backgroundColor: '#10b981', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>✓ Complete</button>
+              </>
+            ) : (
+              <>
+                <button className="btn-sm" onClick={(e) => { e.stopPropagation(); pauseTask(task.id) }} style={{ backgroundColor: '#f59e0b', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>Pause</button>
+                <button className="btn-sm" onClick={(e) => { e.stopPropagation(); markTaskComplete(task.id) }} style={{ backgroundColor: '#10b981', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>✓ Complete</button>
+              </>
+            )}
+          </div>
+
+          <span dangerouslySetInnerHTML={{ __html: getStatusBadge(task.status) }} />
         </div>
-        ${task.description ? `<div class="modal-task-description"><strong>Main Task:</strong> ${task.description}</div>` : ''}
-        <div class="modal-task-meta">
-          <div class="modal-meta-item"><span class="meta-label">Category:</span><span class="meta-value">${task.category || 'general'}</span></div>
-          <div class="modal-meta-item"><span class="meta-label">Estimated Time:</span><span class="meta-value">${formatTime(estimatedTime)}</span></div>
-          ${activeWindowHtml}
-          ${validationHtml}
-          <div class="modal-meta-item"><span class="meta-label">Confidence:</span><span class="meta-value confidence-${task.confidence}">${task.confidence}</span></div>
-          <div class="modal-meta-item"><span class="meta-label">Method:</span><span class="meta-value">${task.method}</span></div>
-          ${task.actual_time ? `<div class="modal-meta-item"><span class="meta-label">Actual Time:</span><span class="meta-value">${formatTime(task.actual_time)}</span></div>` : ''}
+
+        {task.description && <div className="modal-task-description"><strong>Main Task:</strong> {task.description}</div>}
+
+        <div className="modal-task-meta-premium" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', background: '#f8fafc', padding: '16px 20px', borderRadius: '12px', marginTop: '14px', border: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</span>
+            <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1e293b', textTransform: 'capitalize' }}>{task.category || 'General'}</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estimated Time</span>
+            <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#6366f1' }}>{formatTime(estimatedTime)}</span>
+          </div>
+
+          {/* Original Window (The Past) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {isRescheduled ? 'Original Window' : 'Active Window'}
+            </span>
+            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: isRescheduled ? '#ef4444' : '#334155', textDecoration: isRescheduled ? 'line-through' : 'none' }}>
+              {isRescheduled && task.original_allocation_date ? (
+                `${new Date(task.original_allocation_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · `
+              ) : ''}
+              {task.predictedActiveStart} - {task.predictedActiveEnd}
+            </span>
+          </div>
+
+          {/* Rescheduled Window (The Future) */}
+          {isRescheduled && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rescheduled Window</span>
+              <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#4f46e5' }}>
+                {task.rescheduledActiveStart} - {task.rescheduledActiveEnd}
+              </span>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</span>
+            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: validation.isValid ? '#10b981' : '#ef4444' }}>
+              {isRescheduled && !isCompleted && !isFailed ? 'Rescheduled' : validation.message}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Method</span>
+            <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#475569', textTransform: 'capitalize' }}>
+              {task.method === 'cold_start' ? 'Fresh Start' : task.method === 'warm_start' ? 'Guided Session' : task.method.replace('_', ' ')}
+            </span>
+          </div>
+
+          {task.actual_time && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', marginTop: '4px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Completed Time</span>
+              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#10b981' }}>{formatTime(task.actual_time)}</span>
+            </div>
+          )}
         </div>
       </div>
-    `
-  }
-
-  function handleModalClick(e: React.MouseEvent<HTMLDivElement>) {
-    const btn = e.target as HTMLElement
-    const taskName = btn.getAttribute('data-task-name')
-    if (!taskName) return
-    if (btn.classList.contains('start-task-btn')) startTask(taskName)
-    else if (btn.classList.contains('pause-task-btn')) pauseTask(taskName)
-    else if (btn.classList.contains('resume-task-btn')) resumeTask(taskName)
-    else if (btn.classList.contains('mark-complete-btn')) markTaskComplete(taskName)
+    )
   }
 
   return (
@@ -490,8 +577,32 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
           <div className="left-column">
             {/* Calendar */}
             <div className="card">
-              <div className="card-header">
-                <h3>Calendar</h3>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  <h3 style={{ margin: 0 }}>Calendar</h3>
+                  {uniqueMainTasks.length > 1 && (
+                    <select
+                      className="project-filter-select"
+                      value={mainTaskFilter}
+                      onChange={(e) => setMainTaskFilter(e.target.value)}
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        color: '#475569',
+                        backgroundColor: '#f8fafc',
+                        cursor: 'pointer',
+                        outline: 'none'
+                      }}
+                    >
+                      {uniqueMainTasks.map(name => (
+                        <option key={name} value={name}>{name === 'All' ? 'All Projects' : name}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
                 <div className="calendar-nav">
                   <button className="btn-icon" onClick={() => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>‹</button>
                   <span id="currentMonth">{MONTH_NAMES[month]} {year}</span>
@@ -529,6 +640,15 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                           onClick={() => (hasAnyTask || cell.deadlinesForDay.length > 0) && showTasksForDate(cell.dateStr, cell.tasksForDay, cell.summaryForDay, cell.deadlinesForDay)}
                         >
                           <div className="day-number">{cell.day}</div>
+                          {failedCount > 0 && (
+                            <div style={{
+                              fontSize: '0.62rem', color: '#ef4444', fontWeight: 800,
+                              marginTop: '2px', textAlign: 'center', lineHeight: '1.2',
+                              maxWidth: '100%', wordBreak: 'break-word'
+                            }}>
+                              {failedCount === 1 ? '1 task missed' : `${failedCount} missed`}
+                            </div>
+                          )}
                           {hasAnyTask && (
                             <div className="task-count" style={
                               hasTasks && failedCount > 0 ? { backgroundColor: '#ef4444', color: 'white' } :
@@ -537,7 +657,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                                     {}
                             }>
                               {hasTasks
-                                ? (failedCount > 0 ? `${failedCount} ✗` :
+                                ? (failedCount > 0 ? `${failedCount}` :
                                   completedCount === cell.tasksForDay.length ? `${completedCount} ✓` :
                                     cell.tasksForDay.length)
                                 : cell.summaryForDay.length}
@@ -618,27 +738,50 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                         <div key={task.id} className={`todo-item ${task.priority}${isFailed ? ' failed' : ''}`}>
                           <div className="todo-header">
                             <div className={`todo-title${isFailed ? ' failed-title' : ''}`}>{task.name}</div>
+                            {task.rescheduled && (
+                              <span style={{
+                                fontSize: '0.6rem', fontWeight: 900, backgroundColor: '#ffedd5', color: '#9a3412',
+                                padding: '1px 6px', borderRadius: '4px', border: '1px solid #fed7aa', textTransform: 'uppercase'
+                              }}>
+                                Re-Scheduled
+                              </span>
+                            )}
                           </div>
                           <div className="todo-meta">
-                            <div className="todo-meta-item"><span>📅</span><span>{allocationDate}</span></div>
+                            <div className="todo-meta-item">
+                              <span style={{ color: '#6366f1' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                              </span>
+                              <span>{allocationDate}</span>
+                            </div>
                             {task.predictedActiveStart && task.predictedActiveEnd && (
-                              <div className="todo-meta-item">
-                                <span>🕒</span>
-                                <span>{task.predictedActiveStart} - {task.predictedActiveEnd}</span>
-                              </div>
+                                <div className="todo-meta-item">
+                                  <span style={{ color: '#6366f1' }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                  </span>
+                                  <span>{task.predictedActiveStart} - {task.predictedActiveEnd}</span>
+                                </div>
                             )}
-                            <div className="todo-meta-item"><span>⏱️</span><span>{formatTime(estimatedTime)}</span></div>
                             <div className="todo-meta-item">
-                              <span className={`priority-badge ${task.priority}`}>{task.priority}</span>
+                              <span style={{ color: '#6366f1' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+                              </span>
+                              <span>{formatTime(estimatedTime)}</span>
                             </div>
                             <div className="todo-meta-item">
-                              <span className={`confidence-badge ${task.confidence}`}>{task.confidence}</span>
-                            </div>
-                            {isFailed && (
-                              <div className="todo-meta-item">
-                                <span className="status-badge failed">⚠️ Time Window Expired</span>
-                              </div>
-                            )}
+                               <span style={{ color: '#6366f1' }}>
+                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                               </span>
+                               <span className={`priority-badge ${task.priority}`}>{task.priority}</span>
+                             </div>
+                             {isFailed && (
+                               <div className="todo-meta-item" style={{ gridColumn: 'span 2' }}>
+                                 <span style={{ color: '#ef4444' }}>
+                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                 </span>
+                                 <span className="status-badge failed">Time Window Expired</span>
+                               </div>
+                             )}
                           </div>
                           {task.description && (
                             <div className="todo-description"><strong>Main Task:</strong> {task.description}</div>
@@ -657,11 +800,11 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
               <div className="card-body">
                 <div className="time-summary">
                   <div className="time-item">
-                    <span className="time-label">Total Estimated Time:</span>
-                    <span className="time-value">{formatTime(totalEstimatedTime)}</span>
+                    <span className="time-label">Today's Completed Time:</span>
+                    <span className="time-value">{formatTime(todaysLoggedTime)}</span>
                   </div>
                   <div className="time-item">
-                    <span className="time-label">Available Time (Next 7 days):</span>
+                    <span className="time-label">Today's Available Time:</span>
                     <span className="time-value">{availableTime}</span>
                   </div>
                 </div>
@@ -681,15 +824,12 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
             </div>
             <div
               className="modal-body"
-              // timerTick forces re-render for live timer updates
-              key={timerTick}
-              onClick={handleModalClick}
             >
               {/* Allocated Tasks */}
               {modalTasks.length > 0 && (
                 <>
-                  <h4 style={{ margin: '10px 0 5px 0', fontSize: '0.9em', color: '#4b5563' }}>Allocated Tasks</h4>
-                  <div dangerouslySetInnerHTML={{ __html: modalTasks.map(renderModalTask).join('') }} />
+                  <h4 style={{ margin: '12px 0 8px 0', fontSize: '0.85em', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800 }}>Scheduled Focus Tasks</h4>
+                  <div>{modalTasks.map(renderModalTask)}</div>
                 </>
               )}
               {/* Deadline Tasks */}

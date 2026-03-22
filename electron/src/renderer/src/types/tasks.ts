@@ -51,6 +51,12 @@ export interface Task {
   category?: string
   predictedActiveStart?: string
   predictedActiveEnd?: string
+  rescheduledActiveStart?: string
+  rescheduledActiveEnd?: string
+  rescheduled_date?: string
+  is_history?: boolean
+  rescheduled?: boolean
+  original_allocation_date?: string
 }
 
 export interface TimerState {
