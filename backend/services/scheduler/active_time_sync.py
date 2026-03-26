@@ -29,16 +29,36 @@ logging.basicConfig(
 )
 
 # Configuration — FastAPI backend (configurable via .env)
+from pymongo import MongoClient
+
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api/tasks")
-USERS_TO_SYNC = [u for u in os.getenv("SCHEDULER_USERS", "").split(",") if u.strip()]
-ALLOCATION_USERS = [u for u in os.getenv("ALLOCATION_USERS", "").split(",") if u.strip()]
 SCHEDULE_TIME = os.getenv("SCHEDULER_TIME", "21:09")
+
+def get_dynamic_users():
+    """Fetch all unique OAuth user IDs from the MongoDB tasks collection."""
+    try:
+        uri = os.getenv("TASKS_MONGODB_URI")
+        if not uri:
+            return []
+        
+        client = MongoClient(uri)
+        db = client[os.getenv("TASKS_MONGODB_DATABASE", "research_task_db")]
+        tasks_col = db[os.getenv("TASKS_COLLECTION_TASKS", "tasks")]
+        
+        # Get all users who have ever created a task
+        users = tasks_col.distinct("user_id")
+        client.close()
+        return users
+    except Exception as e:
+        import logging
+        logging.error(f"Failed to fetch dynamic users from MongoDB: {e}")
+        return []
 
 
 def allocate_user_tasks(student_id, active_time_id, start_date=None, days_ahead=90):
     """Triggers task allocation for a student based on their active time."""
     if start_date is None:
-        start_date = (datetime.now(ZoneInfo("Asia/Colombo")) - timedelta(days=1)).strftime("%Y-%m-%d")
+        start_date = datetime.now(ZoneInfo("Asia/Colombo")).strftime("%Y-%m-%d")
 
     url = f"{API_BASE_URL}/allocate-internal/{student_id}"
     payload = {
@@ -71,11 +91,15 @@ def fetch_active_time():
     """Fetches active time data for configured users."""
     logging.info(f"--- STARTING DAILY SYNC AT {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---")
 
+    users_to_sync = get_dynamic_users()
+    logging.info(f"[Scheduler] Dynamically found {len(users_to_sync)} OAuth users in the database to sync.")
+
     success_count = 0
     fail_count = 0
 
-    for user_id in USERS_TO_SYNC:
-        url = f"{API_BASE_URL}/active-time/user/{user_id}"
+    for user_id in users_to_sync:
+        today = datetime.now(ZoneInfo("Asia/Colombo")).strftime("%Y-%m-%d")
+        url = f"{API_BASE_URL}/active-time/user/{user_id}?start_date={today}"
         logging.info(f"Attempting sync for {user_id} via {url}")
 
         try:
@@ -98,9 +122,8 @@ def fetch_active_time():
 
                 success_count += 1
 
-                # If this user is in the allocation list, trigger task allocation
-                if user_id in ALLOCATION_USERS:
-                    allocate_user_tasks(user_id, user_id)
+                # Trigger task allocation for this user
+                allocate_user_tasks(user_id, user_id)
 
             else:
                 logging.warning(f"FAILED: {user_id} | Status: {response.status_code} | Reason: {response.text[:100]}")
@@ -130,7 +153,7 @@ def _run_loop():
     next_run = schedule.next_run()
     print(f"[Scheduler] Active Time Sync scheduled daily at {SCHEDULE_TIME}")
     print(f"[Scheduler] Next run: {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"[Scheduler] Monitoring users: {USERS_TO_SYNC}")
+    print(f"[Scheduler] Monitoring users dynamically from database")
     print(f"[Scheduler] API target: {API_BASE_URL}")
 
     while not _stop_event.is_set():
@@ -168,7 +191,7 @@ def stop_scheduler():
 
 if __name__ == "__main__":
     # Standalone mode — blocking loop for manual testing
-    logging.info(f"Scheduler initialized. Monitoring: {', '.join(USERS_TO_SYNC)}")
+    logging.info(f"Scheduler initialized. Monitoring users dynamically from DB.")
     logging.info(f"Daily task scheduled for: {SCHEDULE_TIME}")
     schedule.every().day.at(SCHEDULE_TIME).do(fetch_active_time)
     print(f"Active Time Scheduler is running...")
