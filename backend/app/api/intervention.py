@@ -222,6 +222,7 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
         "time_spent_on_task": 0.0,
         "assigned_time": 0.0,
         "task_deadline_time": None,
+        "recent_completion_boost": 0.0,
         "has_data": False,
     }
 
@@ -264,21 +265,56 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
                         return None
                 return None
 
-            # Count all tasks for this user (no deadline filter — completed_tasks
-            # collection lacks a created_at/completed_at field for date filtering)
+            from datetime import timedelta
+
+            now = datetime.now(timezone.utc)
+            seven_days_ago = now - timedelta(days=7)
+            thirty_min_ago = now - timedelta(minutes=30)
+
+            # Fetch tasks with date fields for proper 7-day filtering
             all_tasks = await collection.find(
                 {"user_id": user_id},
-                {"_id": 0, "status": 1, "deadline": 1},
+                {"_id": 0, "status": 1, "deadline": 1,
+                 "created_date": 1, "completed_date": 1},
             ).to_list(length=1000)
 
+            # Count tasks created or completed in the last 7 days
+            def _in_last_7_days(t):
+                cd = t.get("created_date")
+                if isinstance(cd, datetime):
+                    return cd.replace(tzinfo=timezone.utc) >= seven_days_ago if cd.tzinfo is None else cd >= seven_days_ago
+                return True  # include tasks without created_date for backward compat
+
+            recent_tasks = [t for t in all_tasks if _in_last_7_days(t)]
+
+            def _completed_recently(t):
+                if t.get("status") != "completed":
+                    return False
+                cd = t.get("completed_date")
+                if isinstance(cd, datetime):
+                    cd_aware = cd.replace(tzinfo=timezone.utc) if cd.tzinfo is None else cd
+                    return cd_aware >= seven_days_ago
+                # Fallback: count completed tasks without completed_date
+                return True
+
             result["completed_tasks_last_7_days"] = sum(
-                1 for t in all_tasks if t.get("status") == "completed"
+                1 for t in all_tasks if _completed_recently(t)
             )
-            result["assigned_tasks_last_7_days"] = len(all_tasks)
+            result["assigned_tasks_last_7_days"] = len(recent_tasks)
+
+            # Completion boost: count tasks completed in the last 30 minutes
+            recently_completed = sum(
+                1 for t in all_tasks
+                if t.get("status") == "completed"
+                and isinstance(t.get("completed_date"), datetime)
+                and (t["completed_date"].replace(tzinfo=timezone.utc)
+                     if t["completed_date"].tzinfo is None
+                     else t["completed_date"]) >= thirty_min_ago
+            )
+            # Each recent completion adds a 0.1 boost (capped at 0.3)
+            result["recent_completion_boost"] = min(recently_completed * 0.1, 0.3)
 
             # Find current task: nearest upcoming (or most recently overdue) scheduled task
-            # Fetch scheduled tasks with full fields needed for the context vector
-            now = datetime.now(timezone.utc)
             scheduled_tasks = await collection.find(
                 {"user_id": user_id, "status": "scheduled"},
                 {

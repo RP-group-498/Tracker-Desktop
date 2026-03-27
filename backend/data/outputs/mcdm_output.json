@@ -1,57 +1,59 @@
 {
   "tasks": [
     {
-      "task_name": "Create a Professional Associate Software Engineer Resume",
-      "task_description": "How to compile a comprehensive resume for an Associate Software Engineer role, showcasing full-stack development skills and project experience?",
+      "task_name": "Transforming BiteDash into Microservices",
+      "task_description": "How to propose a microservices-based architecture for BiteDash to address existing issues and ensure efficient scaling?",
       "sub_tasks": [
         {
-          "name": "Gather Contact Information (Email, Mobile, LinkedIn, GitHub)",
-          "estimated_minutes": 5
+          "name": "Identify Microservices",
+          "estimated_minutes": 90,
+          "suggested_date": "2026-03-09"
         },
         {
-          "name": "Write a Professional Summary",
-          "estimated_minutes": 45
+          "name": "Define Communication & Data Handling (including inter-service communication and database strategy)",
+          "estimated_minutes": 120,
+          "suggested_date": "2026-03-09"
         },
         {
-          "name": "List Technical Skills (Programming Languages, Frontend, Backend, Databases, Tools & Platforms, Testing, Concepts & Practices)",
-          "estimated_minutes": 30
+          "name": "Plan the Migration Strategy (including service migration order and transition handling)",
+          "estimated_minutes": 150,
+          "suggested_date": "2026-03-10"
         },
         {
-          "name": "Detail Work Experience (Internships and Contract Roles)",
-          "estimated_minutes": 180
+          "name": "Ensure Fault Tolerance & Scalability",
+          "estimated_minutes": 90,
+          "suggested_date": "2026-03-10"
         },
         {
-          "name": "Showcase Projects (Jupiter Gem, Alankara Interior, Smart Job, Planet First, Official Portfolio, GreenGleam, Orchid Species Identifier, Restaurant Management Service)",
-          "estimated_minutes": 240
+          "name": "Design the Architecture Diagram & API Structure",
+          "estimated_minutes": 180,
+          "suggested_date": "2026-03-11"
         },
         {
-          "name": "Highlight Achievements (Mini Hackathon)",
-          "estimated_minutes": 30
-        },
-        {
-          "name": "Provide Educational Background",
-          "estimated_minutes": 15
+          "name": "Prepare PowerPoint Presentation covering all architectural proposals",
+          "estimated_minutes": 120,
+          "suggested_date": "2026-03-12"
         }
       ],
-      "context": "The resume should highlight strong experience in full-stack development using React.js, Next.js, Angular, Node.js, and .NET. It should emphasize skills in building scalable, responsive, and high-performance web applications, clean code, system optimization, performance tuning, REST APIs, cloud deployment, testing, Agile development, and the software development lifecycle (SDLC), with strong problem-solving abilities.",
+      "context": "You have been hired as a Microservices Architect for BiteDash, a leading online food delivery platform. Your team is responsible for redesigning BiteDash's platform from its existing monolithic structure to a microservices-based architecture. The current system faces challenges in performance, scalability, flexibility, and reliability, including slow response times during peak hours, issues due to a shared infrastructure, difficulty introducing new features and deploying updates efficiently, and reliability concerns where a failure in one feature can disrupt the entire ordering process. The goal is to enhance flexibility, allowing different functionalities to operate independently, scale, update, and recover without affecting the rest, thereby providing a faster, more reliable, and efficient food delivery experience. The deliverable is a PowerPoint Presentation.",
       "ai_suggestions": {
         "ai_suggested_difficulty": 3,
-        "ai_suggested_time": 9.0
+        "ai_suggested_time": 13.0
       },
       "metrics": {
-        "deadline": "2026-03-26",
-        "days_left": 21,
+        "deadline": "2026-03-12",
+        "days_left": 3,
         "credits": 4,
         "percentage": 10,
         "difficulty_rating": 3
       },
       "mcdm_calculation": {
-        "urgency_score": 20.0,
+        "urgency_score": 80.0,
         "impact_score": 20.0,
         "difficulty_score": 60.0,
-        "final_weighted_score": 28.0
+        "final_weighted_score": 58.0
       },
-      "priority": "Low"
+      "priority": "Medium"
     }
   ]
 }
