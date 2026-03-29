@@ -4,12 +4,19 @@ api/intervention.py
 FastAPI router for the Smart Intervention Engine.
 Ports all endpoints from component3/backend/main.py, using
 settings.intervention_mongodb_uri instead of a hardcoded connection string.
+
+Bandit architecture:
+  - Context: 9-element TMT-grounded vector [bias, E, V, I, D, M, deficit_code, session_dur, time_of_day]
+  - Selection: Deficit-weighted LinUCB — ucb_score * (1 + relevance)
+  - Update: Discounted LinUCB (GAMMA = 0.995) for non-stationary adaptation
+  - Logging: Full TMT traceability per bandit event
 """
 
 import asyncio
+import logging
 import time
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,9 +24,13 @@ from app.api.deps import get_current_user
 
 from app.components.smart_intervention_engine.bandit import (
     LinUCBArm,
-    get_allowed_actions,
     select_action,
     ACTIONS,
+    GAMMA,
+)
+from app.components.smart_intervention_engine.tmt_alignment import (
+    compute_relevance_scores,
+    ACTIONS as TMT_ACTIONS,
 )
 from app.components.smart_intervention_engine.schemas import (
     BanditSelectRequest,
@@ -31,6 +42,10 @@ from app.components.smart_intervention_engine.schemas import (
 from app.config import settings
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+# Deficit component labels for logging
+_DEFICIT_LABELS = ["expectancy", "value", "impulsiveness", "delay"]
 
 # ---------------------------------------------------------------------------
 # MongoDB client — only created when a URI is configured
@@ -84,6 +99,29 @@ async def _save_arm(user_id: str, action: str, arm: LinUCBArm) -> None:
     )
 
 
+def _extract_tmt_components(x: List[float]) -> tuple:
+    """
+    Extract TMT proxy values and compute deficit scores from context vector.
+
+    Returns (E, V, I, D, deficit_E, deficit_V, deficit_I, deficit_D, dominant_deficit)
+    """
+    E = x[1]
+    V = x[2]
+    I = x[3]
+    D = x[4]
+
+    deficit_E = 1.0 - E
+    deficit_V = 1.0 - V
+    deficit_I = I
+    deficit_D = D
+
+    deficits = [deficit_E, deficit_V, deficit_I, deficit_D]
+    dominant_index = int(np.argmax(deficits))
+    dominant_deficit = _DEFICIT_LABELS[dominant_index]
+
+    return E, V, I, D, deficit_E, deficit_V, deficit_I, deficit_D, dominant_deficit
+
+
 # ---------------------------------------------------------------------------
 # User goal endpoints
 # ---------------------------------------------------------------------------
@@ -116,49 +154,111 @@ async def set_user_goal(goal: UserGoal, current_user: Dict[str, Any] = Depends(g
 
 @router.post("/bandit/select", response_model=BanditSelectResponse)
 async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
-    """Select the best intervention given the user's context vector."""
-    if len(req.x) != 12:
+    """
+    Select the best intervention using deficit-weighted LinUCB.
+
+    Selection process:
+      1. Extract TMT proxies from context vector
+      2. Compute deficit scores (distance from ideal state)
+      3. Compute relevance scores via TMT alignment matrix
+      4. Compute LinUCB UCB scores for each action
+      5. Weight: weighted_score = ucb_score * (1 + relevance)
+         - When deficits are uniform, LinUCB personalization dominates
+         - When deficits are skewed, relevance steers toward theory-grounded choices
+         - (1 + relevance) ensures no action is completely zeroed out
+      6. Return action with highest weighted score
+    """
+    if len(req.x) != 9:
         raise HTTPException(
-            status_code=400, detail="Context vector must have exactly 12 elements."
+            status_code=400, detail="Context vector must have exactly 9 elements."
         )
 
-    allowed = get_allowed_actions(req.x)
+    user_id = current_user["sub"]
     x = np.array(req.x, dtype=float)
 
-    user_id = current_user["sub"]
-    arms_list = await asyncio.gather(*[_load_arm(user_id, a) for a in allowed])
-    arms = dict(zip(allowed, arms_list))
+    # Extract TMT components and compute deficits
+    E, V, I, D, deficit_E, deficit_V, deficit_I, deficit_D, dominant_deficit = _extract_tmt_components(req.x)
 
-    print(f"[Bandit Select] User: {user_id}")
-    print(f"[Bandit Select] Context Vector: {req.x}")
-    print(f"[Bandit Select] Allowed Actions: {allowed}")
+    logger.info(
+        "[Bandit Select] user=%s context_vector=%s",
+        user_id, req.x,
+    )
+    logger.info(
+        "[Bandit Select] tmt_proxies E=%.3f V=%.3f I=%.3f D=%.3f M=%.3f",
+        E, V, I, D, float(req.x[5]),
+    )
+    logger.info(
+        "[Bandit Select] deficits E=%.3f V=%.3f I=%.3f D=%.3f dominant=%s",
+        deficit_E, deficit_V, deficit_I, deficit_D, dominant_deficit,
+    )
 
-    action = select_action(arms, x, req.alpha)
-    
-    print(f"[Bandit Select] Selected Action: {action}")
+    # Compute relevance scores from TMT alignment matrix
+    relevance = compute_relevance_scores(deficit_E, deficit_V, deficit_I, deficit_D)
 
-    return BanditSelectResponse(action=action, allowed_actions=allowed)
+    # Load all arms in parallel
+    arms_list = await asyncio.gather(*[_load_arm(user_id, a) for a in TMT_ACTIONS])
+    arms_map = dict(zip(TMT_ACTIONS, arms_list))
+
+    # Deficit-weighted selection: UCB score * (1 + relevance)
+    best_action = ""
+    best_score = float("-inf")
+
+    for action in TMT_ACTIONS:
+        arm = arms_map[action]
+        ucb_score = arm.score(x, req.alpha)
+        weighted_score = ucb_score * (1.0 + relevance[action])
+        logger.debug(
+            "[Bandit Select] action=%s ucb=%.4f relevance=%.4f weighted=%.4f",
+            action, ucb_score, relevance[action], weighted_score,
+        )
+        if weighted_score > best_score:
+            best_score = weighted_score
+            best_action = action
+
+    logger.info(
+        "[Bandit Select] selected=%s weighted_score=%.4f relevance_scores=%s",
+        best_action, best_score, relevance,
+    )
+
+    return BanditSelectResponse(action=best_action, allowed_actions=list(TMT_ACTIONS))
 
 
 @router.post("/bandit/update")
 async def bandit_update(req: BanditUpdateRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
-    """Update the LinUCB model after observing a user reward."""
-    if len(req.x) != 12:
+    """Update the discounted LinUCB model after observing a user reward."""
+    if len(req.x) != 9:
         raise HTTPException(
-            status_code=400, detail="Context vector must have exactly 12 elements."
+            status_code=400, detail="Context vector must have exactly 9 elements."
         )
 
     if req.action not in ACTIONS:
         raise HTTPException(status_code=400, detail=f"Unknown action: {req.action}")
 
     user_id = current_user["sub"]
-    
-    print(f"[Bandit Update] User: {user_id}, Action: {req.action}, Reward: {req.reward}")
-    print(f"[Bandit Update] Context Vector: {req.x}")
+
+    # Extract TMT components for logging and event storage
+    E, V, I, D, deficit_E, deficit_V, deficit_I, deficit_D, dominant_deficit = _extract_tmt_components(req.x)
+    relevance = compute_relevance_scores(deficit_E, deficit_V, deficit_I, deficit_D)
+
+    logger.info(
+        "[Bandit Update] user=%s action=%s reward=%.2f button=%s",
+        user_id, req.action, req.reward, req.button,
+    )
+    logger.info("[Bandit Update] context_vector=%s", req.x)
+    logger.info(
+        "[Bandit Update] tmt_proxies E=%.3f V=%.3f I=%.3f D=%.3f dominant_deficit=%s",
+        E, V, I, D, dominant_deficit,
+    )
+
     x = np.array(req.x, dtype=float)
     arm = await _load_arm(user_id, req.action)
     arm.update(x, req.reward)
     await _save_arm(user_id, req.action, arm)
+
+    logger.info(
+        "[Bandit Update] arm updated: n_updates=%d gamma=%.4f",
+        arm.n_updates, GAMMA,
+    )
 
     db = _get_db()
     await db.bandit_events.insert_one({
@@ -168,6 +268,10 @@ async def bandit_update(req: BanditUpdateRequest, current_user: Dict[str, Any] =
         "reward": req.reward,
         "button": req.button,
         "alpha": req.alpha,
+        "gamma": GAMMA,
+        "relevance_scores": relevance,
+        "dominant_deficit": dominant_deficit,
+        "tmt_proxies": {"E": E, "V": V, "I": I, "D": D},
         "n_updates_after": arm.n_updates,
         "timestamp": time.time(),
     })
@@ -208,6 +312,10 @@ async def log_motivation(entry: MotivationLogEntry, current_user: Dict[str, Any]
 async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Fetch raw context signals for the current user from Component 1 and Component 4.
+
+    Returns raw database values. The Electron frontend (contextBuilder.ts) transforms
+    these into the 9-element TMT context vector — the backend is not responsible for
+    vector construction.
     """
     import motor.motor_asyncio
     user_id = current_user["sub"]
@@ -241,8 +349,8 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
                 result["total_transitions"] = int(doc.get("totalAppSwitches", 0) or 0)
                 result["non_academic_transitions"] = int(doc.get("nonAcademicAppSwitches", 0) or 0)
                 result["has_data"] = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("[Context] Failed to fetch Component 1 (activity) data: %s", e)
 
     # ── Component 4: adaptive_time_estimation / completed_tasks ─────────────
     if settings.tasks_mongodb_uri:
@@ -277,7 +385,6 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
             result["assigned_tasks_last_7_days"] = len(all_tasks)
 
             # Find current task: nearest upcoming (or most recently overdue) scheduled task
-            # Fetch scheduled tasks with full fields needed for the context vector
             now = datetime.now(timezone.utc)
             scheduled_tasks = await collection.find(
                 {"user_id": user_id, "status": "scheduled"},
@@ -323,8 +430,8 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
                 result["task_deadline_time"] = deadline_dt.isoformat() if deadline_dt else None
 
                 result["has_data"] = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("[Context] Failed to fetch Component 4 (tasks) data: %s", e)
 
     return result
 
@@ -349,23 +456,26 @@ async def generate_reframe_text(goal: UserGoal, current_user: Dict[str, Any] = D
     """Generate a short reframing notification text using Gemini AI based on user goal."""
     try:
         import google.generativeai as genai
-        # settings is available in the module scope
         if not settings.gemini_api_key:
             return {"text": f"I choose to do this because it helps me {goal.life_goal}."}
-        
+
         genai.configure(api_key=settings.gemini_api_key)
-        
-        # Use a minimal prompt for short generation
+
         model = genai.GenerativeModel("gemini-1.5-flash")
-        prompt = f"Write a very short, encouraging, and highly personal 1-sentence notification reminding the user to reframe their task because it helps them achieve their life goal: '{goal.life_goal}'. Make it a first-person statement, e.g. 'I choose to do this because it helps me...'. Make it no more than 15 words."
-        
+        prompt = (
+            f"Write a very short, encouraging, and highly personal 1-sentence notification "
+            f"reminding the user to reframe their task because it helps them achieve their "
+            f"life goal: '{goal.life_goal}'. Make it a first-person statement, e.g. "
+            f"'I choose to do this because it helps me...'. Make it no more than 15 words."
+        )
+
         response = model.generate_content(prompt)
         text = response.text.strip()
-        
+
         # Remove markdown quotes or formatting if any
         text = text.replace('"', '').replace("'", '').replace('*', '').strip()
-        
+
         return {"text": text}
     except Exception as e:
-        print(f"[Intervention] AI Reframe Error: {e}")
+        logger.error("[Intervention] AI Reframe generation failed: %s", e)
         return {"text": f"I choose to do this because it helps me {goal.life_goal}."}

@@ -76,7 +76,7 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
         try {
             await window.electronAPI.intervention.logMotivation({
                 user_id: userId,
-                motivation: vector[6],
+                motivation: vector[5],  // TMT motivation score, now at index 5 in 9-element vector
                 scenario,
             });
         } catch (e) {
