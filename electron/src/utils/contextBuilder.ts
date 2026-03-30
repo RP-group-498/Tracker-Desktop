@@ -249,9 +249,12 @@ export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSi
  *
  * Pipeline: backend signals → RawBehavioralSignals → TMTProxies → context vector
  */
-export async function getContext(userId: string): Promise<number[]> {
+export async function getContext(): Promise<number[]> {
     try {
-        const backend: BackendContextSignals = await window.electronAPI.intervention.getContext(userId);
+        const backend: BackendContextSignals | null = await window.electronAPI.intervention.getContext();
+        if (!backend) {
+            throw new Error('No context data available');
+        }
         const signals = toRawSignals(backend);
         const proxies = computeTMTProxies(signals);
         return buildContextVector(proxies, signals);

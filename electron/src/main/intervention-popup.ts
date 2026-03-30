@@ -147,13 +147,14 @@ export class InterventionPopup {
 
         win.once('ready-to-show', () => {
             win.showInactive();
-            win.webContents.once('did-finish-load', () => {
-                this.timerReady = true;
-                if (this.pendingTimerLabel) {
-                    win.webContents.send('intervention-popup:timer-update', this.pendingTimerLabel);
-                    this.pendingTimerLabel = null;
-                }
-            });
+        });
+
+        win.webContents.once('did-finish-load', () => {
+            this.timerReady = true;
+            if (this.pendingTimerLabel) {
+                win.webContents.send('intervention-popup:timer-update', this.pendingTimerLabel);
+                this.pendingTimerLabel = null;
+            }
         });
 
         win.on('closed', () => {

@@ -113,7 +113,7 @@ export class MonitoringLoop {
             // 3. Fetch context vector
             console.log(`[MonitoringLoop] Tick #${tickId}: Fetching context...`);
             this.callbacks.onStatusUpdate('Fetching context...');
-            const vector = await getContext(this.userId);
+            const vector = await getContext();
 
             // Log motivation at every tick (motivation is now at vector[5])
             this.callbacks.onLogMotivation(vector);
@@ -152,8 +152,14 @@ export class MonitoringLoop {
             updateHash(ctxHash);
             await this.callbacks.onSuggestIntervention(vector, available);
         } catch (err) {
-            console.error(`[MonitoringLoop] Tick #${tickId} error:`, err);
-            this.callbacks.onStatusUpdate(`Error: ${(err as Error)?.message ?? 'unknown'}`);
+            const msg = (err as Error)?.message ?? 'unknown';
+            if (msg === 'No context data available') {
+                console.log(`[MonitoringLoop] Tick #${tickId}: No context data — skipping`);
+                this.callbacks.onStatusUpdate('Monitoring — no active task');
+            } else {
+                console.error(`[MonitoringLoop] Tick #${tickId} error:`, err);
+                this.callbacks.onStatusUpdate(`Error: ${msg}`);
+            }
         }
     }
 }
