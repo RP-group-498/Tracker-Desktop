@@ -97,7 +97,7 @@ interface InterventionAPI {
     banditSelect: (req: { user_id: string; x: number[]; alpha?: number }) => Promise<{ action: string; allowed_actions: string[] }>;
     banditUpdate: (req: { user_id: string; x: number[]; action: string; reward: number; button: string; alpha?: number }) => Promise<{ status: string; n_updates: number }>;
     getEvents: () => Promise<unknown[]>;
-    logMotivation: (entry: { user_id: string; motivation: number; scenario: string }) => Promise<void>;
+    logMotivation: (entry: { user_id: string; motivation: number; scenario: string; context_vector?: number[] }) => Promise<void>;
     getMotivationHistory: (since?: number) => Promise<unknown[]>;
     getUserGoal: () => Promise<{ life_goal: string }>;
     saveUserGoal: (goal: string) => Promise<{ status: string }>;

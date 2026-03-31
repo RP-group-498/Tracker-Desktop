@@ -39,6 +39,7 @@ class MotivationLogEntry(BaseModel):
     motivation: float        # x[5] from the context vector (TMT motivation score), range [0, 1]
     scenario: str            # 'A' | 'B' | 'C'
     timestamp: Optional[float] = None
+    context_vector: Optional[List[float]] = None
 
 
 class UserGoal(BaseModel):

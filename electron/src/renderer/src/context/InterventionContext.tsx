@@ -78,6 +78,7 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
                 user_id: userId,
                 motivation: vector[5],  // TMT motivation score, now at index 5 in 9-element vector
                 scenario,
+                context_vector: vector,
             });
         } catch (e) {
             console.warn('[Motivation] Log failed:', e);

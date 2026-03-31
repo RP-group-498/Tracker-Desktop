@@ -78,6 +78,7 @@ export function registerInterventionHandlers(
 
     ipcMain.handle('intervention:get-context', async () => {
         const result = await pythonBridge.request('GET', '/intervention/context');
+        if (!result.success) throw new Error(result.error ?? 'get-context failed');
         return result.data;
     });
 

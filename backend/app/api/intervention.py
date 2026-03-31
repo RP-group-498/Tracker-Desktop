@@ -48,11 +48,15 @@ logger = logging.getLogger(__name__)
 _DEFICIT_LABELS = ["expectancy", "value", "impulsiveness", "delay"]
 
 # ---------------------------------------------------------------------------
-# MongoDB client — only created when a URI is configured
+# MongoDB clients — created once and reused across requests
 # ---------------------------------------------------------------------------
 
 _client = None
 _db = None
+_c1_client = None
+_c1_db = None
+_c4_client = None
+_c4_db = None
 
 
 def _get_db():
@@ -68,6 +72,30 @@ def _get_db():
     _client = motor.motor_asyncio.AsyncIOMotorClient(settings.intervention_mongodb_uri)
     _db = _client[settings.intervention_mongodb_database]
     return _db
+
+
+def _get_c1_db():
+    global _c1_client, _c1_db
+    if _c1_db is not None:
+        return _c1_db
+    if not settings.mongodb_uri:
+        return None
+    import motor.motor_asyncio
+    _c1_client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongodb_uri)
+    _c1_db = _c1_client[settings.mongodb_database]
+    return _c1_db
+
+
+def _get_c4_db():
+    global _c4_client, _c4_db
+    if _c4_db is not None:
+        return _c4_db
+    if not settings.tasks_mongodb_uri:
+        return None
+    import motor.motor_asyncio
+    _c4_client = motor.motor_asyncio.AsyncIOMotorClient(settings.tasks_mongodb_uri)
+    _c4_db = _c4_client[settings.tasks_mongodb_database]
+    return _c4_db
 
 
 # ---------------------------------------------------------------------------
@@ -202,11 +230,15 @@ async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] =
     # Deficit-weighted selection: UCB score * (1 + relevance)
     best_action = ""
     best_score = float("-inf")
+    ucb_scores_dict: Dict[str, float] = {}
+    weighted_scores_dict: Dict[str, float] = {}
 
     for action in TMT_ACTIONS:
         arm = arms_map[action]
         ucb_score = arm.score(x, req.alpha)
         weighted_score = ucb_score * (1.0 + relevance[action])
+        ucb_scores_dict[action] = ucb_score
+        weighted_scores_dict[action] = weighted_score
         logger.debug(
             "[Bandit Select] action=%s ucb=%.4f relevance=%.4f weighted=%.4f",
             action, ucb_score, relevance[action], weighted_score,
@@ -219,6 +251,20 @@ async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] =
         "[Bandit Select] selected=%s weighted_score=%.4f relevance_scores=%s",
         best_action, best_score, relevance,
     )
+
+    db = _get_db()
+    await db.bandit_selections.insert_one({
+        "user_id": user_id,
+        "context": req.x,
+        "selected_action": best_action,
+        "alpha": req.alpha,
+        "tmt_proxies": {"E": E, "V": V, "I": I, "D": D},
+        "dominant_deficit": dominant_deficit,
+        "relevance_scores": relevance,
+        "ucb_scores": ucb_scores_dict,
+        "weighted_scores": weighted_scores_dict,
+        "timestamp": time.time(),
+    })
 
     return BanditSelectResponse(action=best_action, allowed_actions=list(TMT_ACTIONS))
 
@@ -299,12 +345,15 @@ async def bandit_events(current_user: Dict[str, Any] = Depends(get_current_user)
 async def log_motivation(entry: MotivationLogEntry, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Store a motivation snapshot for the user."""
     db = _get_db()
-    await db.motivation_logs.insert_one({
+    doc = {
         "user_id": current_user["sub"],
         "motivation": entry.motivation,
         "scenario": entry.scenario,
         "timestamp": entry.timestamp if entry.timestamp is not None else time.time(),
-    })
+    }
+    if entry.context_vector is not None:
+        doc["context_vector"] = entry.context_vector
+    await db.motivation_logs.insert_one(doc)
     return {"status": "ok"}
 
 
@@ -317,7 +366,6 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
     these into the 9-element TMT context vector — the backend is not responsible for
     vector construction.
     """
-    import motor.motor_asyncio
     user_id = current_user["sub"]
 
     _default = {
@@ -336,10 +384,9 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
     result = dict(_default)
 
     # ── Component 1: focus_app_research / active_time ────────────────────────
-    if settings.mongodb_uri:
+    c1_db = _get_c1_db()
+    if c1_db is not None:
         try:
-            c1_client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongodb_uri)
-            c1_db = c1_client[settings.mongodb_database]
             today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
             doc = await c1_db.active_time.find_one(
                 {"userId": user_id, "date": today_str},
@@ -353,10 +400,9 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
             logger.error("[Context] Failed to fetch Component 1 (activity) data: %s", e)
 
     # ── Component 4: adaptive_time_estimation / completed_tasks ─────────────
-    if settings.tasks_mongodb_uri:
+    c4_db = _get_c4_db()
+    if c4_db is not None:
         try:
-            c4_client = motor.motor_asyncio.AsyncIOMotorClient(settings.tasks_mongodb_uri)
-            c4_db = c4_client[settings.tasks_mongodb_database]
             collection = c4_db[settings.tasks_collection_tasks]
 
             def _parse_deadline(d):
@@ -449,6 +495,18 @@ async def motivation_history(since: float = 3600.0, current_user: Dict[str, Any]
         {"_id": 0},
     ).sort("timestamp", 1).limit(500)
     return await cursor.to_list(length=500)
+
+
+@router.delete("/reset")
+async def reset_intervention_data(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Delete all intervention data for this user (bandit models, events, selections, motivation logs)."""
+    db = _get_db()
+    user_id = current_user["sub"]
+    results = {}
+    for collection_name in ["bandit_models", "bandit_events", "bandit_selections", "motivation_logs"]:
+        result = await db[collection_name].delete_many({"user_id": user_id})
+        results[collection_name] = result.deleted_count
+    return {"status": "reset", "deleted": results}
 
 
 @router.post("/reframe-text")
