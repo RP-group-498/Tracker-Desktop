@@ -20,6 +20,8 @@ from typing import Optional, Dict, Any, List
 
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException
+import motor.motor_asyncio
+
 from app.api.deps import get_current_user
 
 from app.components.smart_intervention_engine.bandit import (
@@ -68,7 +70,7 @@ def _get_db():
             status_code=503,
             detail="Intervention MongoDB URI not configured. Set INTERVENTION_MONGODB_URI in .env",
         )
-    import motor.motor_asyncio
+    
     _client = motor.motor_asyncio.AsyncIOMotorClient(settings.intervention_mongodb_uri)
     _db = _client[settings.intervention_mongodb_database]
     return _db
@@ -80,7 +82,6 @@ def _get_c1_db():
         return _c1_db
     if not settings.mongodb_uri:
         return None
-    import motor.motor_asyncio
     _c1_client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongodb_uri)
     _c1_db = _c1_client[settings.mongodb_database]
     return _c1_db
@@ -92,7 +93,6 @@ def _get_c4_db():
         return _c4_db
     if not settings.tasks_mongodb_uri:
         return None
-    import motor.motor_asyncio
     _c4_client = motor.motor_asyncio.AsyncIOMotorClient(settings.tasks_mongodb_uri)
     _c4_db = _c4_client[settings.tasks_mongodb_database]
     return _c4_db
