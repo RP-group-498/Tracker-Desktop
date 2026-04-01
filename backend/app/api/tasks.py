@@ -82,6 +82,7 @@ class CompleteRequest(BaseModel):
     subtask: str
     actual_time: int
     task_id: Optional[str] = None
+    completed_date: Optional[str] = None
 
 
 class StartResumeRequest(BaseModel):
@@ -201,9 +202,10 @@ def complete(req: CompleteRequest, current_user: Dict[str, Any] = Depends(get_cu
         
         # Priority 1: Find by task_id
         if req.task_id:
+            completed_time = datetime.fromisoformat(req.completed_date) if req.completed_date else datetime.now()
             result = estimator.tasks.update_one(
                 {"_id": ObjectId(req.task_id), "user_id": user_id},
-                {"$set": {"estimates.actual_time": req.actual_time, "status": "completed", "completed_date": datetime.now()}}
+                {"$set": {"estimates.actual_time": req.actual_time, "status": "completed", "completed_date": completed_time}}
             )
             task_marked = result.modified_count == 1
         else:
