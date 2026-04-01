@@ -22,11 +22,8 @@ export function registerInterventionHandlers(
     getTray?: () => Tray | null,
 ): void {
 
-    // Create popup manager for Windows
-    let interventionPopup: InterventionPopup | null = null;
-    if (!isMac) {
-        interventionPopup = new InterventionPopup(getMainWindow);
-    }
+    // Create popup manager for all platforms
+    const interventionPopup = new InterventionPopup(getMainWindow);
 
     // ── API bridge handlers ────────────────────────────────────────────────
 
@@ -42,8 +39,8 @@ export function registerInterventionHandlers(
         return result.data;
     });
 
-    ipcMain.handle('intervention:get-events', async (_event, userId: string) => {
-        const result = await pythonBridge.request('GET', `/intervention/bandit/events?user_id=${userId}`);
+    ipcMain.handle('intervention:get-events', async () => {
+        const result = await pythonBridge.request('GET', '/intervention/bandit/events');
         return result.data;
     });
 
@@ -53,11 +50,11 @@ export function registerInterventionHandlers(
         return result.data;
     });
 
-    ipcMain.handle('intervention:get-motivation-history', async (_event, userId: string, since?: number) => {
+    ipcMain.handle('intervention:get-motivation-history', async (_event, since?: number) => {
         const sinceParam = since ?? 3600;
         const result = await pythonBridge.request(
             'GET',
-            `/intervention/motivation/history?user_id=${userId}&since=${sinceParam}`,
+            `/intervention/motivation/history?since=${sinceParam}`,
         );
         return result.data;
     });
@@ -79,8 +76,9 @@ export function registerInterventionHandlers(
         return result.data;
     });
 
-    ipcMain.handle('intervention:get-context', async (_event, _userId: string) => {
+    ipcMain.handle('intervention:get-context', async () => {
         const result = await pythonBridge.request('GET', '/intervention/context');
+        if (!result.success) throw new Error(result.error ?? 'get-context failed');
         return result.data;
     });
 
@@ -137,12 +135,12 @@ export function registerInterventionHandlers(
                 tray.setTitle(data.label);
             }
         } else {
-            // Windows: setTitle() is a no-op; use popup timer + tooltip instead
+            // Windows: setTitle() is a no-op; use tooltip instead
             if (tray) {
                 tray.setToolTip('Focus App - ' + data.label);
             }
-            interventionPopup?.updateTimer(data.label);
         }
+        interventionPopup.updateTimer(data.label); // All platforms
     });
 
     ipcMain.on('intervention:tray-clear', () => {
@@ -156,8 +154,8 @@ export function registerInterventionHandlers(
             if (tray) {
                 tray.setToolTip('Focus App');
             }
-            interventionPopup?.clearTimer();
         }
+        interventionPopup.clearTimer(); // All platforms
     });
 
     // ── Window visibility ─────────────────────────────────────────────────
