@@ -76,7 +76,7 @@ const SmartInterventionPage: React.FC = () => {
         try {
             await window.electronAPI.intervention.logMotivation({
                 user_id: userId,
-                motivation: vector[6],
+                motivation: vector[5],  // TMT motivation score at index 5 in 9-element vector
                 scenario,
             });
         } catch (e) {
@@ -87,7 +87,6 @@ const SmartInterventionPage: React.FC = () => {
     const fetchAndRenderChart = useCallback(async (seconds: number) => {
         try {
             const data = (await window.electronAPI.intervention.getMotivationHistory(
-                userId,
                 seconds,
             )) as Array<{ motivation: number; scenario: string; timestamp: number }>;
 
@@ -196,7 +195,7 @@ const SmartInterventionPage: React.FC = () => {
         setSuggestDisabled(true);
         setSuggestStatus('Fetching context...');
         try {
-            const vector = await getContext(userId);
+            const vector = await getContext();
             await logMotivation(vector);
 
             setSuggestStatus('Asking the model...');
@@ -310,7 +309,7 @@ const SmartInterventionPage: React.FC = () => {
             .then(data => { if ((data as any)?.life_goal) setLifeGoal((data as any).life_goal); })
             .catch(() => { });
 
-        getContext(userId)
+        getContext()
             .then(vector => logMotivation(vector))
             .then(() => fetchAndRenderChart(filterSeconds))
             .catch(() => fetchAndRenderChart(filterSeconds));

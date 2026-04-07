@@ -74,7 +74,6 @@ class SubtaskItem(BaseModel):
 
 
 class PredictBatchRequest(BaseModel):
-    user_id: str
     main_task: dict
     subtasks: list
 
@@ -82,10 +81,19 @@ class PredictBatchRequest(BaseModel):
 class CompleteRequest(BaseModel):
     subtask: str
     actual_time: int
+    task_id: Optional[str] = None
+    completed_date: Optional[str] = None
 
 
-class StartPauseResumeRequest(BaseModel):
+class StartResumeRequest(BaseModel):
     subtask: str
+    task_id: Optional[str] = None
+
+
+class PauseRequest(BaseModel):
+    subtask: str
+    accumulated_time: int
+    task_id: Optional[str] = None
 
 
 class SaveTasksRequest(BaseModel):
@@ -190,16 +198,28 @@ def complete(req: CompleteRequest, current_user: Dict[str, Any] = Depends(get_cu
     """Mark a task as complete and record actual time."""
     try:
         estimator = _get_estimator()
-        task_marked = estimator.mark_complete(req.subtask, current_user["sub"], req.actual_time)
+        user_id = current_user["sub"]
+        
+        # Priority 1: Find by task_id
+        if req.task_id:
+            completed_time = datetime.fromisoformat(req.completed_date) if req.completed_date else datetime.now()
+            result = estimator.tasks.update_one(
+                {"_id": ObjectId(req.task_id), "user_id": user_id},
+                {"$set": {"estimates.actual_time": req.actual_time, "status": "completed", "completed_date": completed_time}}
+            )
+            task_marked = result.modified_count == 1
+        else:
+            # Priority 2: Fallback to name-based (deprecated)
+            task_marked = estimator.mark_complete(req.subtask, user_id, req.actual_time)
 
         if task_marked:
             return {
                 "status": "completed",
-                "message": "Task marked as complete and model updated",
+                "message": "Task marked as complete",
                 "timestamp": datetime.now().isoformat()
             }
         else:
-            raise HTTPException(status_code=404, detail="Task not found or not in scheduled status.")
+            raise HTTPException(status_code=404, detail="Task not found or already completed.")
     except HTTPException:
         raise
     except Exception as e:
@@ -207,23 +227,28 @@ def complete(req: CompleteRequest, current_user: Dict[str, Any] = Depends(get_cu
 
 
 @router.post("/start-task")
-def start_task(req: StartPauseResumeRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
+def start_task(req: StartResumeRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Mark task as started (in_progress)."""
     try:
         estimator = _get_estimator()
+        user_id = current_user["sub"]
+        
+        query = {"user_id": user_id}
+        if req.task_id:
+            query["_id"] = ObjectId(req.task_id)
+        else:
+            query["sub_task.description"] = req.subtask
+            query["status"] = "scheduled"
+
         result = estimator.tasks.update_one(
-            {
-                "user_id": current_user["sub"],
-                "sub_task.description": req.subtask,
-                "status": "scheduled"
-            },
-            {"$set": {"status": "in_progress", "started_date": datetime.now()}}
+            query,
+            {"$set": {"status": "in_progress", "started_date": datetime.now(), "accumulated_time": 0}}
         )
 
         if result.modified_count == 1:
             return {"status": "in_progress", "message": "Task started", "timestamp": datetime.now().isoformat()}
         else:
-            raise HTTPException(status_code=404, detail="Task not found or already started/completed.")
+            raise HTTPException(status_code=404, detail="Task not found or already started.")
     except HTTPException:
         raise
     except Exception as e:
@@ -231,17 +256,22 @@ def start_task(req: StartPauseResumeRequest, current_user: Dict[str, Any] = Depe
 
 
 @router.post("/pause-task")
-def pause_task(req: StartPauseResumeRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
-    """Mark task as paused."""
+def pause_task(req: PauseRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Mark task as paused and store accumulated time."""
     try:
         estimator = _get_estimator()
+        user_id = current_user["sub"]
+
+        query = {"user_id": user_id}
+        if req.task_id:
+            query["_id"] = ObjectId(req.task_id)
+        else:
+            query["sub_task.description"] = req.subtask
+            query["status"] = "in_progress"
+
         result = estimator.tasks.update_one(
-            {
-                "user_id": current_user["sub"],
-                "sub_task.description": req.subtask,
-                "status": "in_progress"
-            },
-            {"$set": {"status": "paused"}}
+            query,
+            {"$set": {"status": "paused", "accumulated_time": req.accumulated_time}, "$unset": {"started_date": ""}}
         )
 
         if result.modified_count == 1:
@@ -255,17 +285,22 @@ def pause_task(req: StartPauseResumeRequest, current_user: Dict[str, Any] = Depe
 
 
 @router.post("/resume-task")
-def resume_task(req: StartPauseResumeRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
-    """Mark task as resumed (back to in_progress)."""
+def resume_task(req: StartResumeRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Mark task as resumed (back to in_progress) and record new start date."""
     try:
         estimator = _get_estimator()
+        user_id = current_user["sub"]
+
+        query = {"user_id": user_id}
+        if req.task_id:
+            query["_id"] = ObjectId(req.task_id)
+        else:
+            query["sub_task.description"] = req.subtask
+            query["status"] = "paused"
+
         result = estimator.tasks.update_one(
-            {
-                "user_id": current_user["sub"],
-                "sub_task.description": req.subtask,
-                "status": "paused"
-            },
-            {"$set": {"status": "in_progress"}}
+            query,
+            {"$set": {"status": "in_progress", "started_date": datetime.now()}}
         )
 
         if result.modified_count == 1:
@@ -344,7 +379,15 @@ def get_user_tasks(
                 "completed_date": task.get('completed_date', '').isoformat() if task.get('completed_date') else None,
                 "time_allocation_date": time_allocation_str,
                 "predictedActiveStart": task.get('predictedActiveStart'),
-                "predictedActiveEnd": task.get('predictedActiveEnd')
+                "predictedActiveEnd": task.get('predictedActiveEnd'),
+                "rescheduledActiveStart": task.get('rescheduledActiveStart'),
+                "rescheduledActiveEnd": task.get('rescheduledActiveEnd'),
+                "rescheduled_date": task.get('rescheduled_date'),
+                "started_date": task.get('started_date', '').isoformat() if task.get('started_date') else None,
+                "accumulated_time": task.get('accumulated_time', 0),
+                "is_history": task.get('is_history', False),
+                "rescheduled": task.get('rescheduled', False),
+                "original_allocation_date": task.get('original_allocation_date').isoformat() if isinstance(task.get('original_allocation_date'), datetime) else task.get('original_allocation_date')
             }
             formatted_tasks.append(formatted_task)
 
@@ -560,13 +603,40 @@ def allocate_tasks(req: AllocateRequest, current_user: Dict[str, Any] = Depends(
 
 @router.post("/allocate-internal/{user_id}")
 def allocate_tasks_internal(user_id: str, req: AllocateRequest):
-    """Internal endpoint for the background scheduler — no JWT auth required.
-    Uses user_id from the URL path instead of the token."""
+    """Internal endpoint for the background scheduler — no JWT auth required."""
     if _apdis_collection is None:
         raise HTTPException(status_code=503, detail="APDIS database not configured.")
 
+    def parse_window_time(time_str, date_obj):
+        if not time_str or not date_obj: return None
+        try:
+            t = datetime.strptime(time_str, "%I:%M %p")
+            return date_obj.replace(hour=t.hour, minute=t.minute, second=0, microsecond=0)
+        except: return None
+
     try:
         estimator = _get_estimator()
+        now = datetime.now()
+
+        # --- AUTO-FAILURE GUARD ---
+        # Mark tasks as failed if their window has passed and they aren't completed
+        overdue_tasks = estimator.tasks.find({
+            "user_id": user_id,
+            "status": {"$in": ["scheduled", "in_progress", "paused"]},
+            "time_allocation_date": {"$ne": None},
+            "predictedActiveEnd": {"$ne": None}
+        })
+        
+        fail_count = 0
+        for task in overdue_tasks:
+            end_time = parse_window_time(task['predictedActiveEnd'], task['time_allocation_date'])
+            if end_time and now > end_time:
+                estimator.tasks.update_one({"_id": task["_id"]}, {"$set": {"status": "failed"}})
+                fail_count += 1
+        
+        if fail_count > 0:
+            print(f" [GUARD] Auto-failed {fail_count} expired tasks for user {user_id}")
+        # ---------------------------
 
         start_date = datetime.strptime(req.start_date, '%Y-%m-%d') if req.start_date else datetime.now()
         end_date = start_date + timedelta(days=req.days_ahead)
@@ -587,11 +657,46 @@ def allocate_tasks_internal(user_id: str, req: AllocateRequest):
 
         incomplete_tasks = list(estimator.tasks.find({
             "user_id": user_id,
-            "status": {"$ne": "completed"}
+            "status": {"$ne": "completed"},
+            "is_history": {"$ne": True}
         }).sort([("final_mcdm_score", -1), ("sub_task.position", 1)]))
 
         if not incomplete_tasks:
+            print(f"\n[ALLOCATION] No incomplete tasks found for user: {user_id}")
             return {"message": "No incomplete tasks found for this user", "user_id": user_id}
+
+        # --- VALIDATION & LOGGING ---
+        print(f"\n{'='*70}")
+        print(f" 🔥 TASK ALLOCATION INITIATED | User: {user_id}")
+        print(f" 🎯 Primary Sort: MCDM Score (DESC) | Secondary: Position (ASC)")
+        print(f"{'-'*70}")
+        
+        last_score = float('inf')
+        last_pos = -1
+        
+        for i, t in enumerate(incomplete_tasks):
+            score = t.get('final_mcdm_score', 0)
+            pos = t.get('sub_task', {}).get('position', 0)
+            name = t.get('sub_task', {}).get('description', 'Unnamed')
+            
+            # STRICT VALIDATION CHECK
+            issue = False
+            if score > last_score:
+                issue = True
+                print(f" [!] ERROR: Primary Sort Broken (Score {score} > {last_score})")
+            elif score == last_score and pos < last_pos:
+                issue = True
+                print(f" [!] ERROR: Secondary Sort Broken (Pos {pos} < {last_pos} for same score)")
+                
+            if issue:
+                print(f"     └─ Affected Task: {name} (Index {i})")
+                
+            last_score = score
+            last_pos = pos
+            
+            print(f" {i+1:2}. [Score: {score:6.2f} | Pos: {pos:2}] {name}")
+        print(f"{'='*70}\n")
+        # ----------------------------
 
         allocations = []
         allocated_task_ids = []
@@ -613,15 +718,49 @@ def allocate_tasks_internal(user_id: str, req: AllocateRequest):
                     predicted_start = active_time.get('predictedActiveStart', '')
                     predicted_end = active_time.get('predictedActiveEnd', '')
 
-                    estimator.tasks.update_one(
-                        {"_id": task['_id']},
-                        {"$set": {
-                            "time_allocation_date": task_date,
-                            "predictedActiveStart": predicted_start,
-                            "predictedActiveEnd": predicted_end
-                        }}
-                    )
+                    update_fields = {
+                        "time_allocation_date": task_date,
+                        "status": "scheduled"
+                    }                    # DUPLICATION-BASED RESCHEDULING LOGIC
+                    if task.get('predictedActiveStart'):
+                        # 1. Create a clone for the new slot
+                        new_task = task.copy()
+                        new_task.pop('_id', None) # Remove old ID to let MongoDB generate a new one
+                        
+                        # Preserve original allocation date
+                        if task.get("time_allocation_date"):
+                            new_task["original_allocation_date"] = task["time_allocation_date"]
+                        
+                        new_task["time_allocation_date"] = task_date
+                        new_task["status"] = "scheduled"
+                        new_task["rescheduled_date"] = date_str
+                        new_task["rescheduledActiveStart"] = predicted_start
+                        new_task["rescheduledActiveEnd"] = predicted_end
+                        new_task["is_history"] = False # Ensure the new one is live
+                        new_task["rescheduled"] = True # Tag as rescheduled
+                        
+                        # 2. Mark the original as history
+                        estimator.tasks.update_one(
+                            {"_id": task['_id']},
+                            {"$set": {"is_history": True, "status": "failed"}}
+                        )
+                        
+                        # 3. Insert the new clone
+                        estimator.tasks.insert_one(new_task)
+                        
+                        print(f" [DUPLICATE-RESCHEDULE] '{task['sub_task'].get('description', 'Unknown')}' cloned to {date_str}")
+                    else:
+                        # First-time allocation: same as before
+                        update_fields["predictedActiveStart"] = predicted_start
+                        update_fields["predictedActiveEnd"] = predicted_end
+                        estimator.tasks.update_one(
+                            {"_id": task['_id']},
+                            {"$set": update_fields}
+                        )
 
+                    print(f" [+] ALLOCATED: '{task['sub_task'].get('description', 'Unknown')}' to {date_str}")
+                    print(f"     Window: {predicted_start} - {predicted_end} | Time: {estimated_time}m")
+                    
                     day_tasks.append({
                         "task_id": str(task['_id']),
                         "subtask": task['sub_task'].get('description', 'Unknown'),
@@ -685,6 +824,7 @@ def debug_active_time():
 def get_active_time_by_user(
     user_id: str,
     date: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
     limit: Optional[int] = Query(None),
     sort: str = Query("date")
 ):
@@ -696,6 +836,8 @@ def get_active_time_by_user(
         query = {"userId": user_id}
         if date:
             query["date"] = date
+        elif start_date:
+            query["date"] = {"$gte": start_date}
 
         predictions_cursor = _apdis_collection.find(query).sort(sort, -1)
         if limit:

@@ -103,13 +103,13 @@ interface ContextSignals {
 interface InterventionAPI {
     banditSelect: (req: { user_id: string; x: number[]; alpha?: number }) => Promise<{ action: string; allowed_actions: string[] }>;
     banditUpdate: (req: { user_id: string; x: number[]; action: string; reward: number; button: string; alpha?: number }) => Promise<{ status: string; n_updates: number }>;
-    getEvents: (userId: string) => Promise<unknown[]>;
-    logMotivation: (entry: { user_id: string; motivation: number; scenario: string }) => Promise<void>;
-    getMotivationHistory: (userId: string, since?: number) => Promise<unknown[]>;
+    getEvents: () => Promise<unknown[]>;
+    logMotivation: (entry: { user_id: string; motivation: number; scenario: string; context_vector?: number[] }) => Promise<void>;
+    getMotivationHistory: (since?: number) => Promise<unknown[]>;
     getUserGoal: () => Promise<{ life_goal: string }>;
     saveUserGoal: (goal: string) => Promise<{ status: string }>;
     generateReframeText: (goal: string) => Promise<{ text: string }>;
-    getContext: (userId: string) => Promise<ContextSignals>;
+    getContext: () => Promise<ContextSignals>;
     notifyActions: (data: { title: string; body: string; strategy: string }) => void;
     onNotificationResponse: (callback: (data: { strategy: string; action: string }) => void) => void;
     updateTrayTimer: (label: string) => void;
@@ -262,13 +262,13 @@ const electronAPI: ElectronAPI = {
     intervention: {
         banditSelect: (req) => ipcRenderer.invoke('intervention:bandit-select', req),
         banditUpdate: (req) => ipcRenderer.invoke('intervention:bandit-update', req),
-        getEvents: (userId) => ipcRenderer.invoke('intervention:get-events', userId),
+        getEvents: () => ipcRenderer.invoke('intervention:get-events'),
         logMotivation: (entry) => ipcRenderer.invoke('intervention:log-motivation', entry),
-        getMotivationHistory: (userId, since) => ipcRenderer.invoke('intervention:get-motivation-history', userId, since),
+        getMotivationHistory: (since) => ipcRenderer.invoke('intervention:get-motivation-history', since),
         getUserGoal: () => ipcRenderer.invoke('intervention:get-user-goal'),
         saveUserGoal: (goal) => ipcRenderer.invoke('intervention:save-user-goal', goal),
         generateReframeText: (goal) => ipcRenderer.invoke('intervention:generate-reframe-text', goal),
-        getContext: (userId) => ipcRenderer.invoke('intervention:get-context', userId),
+        getContext: () => ipcRenderer.invoke('intervention:get-context'),
         notifyActions: (data) => ipcRenderer.send('intervention:notify-actions', data),
         onNotificationResponse: (callback) => {
             ipcRenderer.on('notification-action-response', (_event, data) => callback(data));
