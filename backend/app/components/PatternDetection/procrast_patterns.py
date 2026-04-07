@@ -121,29 +121,55 @@ def _detect_patterns_pure(
                 )
 
     # Pattern 4 — Deadline Rushing
-    # Condition: deadline ≤5 days AND academic >= expected AND non-academic > academic
+    # Two sub-cases:
+    #   A) Behind on goal: deadline ≤5 days AND academic < expected (not meeting goal)
+    #   B) Met goal but still distracted: deadline ≤5 days AND academic >= expected AND non-academic > academic
     if near_tasks:
         nearest = min(near_tasks, key=lambda x: x["days_left"])
         days_left = nearest["days_left"]
         name = nearest.get("task_name", "Unnamed task")
-        total_academic   = today_active.get("fullDayAcademicMinutes",
-                           today_active.get("totalAcademicMinutes", 0))
+        total_academic     = today_active.get("fullDayAcademicMinutes",
+                             today_active.get("totalAcademicMinutes", 0))
         non_academic_total = today_active.get("fullDayNonAcademicMinutes",
                              today_active.get("nonAcademicMinutes", 0))
-        if days_left <= 5 and total_academic >= expected_minutes and non_academic_total > total_academic:
-            intensity = min(non_academic_total / max(total_academic, 1) - 1.0, 1.0)
-            intensity = max(intensity, 0.0)
-            deadline_patterns.append(
-                {
-                    "type": "deadline_rushing",
-                    "severity": _severity_from_ratio(intensity),
-                    "evidence": (
-                        f'Task "{name}" is due in {days_left} day(s). '
-                        f"Non-academic time ({non_academic_total}m) exceeded academic time "
-                        f"({total_academic}m) despite meeting your study goal."
-                    ),
-                    "exit_strategy": _EXIT_STRATEGIES["deadline_rushing"],
-                }
+
+        if days_left <= 5:
+            behind_on_goal    = total_academic < expected_minutes
+            distracted_despite_goal = (
+                total_academic >= expected_minutes and non_academic_total > total_academic
             )
+
+            if behind_on_goal:
+                # Not meeting study goal with deadline approaching
+                goal_gap  = max(expected_minutes - total_academic, 0)
+                intensity = min(goal_gap / max(expected_minutes, 1), 1.0)
+                deadline_patterns.append(
+                    {
+                        "type": "deadline_rushing",
+                        "severity": _severity_from_ratio(intensity),
+                        "evidence": (
+                            f'Task "{name}" is due in {days_left} day(s) but you only completed '
+                            f"{total_academic}m of your {int(expected_minutes)}m study goal today. "
+                            f"You are {goal_gap}m behind with the deadline approaching."
+                        ),
+                        "exit_strategy": _EXIT_STRATEGIES["deadline_rushing"],
+                    }
+                )
+            elif distracted_despite_goal:
+                # Met goal but still spending more time on non-academic
+                intensity = min(non_academic_total / max(total_academic, 1) - 1.0, 1.0)
+                intensity = max(intensity, 0.0)
+                deadline_patterns.append(
+                    {
+                        "type": "deadline_rushing",
+                        "severity": _severity_from_ratio(intensity),
+                        "evidence": (
+                            f'Task "{name}" is due in {days_left} day(s). '
+                            f"Non-academic time ({non_academic_total}m) exceeded academic time "
+                            f"({total_academic}m) despite meeting your study goal."
+                        ),
+                        "exit_strategy": _EXIT_STRATEGIES["deadline_rushing"],
+                    }
+                )
 
     return switching_patterns + inactivity_patterns + browsing_patterns + deadline_patterns
