@@ -23,6 +23,12 @@ interface ElectronAPI {
     // Session
     getCurrentSession: () => Promise<Session | null>;
 
+    // Auth
+    getAuthToken: () => Promise<{ token: string; user: any } | null>;
+    onAuthSuccess: (callback: (authData: any) => void) => void;
+    startOAuthLogin: () => Promise<void>;
+    clearAuth: () => Promise<void>;
+
     // Activity
     getRecentActivity: (limit?: number) => Promise<Activity[]>;
     getActivityStats: () => Promise<ActivityStats>;
@@ -55,6 +61,13 @@ interface ElectronAPI {
     deleteTask: (taskId: number) => Promise<unknown>;
     getCalibrationHistory: (days?: number) => Promise<unknown>;
 
+    // Procrastination — enhanced analysis
+    getAnomalies: (days?: number) => Promise<unknown>;
+    getBehaviorTrends: (days?: number) => Promise<unknown>;
+    getTimeGapStats: () => Promise<unknown>;
+    getDeadlines: () => Promise<unknown>;
+    getModelStatus: () => Promise<unknown>;
+
     // Idle Activity Prompt
     submitIdleActivity: (data: {
         activityId: string | null;
@@ -64,6 +77,11 @@ interface ElectronAPI {
         idleEnd: string;
     }) => Promise<unknown>;
     dismissIdlePrompt: () => Promise<unknown>;
+
+    // Intervention popup (Windows custom popup windows)
+    interventionPopupAction: (data: { strategy: string; action: string }) => void;
+    onInterventionTimerUpdate: (callback: (label: string) => void) => void;
+    onInterventionTimerClear: (callback: () => void) => void;
 
     // Intervention
     intervention: InterventionAPI;
@@ -85,17 +103,28 @@ interface ContextSignals {
 interface InterventionAPI {
     banditSelect: (req: { user_id: string; x: number[]; alpha?: number }) => Promise<{ action: string; allowed_actions: string[] }>;
     banditUpdate: (req: { user_id: string; x: number[]; action: string; reward: number; button: string; alpha?: number }) => Promise<{ status: string; n_updates: number }>;
-    getEvents: (userId: string) => Promise<unknown[]>;
-    logMotivation: (entry: { user_id: string; motivation: number; scenario: string }) => Promise<void>;
-    getMotivationHistory: (userId: string, since?: number) => Promise<unknown[]>;
+    getEvents: () => Promise<unknown[]>;
+    logMotivation: (entry: { user_id: string; motivation: number; scenario: string; context_vector?: number[] }) => Promise<void>;
+    getMotivationHistory: (since?: number) => Promise<unknown[]>;
     getUserGoal: () => Promise<{ life_goal: string }>;
     saveUserGoal: (goal: string) => Promise<{ status: string }>;
-    getContext: (userId: string) => Promise<ContextSignals>;
+    generateReframeText: (goal: string) => Promise<{ text: string }>;
+    getContext: () => Promise<ContextSignals>;
     notifyActions: (data: { title: string; body: string; strategy: string }) => void;
     onNotificationResponse: (callback: (data: { strategy: string; action: string }) => void) => void;
     updateTrayTimer: (label: string) => void;
     clearTray: () => void;
     showWindow: () => void;
+    pomodoroStarted: () => void;
+    pomodoroStopped: () => void;
+    onPomodoroIdleResponse: (callback: (data: { action: string }) => void) => void;
+}
+
+// Additional API for intervention popup windows (used by intervention-notification.html)
+interface ElectronPopupAPI {
+    interventionPopupAction: (data: { strategy: string; action: string }) => void;
+    onInterventionTimerUpdate: (callback: (label: string) => void) => void;
+    onInterventionTimerClear: (callback: () => void) => void;
 }
 
 interface AppState {
@@ -174,6 +203,14 @@ const electronAPI: ElectronAPI = {
     // Session
     getCurrentSession: () => ipcRenderer.invoke('get-current-session'),
 
+    // Auth
+    getAuthToken: () => ipcRenderer.invoke('get-auth-token'),
+    onAuthSuccess: (callback) => {
+        ipcRenderer.on('auth-success', (_event, authData) => callback(authData));
+    },
+    startOAuthLogin: () => ipcRenderer.invoke('start-oauth-login'),
+    clearAuth: () => ipcRenderer.invoke('clear-auth'),
+
     // Activity
     getRecentActivity: (limit = 50) => ipcRenderer.invoke('get-recent-activity', limit),
     getActivityStats: () => ipcRenderer.invoke('get-activity-stats'),
@@ -198,22 +235,40 @@ const electronAPI: ElectronAPI = {
     addTask: (data) => ipcRenderer.invoke('procrastination:add-task', data),
     getTasks: () => ipcRenderer.invoke('procrastination:get-tasks'),
     deleteTask: (taskId) => ipcRenderer.invoke('procrastination:delete-task', taskId),
+
     getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
+
+    // Procrastination — enhanced analysis
+    getAnomalies: (days = 30) => ipcRenderer.invoke('procrastination:get-anomalies', days),
+    getBehaviorTrends: (days = 14) => ipcRenderer.invoke('procrastination:get-behavior-trends', days),
+    getTimeGapStats: () => ipcRenderer.invoke('procrastination:get-time-gap'),
+    getDeadlines: () => ipcRenderer.invoke('procrastination:get-deadlines'),
+    getModelStatus: () => ipcRenderer.invoke('procrastination:get-model-status'),
 
     // Idle Activity Prompt
     submitIdleActivity: (data) => ipcRenderer.invoke('submit-idle-activity', data),
     dismissIdlePrompt: () => ipcRenderer.invoke('dismiss-idle-prompt'),
 
+    // Intervention popup (Windows custom popup windows)
+    interventionPopupAction: (data) => ipcRenderer.send('intervention-popup:action', data),
+    onInterventionTimerUpdate: (callback) => {
+        ipcRenderer.on('intervention-popup:timer-update', (_event, label) => callback(label));
+    },
+    onInterventionTimerClear: (callback) => {
+        ipcRenderer.on('intervention-popup:timer-clear', () => callback());
+    },
+
     // Intervention
     intervention: {
         banditSelect: (req) => ipcRenderer.invoke('intervention:bandit-select', req),
         banditUpdate: (req) => ipcRenderer.invoke('intervention:bandit-update', req),
-        getEvents: (userId) => ipcRenderer.invoke('intervention:get-events', userId),
+        getEvents: () => ipcRenderer.invoke('intervention:get-events'),
         logMotivation: (entry) => ipcRenderer.invoke('intervention:log-motivation', entry),
-        getMotivationHistory: (userId, since) => ipcRenderer.invoke('intervention:get-motivation-history', userId, since),
+        getMotivationHistory: (since) => ipcRenderer.invoke('intervention:get-motivation-history', since),
         getUserGoal: () => ipcRenderer.invoke('intervention:get-user-goal'),
         saveUserGoal: (goal) => ipcRenderer.invoke('intervention:save-user-goal', goal),
-        getContext: (userId) => ipcRenderer.invoke('intervention:get-context', userId),
+        generateReframeText: (goal) => ipcRenderer.invoke('intervention:generate-reframe-text', goal),
+        getContext: () => ipcRenderer.invoke('intervention:get-context'),
         notifyActions: (data) => ipcRenderer.send('intervention:notify-actions', data),
         onNotificationResponse: (callback) => {
             ipcRenderer.on('notification-action-response', (_event, data) => callback(data));
@@ -221,6 +276,11 @@ const electronAPI: ElectronAPI = {
         updateTrayTimer: (label) => ipcRenderer.send('intervention:tray-update', { label }),
         clearTray: () => ipcRenderer.send('intervention:tray-clear'),
         showWindow: () => ipcRenderer.send('intervention:window-show'),
+        pomodoroStarted: () => ipcRenderer.send('intervention:pomodoro-started'),
+        pomodoroStopped: () => ipcRenderer.send('intervention:pomodoro-stopped'),
+        onPomodoroIdleResponse: (callback) => {
+            ipcRenderer.on('intervention:pomodoro-idle', (_event, data) => callback(data));
+        },
     },
 };
 
@@ -229,6 +289,6 @@ contextBridge.exposeInMainWorld('electronAPI', electronAPI);
 // Type declaration for renderer
 declare global {
     interface Window {
-        electronAPI: ElectronAPI & { intervention: InterventionAPI };
+        electronAPI: ElectronAPI & { intervention: InterventionAPI } & ElectronPopupAPI;
     }
 }

@@ -12,6 +12,7 @@ from .health import router as health_router
 from .tasks import router as tasks_router
 from .procrastination_analysis import router as mongodb_analysis_router
 from .intervention import router as intervention_router
+from .auth import router as auth_router
 
 api_router = APIRouter()
 
@@ -23,3 +24,4 @@ api_router.include_router(tasks_router, prefix="/tasks", tags=["tasks"])
 # api_router.include_router(procrastination_router, prefix="/procrastination", tags=["procrastination"])
 api_router.include_router(mongodb_analysis_router, prefix="/analysis", tags=["analysis"])
 api_router.include_router(intervention_router, prefix="/intervention", tags=["intervention"])
+api_router.include_router(auth_router, tags=["auth"])

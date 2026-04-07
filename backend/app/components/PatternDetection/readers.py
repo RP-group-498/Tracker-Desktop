@@ -22,40 +22,23 @@ async def _fetch_behavior_records(
       Pass 2 — fallback: fetch all user docs, filter in Python after coercion
                (works when start_time is stored as ISO string).
     """
-    # Pass 1 — fast path: BSON datetime range on start_time OR timestamp.
-    primary_cursor = (
+    query = {
+        "user_id": user_id,
+        "start_time": {"$gte": start_dt, "$lt": end_dt},
+    }
+
+    _logger.info("[Pipeline] Fetching records for %s between %s and %s", user_id, start_dt, end_dt)
+    
+    cursor = (
         motor_db["activity_events"]
-        .find(
-            {
-                "user_id": user_id,
-                "$or": [
-                    {"start_time": {"$gte": start_dt, "$lt": end_dt}},
-                    {
-                        "start_time": {"$exists": False},
-                        "timestamp":  {"$gte": start_dt, "$lt": end_dt},
-                    },
-                ],
-            },
-            {"_id": 0},
-        )
+        .find(query, {"_id": 0})
         .sort("start_time", 1)
     )
-    docs = await primary_cursor.to_list(length=None)
+    docs = await cursor.to_list(length=2000)  # Safety limit
 
-    # Pass 2 — fallback: fetch all user docs and filter in Python.
     if not docs:
-        fallback_cursor = (
-            motor_db["activity_events"]
-            .find({"user_id": user_id}, {"_id": 0})
-            .sort("start_time", 1)
-        )
-        all_docs = await fallback_cursor.to_list(length=None)
-        docs = []
-        for d in all_docs:
-            raw_time = d.get("start_time") or d.get("timestamp")
-            coerced = _coerce_datetime(raw_time)
-            if coerced is not None and start_dt <= coerced < end_dt:
-                docs.append(d)
+        _logger.info("[Pipeline] No records found for user %s on %s", user_id, start_dt.date())
+        return []
 
     records: list[BehaviorRecord] = []
     prev_app: str | None = None
@@ -148,6 +131,31 @@ async def _get_active_time_history(
         .limit(n_days)
     )
     return await cursor.to_list(length=None)
+
+async def _get_feature_history(
+    motor_db: AsyncIOMotorDatabase,
+    user_id: str,
+    days: int = 30,
+) -> list[dict]:
+    """Fetch stored feature vectors from procrastination_results.
+
+    Returns list of {date: str, features: dict}, sorted ascending by date.
+    Only includes docs where the 'features' key is present (post-enhancement data).
+    """
+    cursor = (
+        motor_db["procrastination_results"]
+        .find(
+            {"userId": user_id, "features": {"$exists": True}},
+            {"_id": 0, "date": 1, "features": 1},
+        )
+        .sort("date", -1)
+        .limit(days)
+    )
+    docs = await cursor.to_list(length=None)
+    # Reverse to get ascending order
+    docs.reverse()
+    return [{"date": d["date"], "features": d["features"]} for d in docs if d.get("features")]
+
 
 async def _fetch_stored_prediction(
     motor_db: AsyncIOMotorDatabase, user_id: str

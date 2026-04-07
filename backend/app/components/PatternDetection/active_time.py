@@ -1,7 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from .constants import FOCUS_WINDOWS
 from .types import BehaviorRecord
+
+# Sri Lanka timezone (UTC+5:30) — focus windows are in LK local time
+_LK = timezone(timedelta(hours=5, minutes=30))
 
 
 def _minutes_to_time(m: int) -> str:
@@ -85,22 +88,24 @@ def _detect_active_time_pure(
     if not records:
         return no_logs("No activity found for this date")
 
-    window_records = [r for r in records if start_h <= r.session_start.hour < end_h]
+    # Convert to LK local time so focus window matches the user's actual day
+    def _lk_hour(r: BehaviorRecord) -> int:
+        st = r.session_start
+        if st.tzinfo is None:
+            st = st.replace(tzinfo=timezone.utc)
+        return st.astimezone(_LK).hour
+
+    window_records = [r for r in records if start_h <= _lk_hour(r) < end_h]
+
+    # When no activity falls in the configured focus window, fall back to
+    # scanning the full day so we can still detect the user's actual peak
+    # study period (instead of returning all zeros).
     if not window_records:
-        out = no_logs("Logs exist but none inside focus window")
-
-        # still include full-day totals
-        out["fullDayAcademicMinutes"] = int(round(full_day_academic))
-        out["fullDayProductivityMinutes"] = int(round(full_day_productivity))
-        out["fullDayNonAcademicMinutes"] = int(round(full_day_non_academic))
-        out["fullDayAcademicAppSwitches"] = int(full_day_acad_switches)
-        out["fullDayProductivityAppSwitches"] = int(full_day_prod_switches)
-        out["fullDayNonAcademicAppSwitches"] = int(full_day_non_acad_switches)
-        out["fullDayTotalAppSwitches"] = int(full_day_total_switches)
-
-        # keep legacy field consistent with "academic only"
-        out["totalAcademicMinutes"] = int(round(full_day_academic))
-        return out
+        source_records = records   # full-day fallback
+        off_window = True
+    else:
+        source_records = window_records
+        off_window = False
 
     window_min = float(expected_min)
     window_max = float(expected_min + 60)
@@ -117,16 +122,16 @@ def _detect_active_time_pure(
     # Sliding window: maximize (academic - non-academic)
     # NOTE: productivity is not academic; by default we treat it as non-academic
     # for the purpose of finding the "best study window".
-    for i in range(len(window_records)):
-        start_time = window_records[i].session_start
+    for i in range(len(source_records)):
+        start_time = source_records[i].session_start
         academic = 0.0
         non_academic = 0.0
         acad_sw = 0
         non_acad_sw = 0
         total_sw = 0
 
-        for j in range(i, len(window_records)):
-            row = window_records[j]
+        for j in range(i, len(source_records)):
+            row = source_records[j]
             end_time = row.session_end
             duration = (end_time - start_time).total_seconds() / 60.0
 
@@ -154,25 +159,30 @@ def _detect_active_time_pure(
                 best_non_acad_switches = non_acad_sw
                 best_total_switches = total_sw
 
-    # Fallback: no window met minimum duration — use whole focus period totals
+    # Fallback: no window met minimum duration — use entire source_records totals
     if best_start is None:
-        best_academic = sum(r.time_spent_minutes for r in window_records if r.category == "academic")
+        best_academic = sum(r.time_spent_minutes for r in source_records if r.category == "academic")
         # treat productivity as non-academic for this summary (see note above)
-        best_non_academic = sum(r.time_spent_minutes for r in window_records if r.category != "academic")
+        best_non_academic = sum(r.time_spent_minutes for r in source_records if r.category != "academic")
 
-        best_acad_switches = sum(r.app_switch_count for r in window_records if r.category == "academic")
-        best_non_acad_switches = sum(r.app_switch_count for r in window_records if r.category != "academic")
-        best_total_switches = sum(r.app_switch_count for r in window_records)
+        best_acad_switches = sum(r.app_switch_count for r in source_records if r.category == "academic")
+        best_non_acad_switches = sum(r.app_switch_count for r in source_records if r.category != "academic")
+        best_total_switches = sum(r.app_switch_count for r in source_records)
 
-        best_start = window_records[0].session_start
-        best_end = window_records[-1].session_end
+        best_start = source_records[0].session_start
+        best_end = source_records[-1].session_end
+
+    # "ok_offwindow" signals that the active window was detected from the full
+    # day (user worked outside their configured focus period); all fields are
+    # still populated with real data.
+    detected_status = "ok_offwindow" if off_window else "ok"
 
     return {
         "date": today_str,
         "day": day_str,
-        "status": "ok",
-        "activeStart": best_start.strftime("%I:%M %p"),
-        "activeEnd": best_end.strftime("%I:%M %p"),
+        "status": detected_status,
+        "activeStart": best_start.astimezone(_LK).strftime("%I:%M %p") if best_start.tzinfo else best_start.replace(tzinfo=timezone.utc).astimezone(_LK).strftime("%I:%M %p"),
+        "activeEnd":   best_end.astimezone(_LK).strftime("%I:%M %p")   if best_end.tzinfo   else best_end.replace(tzinfo=timezone.utc).astimezone(_LK).strftime("%I:%M %p"),
 
         # Focus-window totals
         "academicMinutes": int(round(best_academic)),

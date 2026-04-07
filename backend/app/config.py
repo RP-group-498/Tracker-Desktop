@@ -17,15 +17,22 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # Database
-    database_url: str = "sqlite+aiosqlite:///./data/focusapp.db"
+    database_url: str = "sqlite+aiosqlite:///./data/focusapp_v2.db"
 
     # MongoDB (for research team sync)
     mongodb_uri: str = ""  # e.g. "mongodb+srv://user:pass@cluster.mongodb.net/"
-    mongodb_database: str = "focus_app_research"
+    mongodb_database: str = "focus_app_research_v2"
     mongodb_sync_enabled: bool = False  # Enable when URI is configured
 
-    # User identification
-    user_id: str = ""  # Auto-generated on first run if empty
+    # User identification (Placeholder for migration/fallback)
+    user_id: str = ""  
+
+    # OAuth Settings
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    jwt_secret_key: str = "your-secret-key-please-change-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 24 * 7  # 7 days
 
     # API
     api_prefix: str = "/api"
@@ -58,7 +65,8 @@ class Settings(BaseSettings):
     # Scheduler (active_time_sync — runs in background on startup)
     api_base_url: str = "http://localhost:8000/api/tasks"
     scheduler_time: str = "21:09"
-    scheduler_users: str = "user_003,user_001"
+    scheduler_users: str = ""
+    allocation_users: str = ""
 
     # Component configuration
     component_config: dict = {
@@ -70,7 +78,7 @@ class Settings(BaseSettings):
                 "zero_shot": {
                     "model_name": "facebook/bart-large-mnli",
                     "device": "cpu",  # "cpu" or "cuda" (if GPU available)
-                    "confidence_threshold": 0.80,  # Minimum confidence for ML (below this → Gemini)
+                    "confidence_threshold": 0.55,  # Minimum confidence for ML (below this → Gemini)
                 },
             }
         },

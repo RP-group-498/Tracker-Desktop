@@ -4,7 +4,9 @@
  * Sets up IPC communication between main and renderer processes.
  */
 
-import { IpcMain } from 'electron';
+import { IpcMain, app } from 'electron';
+import path from 'path';
+import fs from 'fs';
 import { PythonBridge } from './python-bridge';
 import { NativeMessagingServer } from './native-messaging';
 
@@ -125,4 +127,104 @@ export function setupIpcHandlers(
         const result = await pythonBridge.request('POST', '/tasks/analyze', payload, 120000);
         return result.data;
     });
+
+    // --- Authentication ---
+
+    const TOKEN_FILE = path.join(app.getPath('userData'), 'auth_token.json');
+
+    ipcMain.handle('start-oauth-login', async (event) => {
+        const BACKEND_PORT = 8000;
+        const BACKEND_URL = `http://localhost:${BACKEND_PORT}`;
+
+        const { BrowserWindow: AuthBrowserWindow } = require('electron');
+        const authWindow = new AuthBrowserWindow({
+            width: 800,
+            height: 600,
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true,
+            },
+        });
+
+        authWindow.loadURL(`${BACKEND_URL}/api/auth/login`);
+
+        // The backend callback returns JSON: { access_token, token_type, user }
+        // did-finish-load fires when the page is done — use executeJavaScript to read body text
+        authWindow.webContents.on('did-finish-load', async () => {
+            const url = authWindow.webContents.getURL();
+            console.log('[Auth] did-finish-load URL:', url);
+
+            if (url.includes('/api/auth/callback')) {
+                try {
+                    // Give the browser a tick to render the JSON body
+                    await new Promise(resolve => setTimeout(resolve, 200));
+
+                    const bodyText = await authWindow.webContents.executeJavaScript(
+                        'document.body ? document.body.innerText : ""'
+                    );
+                    console.log('[Auth] Callback body:', bodyText.substring(0, 200));
+
+                    const data = JSON.parse(bodyText);
+
+                    if (data.access_token) {
+                        // Persist token to disk
+                        fs.writeFileSync(TOKEN_FILE, JSON.stringify(data));
+                        // Set on pythonBridge so all subsequent requests are authenticated
+                        pythonBridge.setAuthToken(data.access_token);
+
+                        console.log('[Auth] Token saved and set on PythonBridge');
+
+                        // Notify renderer
+                        event.sender.send('auth-success', {
+                            token: data.access_token,
+                            user: data.user,
+                        });
+
+                        authWindow.close();
+                    } else {
+                        console.error('[Auth] No access_token in response:', data);
+                    }
+                } catch (err) {
+                    console.error('[Auth] Failed to parse auth callback body:', err);
+                }
+            }
+        });
+
+        authWindow.on('closed', () => {
+            console.log('[Auth] Auth window closed');
+        });
+    });
+
+    ipcMain.handle('get-auth-token', async () => {
+        try {
+            if (fs.existsSync(TOKEN_FILE)) {
+                const data = JSON.parse(fs.readFileSync(TOKEN_FILE, 'utf-8'));
+                pythonBridge.setAuthToken(data.access_token);
+                return { token: data.access_token, user: data.user ?? null };
+            }
+        } catch (e) {
+            console.error('Failed to read auth token', e);
+        }
+        return null;
+    });
+
+    ipcMain.handle('clear-auth', async () => {
+        pythonBridge.setAuthToken(null);
+        if (fs.existsSync(TOKEN_FILE)) {
+            fs.unlinkSync(TOKEN_FILE);
+        }
+    });
+
+    ipcMain.handle('get-auth-user-id', async () => {
+        try {
+            if (fs.existsSync(TOKEN_FILE)) {
+                const data = JSON.parse(fs.readFileSync(TOKEN_FILE, 'utf-8'));
+                return data.user?.id ?? null;
+            }
+        } catch (e) {
+            console.error('Failed to read auth user id', e);
+        }
+        return null;
+    });
+
 }

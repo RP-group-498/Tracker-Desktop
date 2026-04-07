@@ -110,9 +110,9 @@ function SummaryCards({ records }: { records: CalibrationDayRecord[] }) {
     : null;
 
   const cards = [
-    { value: fmtMin(avgAcademic), label: 'Avg Academic Time', sub: 'per day',           accent: '#22c55e', bg: '#f0fdf4', border: '#bbf7d0' },
+    { value: fmtMin(avgAcademic), label: 'Avg Academic Time', sub: 'per day', accent: '#22c55e', bg: '#f0fdf4', border: '#bbf7d0' },
     { value: String(goalMetDays), unit: `/ ${withData.length}`, label: 'Goal Met Days', sub: '≥ 70% target', accent: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' },
-    { value: String(Math.round(avgSwitches)), label: 'Avg App Switches',  sub: 'per day', accent: '#f97316', bg: '#fff7ed', border: '#fed7aa' },
+    { value: String(Math.round(avgSwitches)), label: 'Avg App Switches', sub: 'per day', accent: '#f97316', bg: '#fff7ed', border: '#fed7aa' },
     { value: best ? best.day : '—', label: 'Best Day', sub: best ? `${fmtMin(best.fullDayAcademicMinutes)} academic` : 'no data', accent: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' },
   ];
 
@@ -208,7 +208,7 @@ function BarArea({ children }: { children: React.ReactNode }) {
 function BarLabel({ day, date }: { day: string; date: string }) {
   return (
     <div style={{ position: 'absolute', bottom: -(BARS_LABEL_H - 2), left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', whiteSpace: 'nowrap' }}>
-      <span style={{ fontSize: 9,   fontWeight: 700, color: '#374151', letterSpacing: '0.01em', fontFamily: FONT }}>{day}</span>
+      <span style={{ fontSize: 9, fontWeight: 700, color: '#374151', letterSpacing: '0.01em', fontFamily: FONT }}>{day}</span>
       <span style={{ fontSize: 8.5, fontWeight: 500, color: '#9ca3af', fontFamily: FONT }}>{date}</span>
     </div>
   );
@@ -239,7 +239,7 @@ function TimeBreakdownChart({ records }: { records: CalibrationDayRecord[] }) {
         {records.map((r, idx) => {
           const acad = r.fullDayAcademicMinutes ?? 0;
           const prod = r.fullDayProductivityMinutes ?? 0;
-          const non  = r.fullDayNonAcademicMinutes ?? 0;
+          const non = r.fullDayNonAcademicMinutes ?? 0;
           const total = acad + prod + non;
           const noData = r.status === 'no_logs' || total === 0;
           const tip = noData
@@ -249,12 +249,12 @@ function TimeBreakdownChart({ records }: { records: CalibrationDayRecord[] }) {
 
           return (
             <Tooltip key={r.date} content={tip}>
-              <BarCol opacity={r.status === 'low' ? 0.65 : 1} delay={idx * 20}>
+              <BarCol delay={idx * 20}>
                 <BarArea>
                   {noData ? <NoDataBar /> : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', borderRadius: '4px 4px 0 0', overflow: 'hidden' }}>
                       {[
-                        { h: (non  / maxTotal) * 100, bg: '#ef4444' },
+                        { h: (non / maxTotal) * 100, bg: '#ef4444' },
                         { h: (prod / maxTotal) * 100, bg: '#f97316' },
                         { h: (acad / maxTotal) * 100, bg: '#22c55e' },
                       ].map((seg, si) => (
@@ -294,11 +294,11 @@ function GoalCompletionChart({ records }: { records: CalibrationDayRecord[] }) {
         <BarsWrap>
           {records.map((r, idx) => {
             const expected = r.expectedStudyMinutes ?? 0;
-            const actual   = r.fullDayAcademicMinutes ?? 0;
-            const noData   = r.status === 'no_logs' || expected === 0;
-            const pct      = noData ? 0 : Math.min((actual / expected) * 100, 100);
-            const color    = pct >= 70 ? '#22c55e' : pct >= 40 ? '#f97316' : '#ef4444';
-            const tip      = noData ? 'No data' : `${Math.round(pct)}% of goal\n${fmtMin(actual)} / ${fmtMin(expected)}`;
+            const actual = r.fullDayAcademicMinutes ?? 0;
+            const noData = r.status === 'no_logs' || expected === 0;
+            const pct = noData ? 0 : Math.min((actual / expected) * 100, 100);
+            const color = pct >= 70 ? '#22c55e' : pct >= 40 ? '#f97316' : '#ef4444';
+            const tip = noData ? 'No data' : `${Math.round(pct)}% of goal\n${fmtMin(actual)} / ${fmtMin(expected)}`;
             const [day, date] = formatDateLabel(r.date);
 
             return (
@@ -330,10 +330,10 @@ function AppSwitchesChart({ records }: { records: CalibrationDayRecord[] }) {
     ]}>
       <BarsWrap>
         {records.map((r, idx) => {
-          const sw     = r.fullDayTotalAppSwitches ?? 0;
+          const sw = r.fullDayTotalAppSwitches ?? 0;
           const noData = r.status === 'no_logs';
-          const pct    = noData ? 0 : (sw / maxSwitches) * 100;
-          const tip    = noData ? 'No data' : `${sw} switches`;
+          const pct = noData ? 0 : (sw / maxSwitches) * 100;
+          const tip = noData ? 'No data' : `${sw} switches`;
           const [day, date] = formatDateLabel(r.date);
 
           return (
@@ -375,7 +375,7 @@ function DailyDetailTable({ records }: { records: CalibrationDayRecord[] }) {
           <tbody>
             {records.map((r, i) => {
               const noLogs = r.status === 'no_logs';
-              const isLow  = r.status === 'low';
+              const isLow = r.status === 'low';
               return (
                 <tr key={r.date} className="cd-tr cd-row-in" style={{ opacity: noLogs ? 0.4 : isLow ? 0.7 : 1, animationDelay: `${i * 18}ms` }}>
                   <td style={{ ...TD_STYLE, fontWeight: 700, color: '#111827', fontSize: 11.5 }}>{r.date}</td>
@@ -401,7 +401,7 @@ function DailyDetailTable({ records }: { records: CalibrationDayRecord[] }) {
 const CalibrationDetailsPage: React.FC = () => {
   const [records, setRecords] = useState<CalibrationDayRecord[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { loadHistory(); }, []);
 
@@ -409,8 +409,12 @@ const CalibrationDetailsPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await (window as any).electronAPI.getCalibrationHistory(14) as CalibrationDayRecord[];
-      setRecords(data || []);
+      const data = await (window as any).electronAPI.getCalibrationHistory(90) as CalibrationDayRecord[];
+      // Show the first 14 days (calibration window), not the most recent 14
+      const first14 = [...(data || [])]
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(0, 14);
+      setRecords(first14);
     } catch {
       setError('Could not load calibration history. Is MongoDB connected?');
     } finally {
@@ -470,10 +474,10 @@ const CalibrationDetailsPage: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <SummaryCards records={records} />
           <TimeBreakdownChart records={records} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {/* <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <GoalCompletionChart records={records} />
             <AppSwitchesChart records={records} />
-          </div>
+          </div> */}
           <DailyDetailTable records={records} />
         </div>
       )}

@@ -182,3 +182,15 @@ class IdleActivityResponse(BaseModel):
     event_id: Optional[str] = None
     category: Optional[str] = None
     error: Optional[str] = None
+
+class ActivityCategoryStats(BaseModel):
+    """Stats for a specific category."""
+    count: int
+    time: int
+
+class ActivityStatsResponse(BaseModel):
+    """Overall activity statistics response."""
+    total_events: int
+    total_active_time: int
+    total_idle_time: int
+    by_category: Dict[str, ActivityCategoryStats]

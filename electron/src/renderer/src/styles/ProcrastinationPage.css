@@ -101,6 +101,7 @@
 .score-meta-label   { font-size: 12px; font-weight: 700; color: #818cf8; margin-bottom: 4px; text-transform: uppercase; }
 .score-meta-value   { font-size: 13px; font-weight: 700; color: #111827; margin: 0; }
 .score-meta-badge-wrap { display: flex; justify-content: center; }
+.score-breakdown    { text-align: center; font-size: 11px; color: #6b7280; margin: 0 0 10px; }
 
 .feedback-card   { grid-column: 3; grid-row: 1; display: flex; flex-direction: column; }
 .feedback-footer { border-top: 1px solid #f3f4f6; padding-top: 5px; margin-top: 5px; }
@@ -175,6 +176,7 @@
 .tomorrow-label       { margin-bottom: 6px; }
 .tomorrow-list        { margin: 0; padding: 0 0 0 16px; display: flex; flex-direction: column; gap: 6px; }
 .tomorrow-list li     { font-size: 12px; color: #4b5563; line-height: 1.55; }
+.risk-why             { color: #6b7280 !important; font-style: italic; }
 
 .efficiency-pct { font-size: 26px; font-weight: 900; margin-bottom: 5px; margin-left: 2px; }
 
@@ -195,3 +197,467 @@
 .today-stat-unit       { font-size: 15px; font-weight: 600; color: #9ca3af; margin-left: 2px; }
 .today-stat-label      { font-size: 12px; font-weight: 700; color: #6b7280; margin: 4px 0 2px; text-transform: uppercase; letter-spacing: 0.02em; }
 .today-stat-sub        { font-size: 12px; color: #9ca3af; margin: 0; }
+
+/* ── Shared full-width section cards (outside grid) ── */
+.anomaly-card,
+.trend-chart-card,
+.time-gap-card,
+.deadline-card {
+  margin-top: 10px;
+}
+
+.section-sub {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: -4px 0 10px;
+}
+
+/* ── Pattern exit strategy ── */
+.pattern-exit-strategy {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f46e5;
+  margin: 2px 0 0;
+  line-height: 1.5;
+}
+
+/* ── Anomaly Alerts ── */
+.anomaly-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.anomaly-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #fca5a5;
+  background: #fef2f2;
+}
+
+.anomaly-item--high {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.anomaly-item--unusual {
+  background: #fffbeb;
+  border-color: #fbbf24;
+}
+
+.anomaly-item--low {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.anomaly-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.anomaly-date {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.anomaly-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.anomaly-badge--high {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.anomaly-badge--unusual {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.anomaly-badge--low {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.anomaly-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.anomaly-explanation {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.anomaly-score-row {
+  margin-top: 2px;
+}
+
+.anomaly-score {
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* ── Trend Analysis Chart ── */
+.period-buttons {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.period-btn {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #d1d5db;
+  border-radius: 99px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.period-btn:hover {
+  background: #f5f3ff;
+  border-color: #818cf8;
+  color: #4f46e5;
+}
+
+.period-btn-active {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+}
+
+.period-btn-active:hover {
+  background: #4338ca;
+  border-color: #4338ca;
+  color: #fff;
+}
+
+.chart-container {
+  width: 100%;
+}
+
+.chart-empty {
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 40px 0;
+  margin: 0;
+}
+
+/* ── Time Gap Grid ── */
+.time-gap-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 800px) {
+  .time-gap-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.time-gap-cell {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.time-gap-period {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 4px;
+}
+
+.time-gap-score {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+  margin: 0;
+}
+
+.time-gap-score-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.time-gap-pattern {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+  margin: 2px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time-gap-mins {
+  font-size: 11px;
+  font-weight: 600;
+  margin: 2px 0 0;
+}
+
+.time-gap-sep {
+  color: #d1d5db;
+}
+
+.time-gap-trend {
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 2px 0 0;
+}
+
+.trend-arrow { font-size: 13px; font-weight: 700; }
+.trend-up    { color: #ef4444; }
+.trend-down  { color: #22c55e; }
+.trend-stable { color: #94a3b8; }
+
+.trend-label { font-size: 11px; color: #9ca3af; font-weight: 500; }
+
+.time-gap-anomaly {
+  font-size: 11px;
+  color: #dc2626;
+  font-weight: 600;
+  margin: 2px 0 0;
+}
+
+/* ── Upcoming Deadlines ── */
+.deadline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deadline-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-radius: 10px;
+  border-left: 4px solid #d1d5db;
+}
+
+.deadline-item.priority-high   { border-left-color: #ef4444; }
+.deadline-item.priority-medium { border-left-color: #f97316; }
+.deadline-item.priority-low    { border-left-color: #22c55e; }
+
+.deadline-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.deadline-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.deadline-date {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.deadline-badge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.deadline-hours {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+/* ── Calibration Phase Views ── */
+.calibration-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px 16px;
+  background: #f3f4f6;
+  min-height: 100vh;
+}
+
+.calibration-card {
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  padding: 28px 28px 24px;
+  width: 100%;
+  max-width: 680px;
+  box-sizing: border-box;
+}
+
+.calibration-phase-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 8px;
+}
+
+.calibration-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #1f2937;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.calibration-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+
+.calibration-day-counter {
+  font-size: 14px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.calibration-progress-wrap {
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.calibration-progress-bar {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+  transition: width 0.5s ease;
+}
+
+.calibration-progress-label {
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 500;
+  margin: 0 0 20px;
+}
+
+.calibration-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 20px 0 10px;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 14px;
+}
+
+.calibration-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.calibration-stat {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.calibration-stat-value {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.calibration-stat-unit {
+  font-size: 14px;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-left: 2px;
+}
+
+.calibration-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 4px 0 0;
+}
+
+.calibration-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.calibration-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.calibration-table th {
+  background: #f9fafb;
+  color: #6b7280;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.calibration-table td {
+  padding: 9px 12px;
+  color: #374151;
+  font-weight: 500;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.calibration-table tr:last-child td {
+  border-bottom: none;
+}
+
+.calibration-table tr:hover td {
+  background: #fafafa;
+}
+
+.calibration-goal-good   { color: #16a34a; font-weight: 700; }
+.calibration-goal-medium { color: #ca8a04; font-weight: 700; }
+.calibration-goal-low    { color: #dc2626; font-weight: 700; }

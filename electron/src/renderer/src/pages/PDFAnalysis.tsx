@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { TaskData, Subtask } from '../types/tasks'
+import { useAuth } from '../context/AuthContext'
 import '../styles/pages.css'
 import '../styles/pdf-analysis.css'
 
 const API_BASE_URL = 'http://localhost:8000/api/tasks'
-const USER_ID = '124804d8-40e0-4f90-af05-eeea5c2d7550'
 
 function formatTime(minutes: number): string {
   if (minutes === 0 || !minutes) return '0 minutes'
@@ -24,6 +24,10 @@ interface PDFAnalysisProps {
 }
 
 const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
+  const { token } = useAuth()
+  const authHeaders: Record<string, string> = token
+    ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+    : { 'Content-Type': 'application/json' }
   const [inputMode, setInputMode] = useState<'pdf' | 'text'>('pdf')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [deadline, setDeadline] = useState('')
@@ -80,14 +84,13 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
       }))
 
       const requestData = {
-        user_id: USER_ID,
         main_task: { name: data.task_name || 'Assignment' },
         subtasks,
       }
 
       const response = await fetch(`${API_BASE_URL}/predict-batch`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify(requestData),
       })
 
@@ -245,7 +248,6 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
     })
 
     const requestData = {
-      user_id: USER_ID,
       main_task: {
         name: taskData.task_name,
         difficulty: taskData.metrics.difficulty_rating,
@@ -262,7 +264,7 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/save-tasks`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify(requestData),
       })
       if (!response.ok) throw new Error(`API error! status: ${response.status}`)
@@ -306,11 +308,6 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
       )}
 
       <div className="main-content">
-        <div className="page-header">
-          <h2>Task Analysis</h2>
-          <p>Upload a PDF or paste text to calculate task priority</p>
-        </div>
-
         {/* Input Mode Tabs */}
         <div className="tabs">
           <button

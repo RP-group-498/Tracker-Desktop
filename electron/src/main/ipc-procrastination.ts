@@ -32,54 +32,79 @@ interface MongoRunResult {
     };
     procrastination: {
         date: string;
+        userId: string;
+        dominantPattern: string | null;
+        classId: number;
         score: number;
         level: string;
-        dominantPattern: string | null;
-        patternsDetected: Array<{ type: string; severity: string; evidence: string }>;
+        confidence: number;
+        behaviorState: string;
+        focusProbability: number;
+        source: string;
+        patterns?: Array<{ type: string; severity: string; evidence: string; exit_strategy?: string }>;
     };
-    predicted_active_time: {
+    prediction: {
         date: string;
         day: string;
+        predictedAcademicMinutes: number;
         predictedActiveStart: string;
         predictedActiveEnd: string;
-        predictedAcademicMinutes: number;
+        predictedFocusProbability: number;
+        predictedProcrastinationLevel: string;
+        nextDayProcrastinationRisk: number;
+        source: string;
     } | null;
 }
 
 function mapMongoResultToReport(result: MongoRunResult) {
-    const at = result.active_time;
+    const at   = result.active_time;
     const proc = result.procrastination;
+    const pred = result.prediction ?? null;
+
+    if (!proc || !at) {
+        throw new Error(
+            `Pipeline returned unexpected shape. Keys: ${Object.keys(result ?? {}).join(', ')}`
+        );
+    }
+
     return {
-        date: proc.date,
-        score: proc.score,
-        level: proc.level,
-        dominantPattern: proc.dominantPattern ?? null,
-        patterns: proc.patternsDetected ?? [],
+        date:             proc.date,
+        score:            proc.score,
+        level:            proc.level,
+        dominantPattern:  proc.dominantPattern ?? null,
+        classId:          proc.classId ?? 0,
+        confidence:       proc.confidence ?? 0,
+        behaviorState:    proc.behaviorState ?? null,
+        focusProbability: proc.focusProbability ?? 0,
+        patterns:         proc.patterns ?? [],
         activeTime: {
-            activeStart: at.activeStart ?? null,
-            activeEnd: at.activeEnd ?? null,
-            academicMinutes: at.academicMinutes ?? 0,
-            nonAcademicMinutes: at.nonAcademicMinutes ?? 0,
-            appSwitches: at.totalAppSwitches ?? 0,
-            expectedStudyMinutes: at.expectedStudyMinutes ?? 0,
-            status: at.status ?? 'no_logs',
-            day: at.day ?? '',
-            fullDayAcademicMinutes: at.fullDayAcademicMinutes ?? 0,
-            fullDayNonAcademicMinutes: at.fullDayNonAcademicMinutes ?? 0,
-            fullDayProductivityMinutes: at.fullDayProductivityMinutes ?? 0,
-            fullDayAcademicAppSwitches: at.fullDayAcademicAppSwitches ?? 0,
+            activeStart:                   at.activeStart ?? null,
+            activeEnd:                     at.activeEnd ?? null,
+            academicMinutes:               at.academicMinutes ?? 0,
+            nonAcademicMinutes:            at.nonAcademicMinutes ?? 0,
+            appSwitches:                   at.totalAppSwitches ?? 0,
+            expectedStudyMinutes:          at.expectedStudyMinutes ?? 0,
+            status:                        at.status ?? 'no_logs',
+            day:                           at.day ?? '',
+            fullDayAcademicMinutes:        at.fullDayAcademicMinutes ?? 0,
+            fullDayNonAcademicMinutes:     at.fullDayNonAcademicMinutes ?? 0,
+            fullDayProductivityMinutes:    at.fullDayProductivityMinutes ?? 0,
+            fullDayAcademicAppSwitches:    at.fullDayAcademicAppSwitches ?? 0,
             fullDayNonAcademicAppSwitches: at.fullDayNonAcademicAppSwitches ?? 0,
-            fullDayProductivityAppSwitches: at.fullDayProductivityAppSwitches ?? 0,
-            fullDayTotalAppSwitches: at.fullDayTotalAppSwitches ?? 0,
+            fullDayProductivityAppSwitches:at.fullDayProductivityAppSwitches ?? 0,
+            fullDayTotalAppSwitches:       at.fullDayTotalAppSwitches ?? 0,
         },
-        prediction: result.predicted_active_time
+        prediction: pred
             ? {
-                  date: result.predicted_active_time.date,
-                  day: result.predicted_active_time.day,
-                  predictedActiveStart: result.predicted_active_time.predictedActiveStart,
-                  predictedActiveEnd: result.predicted_active_time.predictedActiveEnd,
-                  predictedAcademicMinutes: result.predicted_active_time.predictedAcademicMinutes,
-              }
+                date:                          pred.date,
+                day:                           pred.day,
+                predictedActiveStart:          pred.predictedActiveStart,
+                predictedActiveEnd:            pred.predictedActiveEnd,
+                predictedAcademicMinutes:      pred.predictedAcademicMinutes,
+                predictedFocusProbability:     pred.predictedFocusProbability,
+                predictedProcrastinationLevel: pred.predictedProcrastinationLevel,
+                nextDayProcrastinationRisk:    pred.nextDayProcrastinationRisk ?? 0.5,
+            }
             : null,
     };
 }
@@ -87,21 +112,21 @@ function mapMongoResultToReport(result: MongoRunResult) {
 export function registerProcrastinationHandlers(pythonBridge: PythonBridge): void {
     // Full daily procrastination report — runs MongoDB analysis pipeline
     ipcMain.handle('procrastination:get-report', async () => {
-    const runResult = await pythonBridge.request('POST', '/analysis/run');
+        const runResult = await pythonBridge.request('POST', '/analysis/run', {}, 60000); // 60s timeout
 
-    if (!runResult.success || !runResult.data) {
-        // show the *actual* backend error / status / url if available
-        throw new Error(
-        `MongoDB analysis pipeline failed: ${runResult.error ?? 'unknown error'}`
-        );
-    }
+        if (!runResult.success || !runResult.data) {
+            // show the *actual* backend error / status / url if available
+            throw new Error(
+                `MongoDB analysis pipeline failed: ${runResult.error ?? 'unknown error'}`
+            );
+        }
 
-    return mapMongoResultToReport(runResult.data as MongoRunResult);
+        return mapMongoResultToReport(runResult.data as MongoRunResult);
     });
 
     // Historical reports (default last 7 days)
     ipcMain.handle('procrastination:get-history', async (_event, days: number = 7) => {
-        const result = await pythonBridge.request('GET', `/procrastination/report/history?days=${days}`);
+        const result = await pythonBridge.request('GET', `/analysis/history?days=${days}`);
         return result.data;
     });
 
@@ -138,6 +163,42 @@ export function registerProcrastinationHandlers(pythonBridge: PythonBridge): voi
     // Calibration phase history (14-day graphs)
     ipcMain.handle('calibration:get-history', async (_event, days: number = 14) => {
         const result = await pythonBridge.request('GET', `/analysis/calibration-history?days=${days}`);
+        return result.data;
+    });
+
+    // Anomaly detection results (Isolation Forest)
+    ipcMain.handle('procrastination:get-anomalies', async (_event, days: number = 30) => {
+        const result = await pythonBridge.request('GET', `/analysis/anomalies?days=${days}`);
+        return result.data;
+    });
+
+    // Behavior trend analysis
+    ipcMain.handle('procrastination:get-behavior-trends', async (_event, days: number = 14) => {
+        const result = await pythonBridge.request('GET', `/analysis/behavior-trends?days=${days}`);
+        return result.data;
+    });
+
+    // Time gap comparative stats (1d/3d/5d/7d/14d)
+    ipcMain.handle('procrastination:get-time-gap', async () => {
+        const result = await pythonBridge.request('GET', '/analysis/time-gap');
+        return result.data;
+    });
+
+    // Upcoming deadlines with day labels
+    ipcMain.handle('procrastination:get-deadlines', async () => {
+        const result = await pythonBridge.request('GET', '/analysis/deadlines');
+        return result.data;
+    });
+
+    // Per-user adaptive model training status
+    ipcMain.handle('procrastination:get-model-status', async () => {
+        const result = await pythonBridge.request('GET', '/analysis/model-status');
+        return result.data;
+    });
+
+    // Debug: count events pipeline can see
+    ipcMain.handle('procrastination:debug-count', async () => {
+        const result = await pythonBridge.request('GET', '/analysis/debug-count');
         return result.data;
     });
 }

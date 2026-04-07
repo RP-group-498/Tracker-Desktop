@@ -34,6 +34,7 @@ class MongoDBSyncService:
         self._client: AsyncIOMotorClient | None = None
         self._db: AsyncIOMotorDatabase | None = None
         self._connected: bool = False
+        self._last_error: str = ""
         self._retry_queue: list[dict[str, Any]] = []
         self._retry_task: asyncio.Task | None = None
 
@@ -56,6 +57,7 @@ class MongoDBSyncService:
             await collection.create_index([("user_id", 1), ("start_time", 1)])   # compound — pipeline
             await collection.create_index([("user_id", 1), ("timestamp", -1)])
 
+            self._last_error = ""
             self._connected = True
             print(f"[MongoSync] Connected to MongoDB Atlas, database: {db_name}")
 
@@ -63,13 +65,19 @@ class MongoDBSyncService:
             self._retry_task = asyncio.create_task(self._retry_loop())
 
         except Exception as e:
-            print(f"[MongoSync] Failed to connect to MongoDB: {e}")
+            self._last_error = str(e)
             self._connected = False
+            print(f"[MongoSync] Failed to connect to MongoDB: {e}")
 
     @property
     def is_connected(self) -> bool:
         """Whether the service is currently connected to MongoDB."""
         return self._connected
+
+    @property
+    def last_error(self) -> str:
+        """Last connection error message, empty string if connected."""
+        return self._last_error
 
     @property
     def pending_count(self) -> int:
@@ -286,4 +294,13 @@ async def ensure_pipeline_indexes(db: AsyncIOMotorDatabase) -> None:
 
     await db["user_calibration"].create_index("user_id")
     await db["Task"].create_index("userId")
+
+    # Adaptive model metadata — one doc per user
+    await db["model_meta"].create_index("user_id", unique=True)
+
+    # Fast anomaly queries (isAnomaly filter on procrastination_results)
+    await db["procrastination_results"].create_index(
+        [("userId", 1), ("isAnomaly", 1)],
+        name="procrastination_results_userId_isAnomaly",
+    )
 
