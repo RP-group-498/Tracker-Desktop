@@ -61,6 +61,13 @@ interface ElectronAPI {
     deleteTask: (taskId: number) => Promise<unknown>;
     getCalibrationHistory: (days?: number) => Promise<unknown>;
 
+    // Procrastination — enhanced analysis
+    getAnomalies: (days?: number) => Promise<unknown>;
+    getBehaviorTrends: (days?: number) => Promise<unknown>;
+    getTimeGapStats: () => Promise<unknown>;
+    getDeadlines: () => Promise<unknown>;
+    getModelStatus: () => Promise<unknown>;
+
     // Idle Activity Prompt
     submitIdleActivity: (data: {
         activityId: string | null;
@@ -230,6 +237,13 @@ const electronAPI: ElectronAPI = {
     deleteTask: (taskId) => ipcRenderer.invoke('procrastination:delete-task', taskId),
 
     getCalibrationHistory: (days = 14) => ipcRenderer.invoke('calibration:get-history', days),
+
+    // Procrastination — enhanced analysis
+    getAnomalies: (days = 30) => ipcRenderer.invoke('procrastination:get-anomalies', days),
+    getBehaviorTrends: (days = 14) => ipcRenderer.invoke('procrastination:get-behavior-trends', days),
+    getTimeGapStats: () => ipcRenderer.invoke('procrastination:get-time-gap'),
+    getDeadlines: () => ipcRenderer.invoke('procrastination:get-deadlines'),
+    getModelStatus: () => ipcRenderer.invoke('procrastination:get-model-status'),
 
     // Idle Activity Prompt
     submitIdleActivity: (data) => ipcRenderer.invoke('submit-idle-activity', data),

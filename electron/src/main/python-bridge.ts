@@ -267,7 +267,12 @@ export class PythonBridge extends EventEmitter {
                 res.on('end', () => {
                     try {
                         const parsed = JSON.parse(data);
-                        resolve({ success: true, data: parsed });
+                        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                            resolve({ success: true, data: parsed });
+                        } else {
+                            const detail = (parsed as any)?.detail ?? (parsed as any)?.error ?? JSON.stringify(parsed);
+                            resolve({ success: false, error: `HTTP ${res.statusCode}: ${detail}` });
+                        }
                     } catch {
                         resolve({ success: false, error: 'Invalid JSON response' });
                     }

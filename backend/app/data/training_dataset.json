@@ -1,0 +1,3346 @@
+[
+  {
+    "features": {
+      "total_events": 782,
+      "academic_event_ratio": 0.473146,
+      "non_academic_event_ratio": 0.300512,
+      "switch_count": 515,
+      "switch_rate": 1.004188,
+      "avg_active_time": 0.655821,
+      "idle_ratio": 0.264044,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.570449
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.337449,
+      "non_academic_event_ratio": 0.471879,
+      "switch_count": 484,
+      "switch_rate": 1.069697,
+      "avg_active_time": 0.620665,
+      "idle_ratio": 0.27,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.428838
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 776,
+      "academic_event_ratio": 0.193299,
+      "non_academic_event_ratio": 0.685567,
+      "switch_count": 496,
+      "switch_rate": 1.025976,
+      "avg_active_time": 0.622992,
+      "idle_ratio": 0.286055,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.766667,
+      "hour_of_day_entropy": 3.553463
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.137174,
+      "non_academic_event_ratio": 0.796982,
+      "switch_count": 479,
+      "switch_rate": 1.057849,
+      "avg_active_time": 0.621132,
+      "idle_ratio": 0.30247,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.508333,
+      "hour_of_day_entropy": 3.404725
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 962,
+      "academic_event_ratio": 0.554054,
+      "non_academic_event_ratio": 0.202703,
+      "switch_count": 573,
+      "switch_rate": 0.949495,
+      "avg_active_time": 0.627317,
+      "idle_ratio": 0.247982,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.786926
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 915,
+      "academic_event_ratio": 0.422951,
+      "non_academic_event_ratio": 0.318033,
+      "switch_count": 561,
+      "switch_rate": 0.978831,
+      "avg_active_time": 0.626374,
+      "idle_ratio": 0.245662,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.687065
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 744,
+      "academic_event_ratio": 0.456989,
+      "non_academic_event_ratio": 0.325269,
+      "switch_count": 466,
+      "switch_rate": 0.931513,
+      "avg_active_time": 0.672394,
+      "idle_ratio": 0.242443,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.481109
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 1010,
+      "academic_event_ratio": 0.478218,
+      "non_academic_event_ratio": 0.192079,
+      "switch_count": 602,
+      "switch_rate": 0.951879,
+      "avg_active_time": 0.626172,
+      "idle_ratio": 0.232328,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.844632
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 910,
+      "academic_event_ratio": 0.637363,
+      "non_academic_event_ratio": 0.257143,
+      "switch_count": 598,
+      "switch_rate": 1.048207,
+      "avg_active_time": 0.626921,
+      "idle_ratio": 0.246268,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.683266
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 868,
+      "academic_event_ratio": 0.33871,
+      "non_academic_event_ratio": 0.388249,
+      "switch_count": 515,
+      "switch_rate": 0.94994,
+      "avg_active_time": 0.624585,
+      "idle_ratio": 0.263837,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.681796
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4945,
+      "non_academic_event_ratio": 0.225,
+      "switch_count": 1228,
+      "switch_rate": 2.055026,
+      "avg_active_time": 0.29878,
+      "idle_ratio": 0.179831,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.639163
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 132,
+      "academic_event_ratio": 0.666667,
+      "non_academic_event_ratio": 0.204545,
+      "switch_count": 71,
+      "switch_rate": 0.286227,
+      "avg_active_time": 1.879204,
+      "idle_ratio": 0.53726,
+      "burst_non_academic_count": 17,
+      "focus_ratio": 0.425,
+      "hour_of_day_entropy": 0.833096
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 782,
+      "academic_event_ratio": 0.473146,
+      "non_academic_event_ratio": 0.300512,
+      "switch_count": 515,
+      "switch_rate": 1.004188,
+      "avg_active_time": 0.655821,
+      "idle_ratio": 0.264044,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.570449
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.337449,
+      "non_academic_event_ratio": 0.471879,
+      "switch_count": 484,
+      "switch_rate": 1.069697,
+      "avg_active_time": 0.620665,
+      "idle_ratio": 0.27,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.428838
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 776,
+      "academic_event_ratio": 0.193299,
+      "non_academic_event_ratio": 0.685567,
+      "switch_count": 496,
+      "switch_rate": 1.025976,
+      "avg_active_time": 0.622992,
+      "idle_ratio": 0.286055,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.766667,
+      "hour_of_day_entropy": 3.553463
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.137174,
+      "non_academic_event_ratio": 0.796982,
+      "switch_count": 479,
+      "switch_rate": 1.057849,
+      "avg_active_time": 0.621132,
+      "idle_ratio": 0.30247,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.508333,
+      "hour_of_day_entropy": 3.404725
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 962,
+      "academic_event_ratio": 0.554054,
+      "non_academic_event_ratio": 0.202703,
+      "switch_count": 573,
+      "switch_rate": 0.949495,
+      "avg_active_time": 0.627317,
+      "idle_ratio": 0.247982,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.786926
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 915,
+      "academic_event_ratio": 0.422951,
+      "non_academic_event_ratio": 0.318033,
+      "switch_count": 561,
+      "switch_rate": 0.978831,
+      "avg_active_time": 0.626374,
+      "idle_ratio": 0.245662,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.687065
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 744,
+      "academic_event_ratio": 0.456989,
+      "non_academic_event_ratio": 0.325269,
+      "switch_count": 466,
+      "switch_rate": 0.931513,
+      "avg_active_time": 0.672394,
+      "idle_ratio": 0.242443,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.481109
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 1010,
+      "academic_event_ratio": 0.478218,
+      "non_academic_event_ratio": 0.192079,
+      "switch_count": 602,
+      "switch_rate": 0.951879,
+      "avg_active_time": 0.626172,
+      "idle_ratio": 0.232328,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.844632
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 910,
+      "academic_event_ratio": 0.637363,
+      "non_academic_event_ratio": 0.257143,
+      "switch_count": 598,
+      "switch_rate": 1.048207,
+      "avg_active_time": 0.626921,
+      "idle_ratio": 0.246268,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.683266
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 868,
+      "academic_event_ratio": 0.33871,
+      "non_academic_event_ratio": 0.388249,
+      "switch_count": 515,
+      "switch_rate": 0.94994,
+      "avg_active_time": 0.624585,
+      "idle_ratio": 0.263837,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.681796
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4945,
+      "non_academic_event_ratio": 0.225,
+      "switch_count": 1228,
+      "switch_rate": 2.055026,
+      "avg_active_time": 0.29878,
+      "idle_ratio": 0.179831,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.639163
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 132,
+      "academic_event_ratio": 0.666667,
+      "non_academic_event_ratio": 0.204545,
+      "switch_count": 71,
+      "switch_rate": 0.286227,
+      "avg_active_time": 1.879204,
+      "idle_ratio": 0.53726,
+      "burst_non_academic_count": 17,
+      "focus_ratio": 0.425,
+      "hour_of_day_entropy": 0.833096
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 782,
+      "academic_event_ratio": 0.473146,
+      "non_academic_event_ratio": 0.300512,
+      "switch_count": 515,
+      "switch_rate": 1.004188,
+      "avg_active_time": 0.655821,
+      "idle_ratio": 0.264044,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.570449
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.337449,
+      "non_academic_event_ratio": 0.471879,
+      "switch_count": 484,
+      "switch_rate": 1.069697,
+      "avg_active_time": 0.620665,
+      "idle_ratio": 0.27,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.428838
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 776,
+      "academic_event_ratio": 0.193299,
+      "non_academic_event_ratio": 0.685567,
+      "switch_count": 496,
+      "switch_rate": 1.025976,
+      "avg_active_time": 0.622992,
+      "idle_ratio": 0.286055,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.766667,
+      "hour_of_day_entropy": 3.553463
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.137174,
+      "non_academic_event_ratio": 0.796982,
+      "switch_count": 479,
+      "switch_rate": 1.057849,
+      "avg_active_time": 0.621132,
+      "idle_ratio": 0.30247,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.508333,
+      "hour_of_day_entropy": 3.404725
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 962,
+      "academic_event_ratio": 0.554054,
+      "non_academic_event_ratio": 0.202703,
+      "switch_count": 573,
+      "switch_rate": 0.949495,
+      "avg_active_time": 0.627317,
+      "idle_ratio": 0.247982,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.786926
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 915,
+      "academic_event_ratio": 0.422951,
+      "non_academic_event_ratio": 0.318033,
+      "switch_count": 561,
+      "switch_rate": 0.978831,
+      "avg_active_time": 0.626374,
+      "idle_ratio": 0.245662,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.687065
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 744,
+      "academic_event_ratio": 0.456989,
+      "non_academic_event_ratio": 0.325269,
+      "switch_count": 466,
+      "switch_rate": 0.931513,
+      "avg_active_time": 0.672394,
+      "idle_ratio": 0.242443,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.481109
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 1010,
+      "academic_event_ratio": 0.478218,
+      "non_academic_event_ratio": 0.192079,
+      "switch_count": 602,
+      "switch_rate": 0.951879,
+      "avg_active_time": 0.626172,
+      "idle_ratio": 0.232328,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.844632
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 910,
+      "academic_event_ratio": 0.637363,
+      "non_academic_event_ratio": 0.257143,
+      "switch_count": 598,
+      "switch_rate": 1.048207,
+      "avg_active_time": 0.626921,
+      "idle_ratio": 0.246268,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.683266
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 868,
+      "academic_event_ratio": 0.33871,
+      "non_academic_event_ratio": 0.388249,
+      "switch_count": 515,
+      "switch_rate": 0.94994,
+      "avg_active_time": 0.624585,
+      "idle_ratio": 0.263837,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.681796
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4945,
+      "non_academic_event_ratio": 0.225,
+      "switch_count": 1228,
+      "switch_rate": 2.055026,
+      "avg_active_time": 0.29878,
+      "idle_ratio": 0.179831,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.639163
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 132,
+      "academic_event_ratio": 0.666667,
+      "non_academic_event_ratio": 0.204545,
+      "switch_count": 71,
+      "switch_rate": 0.286227,
+      "avg_active_time": 1.879204,
+      "idle_ratio": 0.53726,
+      "burst_non_academic_count": 17,
+      "focus_ratio": 0.425,
+      "hour_of_day_entropy": 0.833096
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 782,
+      "academic_event_ratio": 0.473146,
+      "non_academic_event_ratio": 0.300512,
+      "switch_count": 515,
+      "switch_rate": 1.004188,
+      "avg_active_time": 0.655821,
+      "idle_ratio": 0.264044,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.570449
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.337449,
+      "non_academic_event_ratio": 0.471879,
+      "switch_count": 484,
+      "switch_rate": 1.069697,
+      "avg_active_time": 0.620665,
+      "idle_ratio": 0.27,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.428838
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 776,
+      "academic_event_ratio": 0.193299,
+      "non_academic_event_ratio": 0.685567,
+      "switch_count": 496,
+      "switch_rate": 1.025976,
+      "avg_active_time": 0.622992,
+      "idle_ratio": 0.286055,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.766667,
+      "hour_of_day_entropy": 3.553463
+    },
+    "class_id": 1,
+    "label": "frequent_task_switching"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.137174,
+      "non_academic_event_ratio": 0.796982,
+      "switch_count": 479,
+      "switch_rate": 1.057849,
+      "avg_active_time": 0.621132,
+      "idle_ratio": 0.30247,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.508333,
+      "hour_of_day_entropy": 3.404725
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 962,
+      "academic_event_ratio": 0.554054,
+      "non_academic_event_ratio": 0.202703,
+      "switch_count": 573,
+      "switch_rate": 0.949495,
+      "avg_active_time": 0.627317,
+      "idle_ratio": 0.247982,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.786926
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 915,
+      "academic_event_ratio": 0.422951,
+      "non_academic_event_ratio": 0.318033,
+      "switch_count": 561,
+      "switch_rate": 0.978831,
+      "avg_active_time": 0.626374,
+      "idle_ratio": 0.245662,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.687065
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 744,
+      "academic_event_ratio": 0.456989,
+      "non_academic_event_ratio": 0.325269,
+      "switch_count": 466,
+      "switch_rate": 0.931513,
+      "avg_active_time": 0.672394,
+      "idle_ratio": 0.242443,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.481109
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 1010,
+      "academic_event_ratio": 0.478218,
+      "non_academic_event_ratio": 0.192079,
+      "switch_count": 602,
+      "switch_rate": 0.951879,
+      "avg_active_time": 0.626172,
+      "idle_ratio": 0.232328,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.844632
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 910,
+      "academic_event_ratio": 0.637363,
+      "non_academic_event_ratio": 0.257143,
+      "switch_count": 598,
+      "switch_rate": 1.048207,
+      "avg_active_time": 0.626921,
+      "idle_ratio": 0.246268,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.683266
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 868,
+      "academic_event_ratio": 0.33871,
+      "non_academic_event_ratio": 0.388249,
+      "switch_count": 515,
+      "switch_rate": 0.94994,
+      "avg_active_time": 0.624585,
+      "idle_ratio": 0.263837,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.681796
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4945,
+      "non_academic_event_ratio": 0.225,
+      "switch_count": 1228,
+      "switch_rate": 2.055026,
+      "avg_active_time": 0.29878,
+      "idle_ratio": 0.179831,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.639163
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 132,
+      "academic_event_ratio": 0.666667,
+      "non_academic_event_ratio": 0.204545,
+      "switch_count": 71,
+      "switch_rate": 0.286227,
+      "avg_active_time": 1.879204,
+      "idle_ratio": 0.53726,
+      "burst_non_academic_count": 17,
+      "focus_ratio": 0.425,
+      "hour_of_day_entropy": 0.833096
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 782,
+      "academic_event_ratio": 0.473146,
+      "non_academic_event_ratio": 0.300512,
+      "switch_count": 515,
+      "switch_rate": 1.004188,
+      "avg_active_time": 0.655821,
+      "idle_ratio": 0.264044,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.570449
+    },
+    "class_id": 2,
+    "label": "prolonged_inactivity"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.337449,
+      "non_academic_event_ratio": 0.471879,
+      "switch_count": 484,
+      "switch_rate": 1.069697,
+      "avg_active_time": 0.620665,
+      "idle_ratio": 0.27,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.428838
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 776,
+      "academic_event_ratio": 0.193299,
+      "non_academic_event_ratio": 0.685567,
+      "switch_count": 496,
+      "switch_rate": 1.025976,
+      "avg_active_time": 0.622992,
+      "idle_ratio": 0.286055,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.766667,
+      "hour_of_day_entropy": 3.553463
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.137174,
+      "non_academic_event_ratio": 0.796982,
+      "switch_count": 479,
+      "switch_rate": 1.057849,
+      "avg_active_time": 0.621132,
+      "idle_ratio": 0.30247,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.508333,
+      "hour_of_day_entropy": 3.404725
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 962,
+      "academic_event_ratio": 0.554054,
+      "non_academic_event_ratio": 0.202703,
+      "switch_count": 573,
+      "switch_rate": 0.949495,
+      "avg_active_time": 0.627317,
+      "idle_ratio": 0.247982,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.786926
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 915,
+      "academic_event_ratio": 0.422951,
+      "non_academic_event_ratio": 0.318033,
+      "switch_count": 561,
+      "switch_rate": 0.978831,
+      "avg_active_time": 0.626374,
+      "idle_ratio": 0.245662,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.687065
+    },
+    "class_id": 2,
+    "label": "prolonged_inactivity"
+  },
+  {
+    "features": {
+      "total_events": 744,
+      "academic_event_ratio": 0.456989,
+      "non_academic_event_ratio": 0.325269,
+      "switch_count": 466,
+      "switch_rate": 0.931513,
+      "avg_active_time": 0.672394,
+      "idle_ratio": 0.242443,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.481109
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 1010,
+      "academic_event_ratio": 0.478218,
+      "non_academic_event_ratio": 0.192079,
+      "switch_count": 602,
+      "switch_rate": 0.951879,
+      "avg_active_time": 0.626172,
+      "idle_ratio": 0.232328,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.844632
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 910,
+      "academic_event_ratio": 0.637363,
+      "non_academic_event_ratio": 0.257143,
+      "switch_count": 598,
+      "switch_rate": 1.048207,
+      "avg_active_time": 0.626921,
+      "idle_ratio": 0.246268,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.683266
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 868,
+      "academic_event_ratio": 0.33871,
+      "non_academic_event_ratio": 0.388249,
+      "switch_count": 515,
+      "switch_rate": 0.94994,
+      "avg_active_time": 0.624585,
+      "idle_ratio": 0.263837,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.681796
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4945,
+      "non_academic_event_ratio": 0.225,
+      "switch_count": 1228,
+      "switch_rate": 2.055026,
+      "avg_active_time": 0.29878,
+      "idle_ratio": 0.179831,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.639163
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 132,
+      "academic_event_ratio": 0.666667,
+      "non_academic_event_ratio": 0.204545,
+      "switch_count": 71,
+      "switch_rate": 0.286227,
+      "avg_active_time": 1.879204,
+      "idle_ratio": 0.53726,
+      "burst_non_academic_count": 17,
+      "focus_ratio": 0.425,
+      "hour_of_day_entropy": 0.833096
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 782,
+      "academic_event_ratio": 0.473146,
+      "non_academic_event_ratio": 0.300512,
+      "switch_count": 515,
+      "switch_rate": 1.004188,
+      "avg_active_time": 0.655821,
+      "idle_ratio": 0.264044,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.570449
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.337449,
+      "non_academic_event_ratio": 0.471879,
+      "switch_count": 484,
+      "switch_rate": 1.069697,
+      "avg_active_time": 0.620665,
+      "idle_ratio": 0.27,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.428838
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 776,
+      "academic_event_ratio": 0.193299,
+      "non_academic_event_ratio": 0.685567,
+      "switch_count": 496,
+      "switch_rate": 1.025976,
+      "avg_active_time": 0.622992,
+      "idle_ratio": 0.286055,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.766667,
+      "hour_of_day_entropy": 3.553463
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.137174,
+      "non_academic_event_ratio": 0.796982,
+      "switch_count": 479,
+      "switch_rate": 1.057849,
+      "avg_active_time": 0.621132,
+      "idle_ratio": 0.30247,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.508333,
+      "hour_of_day_entropy": 3.404725
+    },
+    "class_id": 1,
+    "label": "frequent_task_switching"
+  },
+  {
+    "features": {
+      "total_events": 962,
+      "academic_event_ratio": 0.554054,
+      "non_academic_event_ratio": 0.202703,
+      "switch_count": 573,
+      "switch_rate": 0.949495,
+      "avg_active_time": 0.627317,
+      "idle_ratio": 0.247982,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.786926
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 915,
+      "academic_event_ratio": 0.422951,
+      "non_academic_event_ratio": 0.318033,
+      "switch_count": 561,
+      "switch_rate": 0.978831,
+      "avg_active_time": 0.626374,
+      "idle_ratio": 0.245662,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.687065
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 744,
+      "academic_event_ratio": 0.456989,
+      "non_academic_event_ratio": 0.325269,
+      "switch_count": 466,
+      "switch_rate": 0.931513,
+      "avg_active_time": 0.672394,
+      "idle_ratio": 0.242443,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.481109
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 1010,
+      "academic_event_ratio": 0.478218,
+      "non_academic_event_ratio": 0.192079,
+      "switch_count": 602,
+      "switch_rate": 0.951879,
+      "avg_active_time": 0.626172,
+      "idle_ratio": 0.232328,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.844632
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 910,
+      "academic_event_ratio": 0.637363,
+      "non_academic_event_ratio": 0.257143,
+      "switch_count": 598,
+      "switch_rate": 1.048207,
+      "avg_active_time": 0.626921,
+      "idle_ratio": 0.246268,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.683266
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 868,
+      "academic_event_ratio": 0.33871,
+      "non_academic_event_ratio": 0.388249,
+      "switch_count": 515,
+      "switch_rate": 0.94994,
+      "avg_active_time": 0.624585,
+      "idle_ratio": 0.263837,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.681796
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.531,
+      "non_academic_event_ratio": 0.344,
+      "switch_count": 1592,
+      "switch_rate": 1.832524,
+      "avg_active_time": 0.434373,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 358,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.144557
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.511,
+      "non_academic_event_ratio": 0.4805,
+      "switch_count": 1644,
+      "switch_rate": 1.093213,
+      "avg_active_time": 0.751912,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 491,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.323243
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4995,
+      "non_academic_event_ratio": 0.5005,
+      "switch_count": 1705,
+      "switch_rate": 1.266665,
+      "avg_active_time": 0.673027,
+      "idle_ratio": 0.05768,
+      "burst_non_academic_count": 496,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.583833
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.489,
+      "non_academic_event_ratio": 0.511,
+      "switch_count": 1663,
+      "switch_rate": 1.226805,
+      "avg_active_time": 0.677777,
+      "idle_ratio": 0.057274,
+      "burst_non_academic_count": 492,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584896
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4965,
+      "non_academic_event_ratio": 0.5035,
+      "switch_count": 1663,
+      "switch_rate": 1.233507,
+      "avg_active_time": 0.674094,
+      "idle_ratio": 0.059212,
+      "burst_non_academic_count": 494,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584546
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 1983,
+      "academic_event_ratio": 0.505799,
+      "non_academic_event_ratio": 0.494201,
+      "switch_count": 1637,
+      "switch_rate": 1.206139,
+      "avg_active_time": 0.684429,
+      "idle_ratio": 0.057703,
+      "burst_non_academic_count": 485,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584946
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4935,
+      "non_academic_event_ratio": 0.5065,
+      "switch_count": 1660,
+      "switch_rate": 1.229629,
+      "avg_active_time": 0.675001,
+      "idle_ratio": 0.057763,
+      "burst_non_academic_count": 502,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584531
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 561,
+      "academic_event_ratio": 0.500891,
+      "non_academic_event_ratio": 0.499109,
+      "switch_count": 475,
+      "switch_rate": 1.244019,
+      "avg_active_time": 0.680619,
+      "idle_ratio": 0.058746,
+      "burst_non_academic_count": 148,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 2.812001
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 4,
+      "academic_event_ratio": 0.25,
+      "non_academic_event_ratio": 0.0,
+      "switch_count": 1,
+      "switch_rate": 0.53233,
+      "avg_active_time": 0.469633,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 1,
+      "focus_ratio": 0.0,
+      "hour_of_day_entropy": 0.0
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 782,
+      "academic_event_ratio": 0.473146,
+      "non_academic_event_ratio": 0.300512,
+      "switch_count": 515,
+      "switch_rate": 1.004188,
+      "avg_active_time": 0.655821,
+      "idle_ratio": 0.264044,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.570449
+    },
+    "class_id": 1,
+    "label": "frequent_task_switching"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.337449,
+      "non_academic_event_ratio": 0.471879,
+      "switch_count": 484,
+      "switch_rate": 1.069697,
+      "avg_active_time": 0.620665,
+      "idle_ratio": 0.27,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.428838
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 776,
+      "academic_event_ratio": 0.193299,
+      "non_academic_event_ratio": 0.685567,
+      "switch_count": 496,
+      "switch_rate": 1.025976,
+      "avg_active_time": 0.622992,
+      "idle_ratio": 0.286055,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.766667,
+      "hour_of_day_entropy": 3.553463
+    },
+    "class_id": 2,
+    "label": "prolonged_inactivity"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.137174,
+      "non_academic_event_ratio": 0.796982,
+      "switch_count": 479,
+      "switch_rate": 1.057849,
+      "avg_active_time": 0.621132,
+      "idle_ratio": 0.30247,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.508333,
+      "hour_of_day_entropy": 3.404725
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 962,
+      "academic_event_ratio": 0.554054,
+      "non_academic_event_ratio": 0.202703,
+      "switch_count": 573,
+      "switch_rate": 0.949495,
+      "avg_active_time": 0.627317,
+      "idle_ratio": 0.247982,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.786926
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 915,
+      "academic_event_ratio": 0.422951,
+      "non_academic_event_ratio": 0.318033,
+      "switch_count": 561,
+      "switch_rate": 0.978831,
+      "avg_active_time": 0.626374,
+      "idle_ratio": 0.245662,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.687065
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 744,
+      "academic_event_ratio": 0.456989,
+      "non_academic_event_ratio": 0.325269,
+      "switch_count": 466,
+      "switch_rate": 0.931513,
+      "avg_active_time": 0.672394,
+      "idle_ratio": 0.242443,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.481109
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 1010,
+      "academic_event_ratio": 0.478218,
+      "non_academic_event_ratio": 0.192079,
+      "switch_count": 602,
+      "switch_rate": 0.951879,
+      "avg_active_time": 0.626172,
+      "idle_ratio": 0.232328,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.844632
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 910,
+      "academic_event_ratio": 0.637363,
+      "non_academic_event_ratio": 0.257143,
+      "switch_count": 598,
+      "switch_rate": 1.048207,
+      "avg_active_time": 0.626921,
+      "idle_ratio": 0.246268,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.683266
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 868,
+      "academic_event_ratio": 0.33871,
+      "non_academic_event_ratio": 0.388249,
+      "switch_count": 515,
+      "switch_rate": 0.94994,
+      "avg_active_time": 0.624585,
+      "idle_ratio": 0.263837,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.681796
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.531,
+      "non_academic_event_ratio": 0.344,
+      "switch_count": 1592,
+      "switch_rate": 1.832524,
+      "avg_active_time": 0.434373,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 358,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.144557
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.511,
+      "non_academic_event_ratio": 0.4805,
+      "switch_count": 1644,
+      "switch_rate": 1.093213,
+      "avg_active_time": 0.751912,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 491,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.323243
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4995,
+      "non_academic_event_ratio": 0.5005,
+      "switch_count": 1705,
+      "switch_rate": 1.266665,
+      "avg_active_time": 0.673027,
+      "idle_ratio": 0.05768,
+      "burst_non_academic_count": 496,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.583833
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.489,
+      "non_academic_event_ratio": 0.511,
+      "switch_count": 1663,
+      "switch_rate": 1.226805,
+      "avg_active_time": 0.677777,
+      "idle_ratio": 0.057274,
+      "burst_non_academic_count": 492,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584896
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4965,
+      "non_academic_event_ratio": 0.5035,
+      "switch_count": 1663,
+      "switch_rate": 1.233507,
+      "avg_active_time": 0.674094,
+      "idle_ratio": 0.059212,
+      "burst_non_academic_count": 494,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584546
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 1983,
+      "academic_event_ratio": 0.505799,
+      "non_academic_event_ratio": 0.494201,
+      "switch_count": 1637,
+      "switch_rate": 1.206139,
+      "avg_active_time": 0.684429,
+      "idle_ratio": 0.057703,
+      "burst_non_academic_count": 485,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584946
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4935,
+      "non_academic_event_ratio": 0.5065,
+      "switch_count": 1660,
+      "switch_rate": 1.229629,
+      "avg_active_time": 0.675001,
+      "idle_ratio": 0.057763,
+      "burst_non_academic_count": 502,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584531
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 561,
+      "academic_event_ratio": 0.500891,
+      "non_academic_event_ratio": 0.499109,
+      "switch_count": 475,
+      "switch_rate": 1.244019,
+      "avg_active_time": 0.680619,
+      "idle_ratio": 0.058746,
+      "burst_non_academic_count": 148,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 2.812001
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 782,
+      "academic_event_ratio": 0.473146,
+      "non_academic_event_ratio": 0.300512,
+      "switch_count": 515,
+      "switch_rate": 1.004188,
+      "avg_active_time": 0.655821,
+      "idle_ratio": 0.264044,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.570449
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.337449,
+      "non_academic_event_ratio": 0.471879,
+      "switch_count": 484,
+      "switch_rate": 1.069697,
+      "avg_active_time": 0.620665,
+      "idle_ratio": 0.27,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.428838
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 776,
+      "academic_event_ratio": 0.193299,
+      "non_academic_event_ratio": 0.685567,
+      "switch_count": 496,
+      "switch_rate": 1.025976,
+      "avg_active_time": 0.622992,
+      "idle_ratio": 0.286055,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.766667,
+      "hour_of_day_entropy": 3.553463
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.137174,
+      "non_academic_event_ratio": 0.796982,
+      "switch_count": 479,
+      "switch_rate": 1.057849,
+      "avg_active_time": 0.621132,
+      "idle_ratio": 0.30247,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.508333,
+      "hour_of_day_entropy": 3.404725
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 962,
+      "academic_event_ratio": 0.554054,
+      "non_academic_event_ratio": 0.202703,
+      "switch_count": 573,
+      "switch_rate": 0.949495,
+      "avg_active_time": 0.627317,
+      "idle_ratio": 0.247982,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.786926
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 915,
+      "academic_event_ratio": 0.422951,
+      "non_academic_event_ratio": 0.318033,
+      "switch_count": 561,
+      "switch_rate": 0.978831,
+      "avg_active_time": 0.626374,
+      "idle_ratio": 0.245662,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.687065
+    },
+    "class_id": 1,
+    "label": "frequent_task_switching"
+  },
+  {
+    "features": {
+      "total_events": 744,
+      "academic_event_ratio": 0.456989,
+      "non_academic_event_ratio": 0.325269,
+      "switch_count": 466,
+      "switch_rate": 0.931513,
+      "avg_active_time": 0.672394,
+      "idle_ratio": 0.242443,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.481109
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 1010,
+      "academic_event_ratio": 0.478218,
+      "non_academic_event_ratio": 0.192079,
+      "switch_count": 602,
+      "switch_rate": 0.951879,
+      "avg_active_time": 0.626172,
+      "idle_ratio": 0.232328,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.844632
+    },
+    "class_id": 1,
+    "label": "frequent_task_switching"
+  },
+  {
+    "features": {
+      "total_events": 910,
+      "academic_event_ratio": 0.637363,
+      "non_academic_event_ratio": 0.257143,
+      "switch_count": 598,
+      "switch_rate": 1.048207,
+      "avg_active_time": 0.626921,
+      "idle_ratio": 0.246268,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.683266
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 868,
+      "academic_event_ratio": 0.33871,
+      "non_academic_event_ratio": 0.388249,
+      "switch_count": 515,
+      "switch_rate": 0.94994,
+      "avg_active_time": 0.624585,
+      "idle_ratio": 0.263837,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.681796
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.531,
+      "non_academic_event_ratio": 0.344,
+      "switch_count": 1592,
+      "switch_rate": 1.832524,
+      "avg_active_time": 0.434373,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 358,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.144557
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.511,
+      "non_academic_event_ratio": 0.4805,
+      "switch_count": 1644,
+      "switch_rate": 1.093213,
+      "avg_active_time": 0.751912,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 491,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.323243
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4995,
+      "non_academic_event_ratio": 0.5005,
+      "switch_count": 1705,
+      "switch_rate": 1.266665,
+      "avg_active_time": 0.673027,
+      "idle_ratio": 0.05768,
+      "burst_non_academic_count": 496,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.583833
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.489,
+      "non_academic_event_ratio": 0.511,
+      "switch_count": 1663,
+      "switch_rate": 1.226805,
+      "avg_active_time": 0.677777,
+      "idle_ratio": 0.057274,
+      "burst_non_academic_count": 492,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584896
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4965,
+      "non_academic_event_ratio": 0.5035,
+      "switch_count": 1663,
+      "switch_rate": 1.233507,
+      "avg_active_time": 0.674094,
+      "idle_ratio": 0.059212,
+      "burst_non_academic_count": 494,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584546
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 1983,
+      "academic_event_ratio": 0.505799,
+      "non_academic_event_ratio": 0.494201,
+      "switch_count": 1637,
+      "switch_rate": 1.206139,
+      "avg_active_time": 0.684429,
+      "idle_ratio": 0.057703,
+      "burst_non_academic_count": 485,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584946
+    },
+    "class_id": 1,
+    "label": "frequent_task_switching"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4935,
+      "non_academic_event_ratio": 0.5065,
+      "switch_count": 1660,
+      "switch_rate": 1.229629,
+      "avg_active_time": 0.675001,
+      "idle_ratio": 0.057763,
+      "burst_non_academic_count": 502,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584531
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 561,
+      "academic_event_ratio": 0.500891,
+      "non_academic_event_ratio": 0.499109,
+      "switch_count": 475,
+      "switch_rate": 1.244019,
+      "avg_active_time": 0.680619,
+      "idle_ratio": 0.058746,
+      "burst_non_academic_count": 148,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 2.812001
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 782,
+      "academic_event_ratio": 0.473146,
+      "non_academic_event_ratio": 0.300512,
+      "switch_count": 515,
+      "switch_rate": 1.004188,
+      "avg_active_time": 0.655821,
+      "idle_ratio": 0.264044,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.570449
+    },
+    "class_id": 2,
+    "label": "prolonged_inactivity"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.337449,
+      "non_academic_event_ratio": 0.471879,
+      "switch_count": 484,
+      "switch_rate": 1.069697,
+      "avg_active_time": 0.620665,
+      "idle_ratio": 0.27,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.428838
+    },
+    "class_id": 2,
+    "label": "prolonged_inactivity"
+  },
+  {
+    "features": {
+      "total_events": 776,
+      "academic_event_ratio": 0.193299,
+      "non_academic_event_ratio": 0.685567,
+      "switch_count": 496,
+      "switch_rate": 1.025976,
+      "avg_active_time": 0.622992,
+      "idle_ratio": 0.286055,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.766667,
+      "hour_of_day_entropy": 3.553463
+    },
+    "class_id": 2,
+    "label": "prolonged_inactivity"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.137174,
+      "non_academic_event_ratio": 0.796982,
+      "switch_count": 479,
+      "switch_rate": 1.057849,
+      "avg_active_time": 0.621132,
+      "idle_ratio": 0.30247,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.508333,
+      "hour_of_day_entropy": 3.404725
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 962,
+      "academic_event_ratio": 0.554054,
+      "non_academic_event_ratio": 0.202703,
+      "switch_count": 573,
+      "switch_rate": 0.949495,
+      "avg_active_time": 0.627317,
+      "idle_ratio": 0.247982,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.786926
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 915,
+      "academic_event_ratio": 0.422951,
+      "non_academic_event_ratio": 0.318033,
+      "switch_count": 561,
+      "switch_rate": 0.978831,
+      "avg_active_time": 0.626374,
+      "idle_ratio": 0.245662,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.687065
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 744,
+      "academic_event_ratio": 0.456989,
+      "non_academic_event_ratio": 0.325269,
+      "switch_count": 466,
+      "switch_rate": 0.931513,
+      "avg_active_time": 0.672394,
+      "idle_ratio": 0.242443,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.481109
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 1010,
+      "academic_event_ratio": 0.478218,
+      "non_academic_event_ratio": 0.192079,
+      "switch_count": 602,
+      "switch_rate": 0.951879,
+      "avg_active_time": 0.626172,
+      "idle_ratio": 0.232328,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.844632
+    },
+    "class_id": 2,
+    "label": "prolonged_inactivity"
+  },
+  {
+    "features": {
+      "total_events": 910,
+      "academic_event_ratio": 0.637363,
+      "non_academic_event_ratio": 0.257143,
+      "switch_count": 598,
+      "switch_rate": 1.048207,
+      "avg_active_time": 0.626921,
+      "idle_ratio": 0.246268,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.683266
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 868,
+      "academic_event_ratio": 0.33871,
+      "non_academic_event_ratio": 0.388249,
+      "switch_count": 515,
+      "switch_rate": 0.94994,
+      "avg_active_time": 0.624585,
+      "idle_ratio": 0.263837,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.681796
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.531,
+      "non_academic_event_ratio": 0.344,
+      "switch_count": 1592,
+      "switch_rate": 1.832524,
+      "avg_active_time": 0.434373,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 358,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.144557
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.511,
+      "non_academic_event_ratio": 0.4805,
+      "switch_count": 1644,
+      "switch_rate": 1.093213,
+      "avg_active_time": 0.751912,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 491,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.323243
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4995,
+      "non_academic_event_ratio": 0.5005,
+      "switch_count": 1705,
+      "switch_rate": 1.266665,
+      "avg_active_time": 0.673027,
+      "idle_ratio": 0.05768,
+      "burst_non_academic_count": 496,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.583833
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.489,
+      "non_academic_event_ratio": 0.511,
+      "switch_count": 1663,
+      "switch_rate": 1.226805,
+      "avg_active_time": 0.677777,
+      "idle_ratio": 0.057274,
+      "burst_non_academic_count": 492,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584896
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4965,
+      "non_academic_event_ratio": 0.5035,
+      "switch_count": 1663,
+      "switch_rate": 1.233507,
+      "avg_active_time": 0.674094,
+      "idle_ratio": 0.059212,
+      "burst_non_academic_count": 494,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584546
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 1983,
+      "academic_event_ratio": 0.505799,
+      "non_academic_event_ratio": 0.494201,
+      "switch_count": 1637,
+      "switch_rate": 1.206139,
+      "avg_active_time": 0.684429,
+      "idle_ratio": 0.057703,
+      "burst_non_academic_count": 485,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584946
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4935,
+      "non_academic_event_ratio": 0.5065,
+      "switch_count": 1660,
+      "switch_rate": 1.229629,
+      "avg_active_time": 0.675001,
+      "idle_ratio": 0.057763,
+      "burst_non_academic_count": 502,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584531
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 561,
+      "academic_event_ratio": 0.500891,
+      "non_academic_event_ratio": 0.499109,
+      "switch_count": 475,
+      "switch_rate": 1.244019,
+      "avg_active_time": 0.680619,
+      "idle_ratio": 0.058746,
+      "burst_non_academic_count": 148,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 2.812001
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 1569,
+      "academic_event_ratio": 0.493945,
+      "non_academic_event_ratio": 0.506055,
+      "switch_count": 1279,
+      "switch_rate": 1.191273,
+      "avg_active_time": 0.684284,
+      "idle_ratio": 0.058229,
+      "burst_non_academic_count": 386,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.247877
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.504,
+      "non_academic_event_ratio": 0.496,
+      "switch_count": 1655,
+      "switch_rate": 1.224912,
+      "avg_active_time": 0.675559,
+      "idle_ratio": 0.058588,
+      "burst_non_academic_count": 488,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584726
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.5015,
+      "non_academic_event_ratio": 0.4985,
+      "switch_count": 1691,
+      "switch_rate": 1.253583,
+      "avg_active_time": 0.674466,
+      "idle_ratio": 0.059094,
+      "burst_non_academic_count": 533,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584582
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.503,
+      "non_academic_event_ratio": 0.497,
+      "switch_count": 1664,
+      "switch_rate": 1.234171,
+      "avg_active_time": 0.674137,
+      "idle_ratio": 0.058602,
+      "burst_non_academic_count": 487,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584467
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4905,
+      "non_academic_event_ratio": 0.5095,
+      "switch_count": 1672,
+      "switch_rate": 1.247223,
+      "avg_active_time": 0.670289,
+      "idle_ratio": 0.0585,
+      "burst_non_academic_count": 507,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.582552
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 1999,
+      "academic_event_ratio": 0.510755,
+      "non_academic_event_ratio": 0.489245,
+      "switch_count": 1671,
+      "switch_rate": 1.229857,
+      "avg_active_time": 0.679687,
+      "idle_ratio": 0.057276,
+      "burst_non_academic_count": 486,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584943
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.503,
+      "non_academic_event_ratio": 0.497,
+      "switch_count": 1674,
+      "switch_rate": 1.240381,
+      "avg_active_time": 0.674793,
+      "idle_ratio": 0.059054,
+      "burst_non_academic_count": 501,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584635
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.5035,
+      "non_academic_event_ratio": 0.4965,
+      "switch_count": 1667,
+      "switch_rate": 1.233521,
+      "avg_active_time": 0.675708,
+      "idle_ratio": 0.058271,
+      "burst_non_academic_count": 490,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584741
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.5085,
+      "non_academic_event_ratio": 0.4915,
+      "switch_count": 1664,
+      "switch_rate": 1.239651,
+      "avg_active_time": 0.671157,
+      "idle_ratio": 0.059531,
+      "burst_non_academic_count": 498,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.583526
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4955,
+      "non_academic_event_ratio": 0.5045,
+      "switch_count": 1692,
+      "switch_rate": 1.250132,
+      "avg_active_time": 0.676728,
+      "idle_ratio": 0.058518,
+      "burst_non_academic_count": 498,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.58483
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4975,
+      "non_academic_event_ratio": 0.5025,
+      "switch_count": 1685,
+      "switch_rate": 1.244379,
+      "avg_active_time": 0.677045,
+      "idle_ratio": 0.05821,
+      "burst_non_academic_count": 486,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584888
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.504,
+      "non_academic_event_ratio": 0.496,
+      "switch_count": 1669,
+      "switch_rate": 1.243124,
+      "avg_active_time": 0.671293,
+      "idle_ratio": 0.058964,
+      "burst_non_academic_count": 512,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.58344
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 1995,
+      "academic_event_ratio": 0.530326,
+      "non_academic_event_ratio": 0.469674,
+      "switch_count": 1694,
+      "switch_rate": 1.249241,
+      "avg_active_time": 0.679711,
+      "idle_ratio": 0.058862,
+      "burst_non_academic_count": 507,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584917
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4945,
+      "non_academic_event_ratio": 0.5055,
+      "switch_count": 1668,
+      "switch_rate": 1.246712,
+      "avg_active_time": 0.668959,
+      "idle_ratio": 0.057677,
+      "burst_non_academic_count": 499,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.581235
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.5085,
+      "non_academic_event_ratio": 0.4915,
+      "switch_count": 1665,
+      "switch_rate": 1.243291,
+      "avg_active_time": 0.669594,
+      "idle_ratio": 0.059095,
+      "burst_non_academic_count": 528,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.582401
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.497,
+      "non_academic_event_ratio": 0.503,
+      "switch_count": 1670,
+      "switch_rate": 1.23746,
+      "avg_active_time": 0.674769,
+      "idle_ratio": 0.057454,
+      "burst_non_academic_count": 494,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584314
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4975,
+      "non_academic_event_ratio": 0.5025,
+      "switch_count": 1698,
+      "switch_rate": 1.255373,
+      "avg_active_time": 0.676293,
+      "idle_ratio": 0.058365,
+      "burst_non_academic_count": 516,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584844
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4975,
+      "non_academic_event_ratio": 0.5025,
+      "switch_count": 1668,
+      "switch_rate": 1.234304,
+      "avg_active_time": 0.675684,
+      "idle_ratio": 0.057087,
+      "burst_non_academic_count": 509,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584496
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.509,
+      "non_academic_event_ratio": 0.491,
+      "switch_count": 1669,
+      "switch_rate": 1.232839,
+      "avg_active_time": 0.676893,
+      "idle_ratio": 0.057927,
+      "burst_non_academic_count": 497,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584883
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 559,
+      "academic_event_ratio": 0.515206,
+      "non_academic_event_ratio": 0.484794,
+      "switch_count": 471,
+      "switch_rate": 1.234484,
+      "avg_active_time": 0.682533,
+      "idle_ratio": 0.058797,
+      "burst_non_academic_count": 144,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 2.819355
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 782,
+      "academic_event_ratio": 0.473146,
+      "non_academic_event_ratio": 0.300512,
+      "switch_count": 515,
+      "switch_rate": 1.004188,
+      "avg_active_time": 0.655821,
+      "idle_ratio": 0.264044,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.570449
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.337449,
+      "non_academic_event_ratio": 0.471879,
+      "switch_count": 484,
+      "switch_rate": 1.069697,
+      "avg_active_time": 0.620665,
+      "idle_ratio": 0.27,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.428838
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 776,
+      "academic_event_ratio": 0.193299,
+      "non_academic_event_ratio": 0.685567,
+      "switch_count": 496,
+      "switch_rate": 1.025976,
+      "avg_active_time": 0.622992,
+      "idle_ratio": 0.286055,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.766667,
+      "hour_of_day_entropy": 3.553463
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.137174,
+      "non_academic_event_ratio": 0.796982,
+      "switch_count": 479,
+      "switch_rate": 1.057849,
+      "avg_active_time": 0.621132,
+      "idle_ratio": 0.30247,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.508333,
+      "hour_of_day_entropy": 3.404725
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 962,
+      "academic_event_ratio": 0.554054,
+      "non_academic_event_ratio": 0.202703,
+      "switch_count": 573,
+      "switch_rate": 0.949495,
+      "avg_active_time": 0.627317,
+      "idle_ratio": 0.247982,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.786926
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 915,
+      "academic_event_ratio": 0.422951,
+      "non_academic_event_ratio": 0.318033,
+      "switch_count": 561,
+      "switch_rate": 0.978831,
+      "avg_active_time": 0.626374,
+      "idle_ratio": 0.245662,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.687065
+    },
+    "class_id": 1,
+    "label": "frequent_task_switching"
+  },
+  {
+    "features": {
+      "total_events": 744,
+      "academic_event_ratio": 0.456989,
+      "non_academic_event_ratio": 0.325269,
+      "switch_count": 466,
+      "switch_rate": 0.931513,
+      "avg_active_time": 0.672394,
+      "idle_ratio": 0.242443,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.481109
+    },
+    "class_id": 2,
+    "label": "prolonged_inactivity"
+  },
+  {
+    "features": {
+      "total_events": 1010,
+      "academic_event_ratio": 0.478218,
+      "non_academic_event_ratio": 0.192079,
+      "switch_count": 602,
+      "switch_rate": 0.951879,
+      "avg_active_time": 0.626172,
+      "idle_ratio": 0.232328,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.844632
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 910,
+      "academic_event_ratio": 0.637363,
+      "non_academic_event_ratio": 0.257143,
+      "switch_count": 598,
+      "switch_rate": 1.048207,
+      "avg_active_time": 0.626921,
+      "idle_ratio": 0.246268,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.683266
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 868,
+      "academic_event_ratio": 0.33871,
+      "non_academic_event_ratio": 0.388249,
+      "switch_count": 515,
+      "switch_rate": 0.94994,
+      "avg_active_time": 0.624585,
+      "idle_ratio": 0.263837,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.681796
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.531,
+      "non_academic_event_ratio": 0.344,
+      "switch_count": 1592,
+      "switch_rate": 1.832524,
+      "avg_active_time": 0.434373,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 358,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.144557
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.511,
+      "non_academic_event_ratio": 0.4805,
+      "switch_count": 1644,
+      "switch_rate": 1.093213,
+      "avg_active_time": 0.751912,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 491,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.323243
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4995,
+      "non_academic_event_ratio": 0.5005,
+      "switch_count": 1705,
+      "switch_rate": 1.266665,
+      "avg_active_time": 0.673027,
+      "idle_ratio": 0.05768,
+      "burst_non_academic_count": 496,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.583833
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.489,
+      "non_academic_event_ratio": 0.511,
+      "switch_count": 1663,
+      "switch_rate": 1.226805,
+      "avg_active_time": 0.677777,
+      "idle_ratio": 0.057274,
+      "burst_non_academic_count": 492,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584896
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4965,
+      "non_academic_event_ratio": 0.5035,
+      "switch_count": 1663,
+      "switch_rate": 1.233507,
+      "avg_active_time": 0.674094,
+      "idle_ratio": 0.059212,
+      "burst_non_academic_count": 494,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584546
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 1983,
+      "academic_event_ratio": 0.505799,
+      "non_academic_event_ratio": 0.494201,
+      "switch_count": 1637,
+      "switch_rate": 1.206139,
+      "avg_active_time": 0.684429,
+      "idle_ratio": 0.057703,
+      "burst_non_academic_count": 485,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584946
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4935,
+      "non_academic_event_ratio": 0.5065,
+      "switch_count": 1660,
+      "switch_rate": 1.229629,
+      "avg_active_time": 0.675001,
+      "idle_ratio": 0.057763,
+      "burst_non_academic_count": 502,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584531
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 561,
+      "academic_event_ratio": 0.500891,
+      "non_academic_event_ratio": 0.499109,
+      "switch_count": 475,
+      "switch_rate": 1.244019,
+      "avg_active_time": 0.680619,
+      "idle_ratio": 0.058746,
+      "burst_non_academic_count": 148,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 2.812001
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 1569,
+      "academic_event_ratio": 0.493945,
+      "non_academic_event_ratio": 0.506055,
+      "switch_count": 1279,
+      "switch_rate": 1.191273,
+      "avg_active_time": 0.684284,
+      "idle_ratio": 0.058229,
+      "burst_non_academic_count": 386,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.247877
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.504,
+      "non_academic_event_ratio": 0.496,
+      "switch_count": 1655,
+      "switch_rate": 1.224912,
+      "avg_active_time": 0.675559,
+      "idle_ratio": 0.058588,
+      "burst_non_academic_count": 488,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584726
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.5015,
+      "non_academic_event_ratio": 0.4985,
+      "switch_count": 1691,
+      "switch_rate": 1.253583,
+      "avg_active_time": 0.674466,
+      "idle_ratio": 0.059094,
+      "burst_non_academic_count": 533,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584582
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.503,
+      "non_academic_event_ratio": 0.497,
+      "switch_count": 1664,
+      "switch_rate": 1.234171,
+      "avg_active_time": 0.674137,
+      "idle_ratio": 0.058602,
+      "burst_non_academic_count": 487,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584467
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4905,
+      "non_academic_event_ratio": 0.5095,
+      "switch_count": 1672,
+      "switch_rate": 1.247223,
+      "avg_active_time": 0.670289,
+      "idle_ratio": 0.0585,
+      "burst_non_academic_count": 507,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.582552
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 1999,
+      "academic_event_ratio": 0.510755,
+      "non_academic_event_ratio": 0.489245,
+      "switch_count": 1671,
+      "switch_rate": 1.229857,
+      "avg_active_time": 0.679687,
+      "idle_ratio": 0.057276,
+      "burst_non_academic_count": 486,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584943
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.503,
+      "non_academic_event_ratio": 0.497,
+      "switch_count": 1674,
+      "switch_rate": 1.240381,
+      "avg_active_time": 0.674793,
+      "idle_ratio": 0.059054,
+      "burst_non_academic_count": 501,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584635
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.5035,
+      "non_academic_event_ratio": 0.4965,
+      "switch_count": 1667,
+      "switch_rate": 1.233521,
+      "avg_active_time": 0.675708,
+      "idle_ratio": 0.058271,
+      "burst_non_academic_count": 490,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584741
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.5085,
+      "non_academic_event_ratio": 0.4915,
+      "switch_count": 1664,
+      "switch_rate": 1.239651,
+      "avg_active_time": 0.671157,
+      "idle_ratio": 0.059531,
+      "burst_non_academic_count": 498,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.583526
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4955,
+      "non_academic_event_ratio": 0.5045,
+      "switch_count": 1692,
+      "switch_rate": 1.250132,
+      "avg_active_time": 0.676728,
+      "idle_ratio": 0.058518,
+      "burst_non_academic_count": 498,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.58483
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4975,
+      "non_academic_event_ratio": 0.5025,
+      "switch_count": 1685,
+      "switch_rate": 1.244379,
+      "avg_active_time": 0.677045,
+      "idle_ratio": 0.05821,
+      "burst_non_academic_count": 486,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584888
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.504,
+      "non_academic_event_ratio": 0.496,
+      "switch_count": 1669,
+      "switch_rate": 1.243124,
+      "avg_active_time": 0.671293,
+      "idle_ratio": 0.058964,
+      "burst_non_academic_count": 512,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.58344
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 1995,
+      "academic_event_ratio": 0.530326,
+      "non_academic_event_ratio": 0.469674,
+      "switch_count": 1694,
+      "switch_rate": 1.249241,
+      "avg_active_time": 0.679711,
+      "idle_ratio": 0.058862,
+      "burst_non_academic_count": 507,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584917
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4945,
+      "non_academic_event_ratio": 0.5055,
+      "switch_count": 1668,
+      "switch_rate": 1.246712,
+      "avg_active_time": 0.668959,
+      "idle_ratio": 0.057677,
+      "burst_non_academic_count": 499,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.581235
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.5085,
+      "non_academic_event_ratio": 0.4915,
+      "switch_count": 1665,
+      "switch_rate": 1.243291,
+      "avg_active_time": 0.669594,
+      "idle_ratio": 0.059095,
+      "burst_non_academic_count": 528,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.582401
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.497,
+      "non_academic_event_ratio": 0.503,
+      "switch_count": 1670,
+      "switch_rate": 1.23746,
+      "avg_active_time": 0.674769,
+      "idle_ratio": 0.057454,
+      "burst_non_academic_count": 494,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584314
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4975,
+      "non_academic_event_ratio": 0.5025,
+      "switch_count": 1698,
+      "switch_rate": 1.255373,
+      "avg_active_time": 0.676293,
+      "idle_ratio": 0.058365,
+      "burst_non_academic_count": 516,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584844
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4975,
+      "non_academic_event_ratio": 0.5025,
+      "switch_count": 1668,
+      "switch_rate": 1.234304,
+      "avg_active_time": 0.675684,
+      "idle_ratio": 0.057087,
+      "burst_non_academic_count": 509,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584496
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.509,
+      "non_academic_event_ratio": 0.491,
+      "switch_count": 1669,
+      "switch_rate": 1.232839,
+      "avg_active_time": 0.676893,
+      "idle_ratio": 0.057927,
+      "burst_non_academic_count": 497,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584883
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 559,
+      "academic_event_ratio": 0.515206,
+      "non_academic_event_ratio": 0.484794,
+      "switch_count": 471,
+      "switch_rate": 1.234484,
+      "avg_active_time": 0.682533,
+      "idle_ratio": 0.058797,
+      "burst_non_academic_count": 144,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 2.819355
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 782,
+      "academic_event_ratio": 0.473146,
+      "non_academic_event_ratio": 0.300512,
+      "switch_count": 515,
+      "switch_rate": 1.004188,
+      "avg_active_time": 0.655821,
+      "idle_ratio": 0.264044,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.570449
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.337449,
+      "non_academic_event_ratio": 0.471879,
+      "switch_count": 484,
+      "switch_rate": 1.069697,
+      "avg_active_time": 0.620665,
+      "idle_ratio": 0.27,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.428838
+    },
+    "class_id": 2,
+    "label": "prolonged_inactivity"
+  },
+  {
+    "features": {
+      "total_events": 776,
+      "academic_event_ratio": 0.193299,
+      "non_academic_event_ratio": 0.685567,
+      "switch_count": 496,
+      "switch_rate": 1.025976,
+      "avg_active_time": 0.622992,
+      "idle_ratio": 0.286055,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.766667,
+      "hour_of_day_entropy": 3.553463
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 729,
+      "academic_event_ratio": 0.137174,
+      "non_academic_event_ratio": 0.796982,
+      "switch_count": 479,
+      "switch_rate": 1.057849,
+      "avg_active_time": 0.621132,
+      "idle_ratio": 0.30247,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 0.508333,
+      "hour_of_day_entropy": 3.404725
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 962,
+      "academic_event_ratio": 0.554054,
+      "non_academic_event_ratio": 0.202703,
+      "switch_count": 573,
+      "switch_rate": 0.949495,
+      "avg_active_time": 0.627317,
+      "idle_ratio": 0.247982,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.786926
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 915,
+      "academic_event_ratio": 0.422951,
+      "non_academic_event_ratio": 0.318033,
+      "switch_count": 561,
+      "switch_rate": 0.978831,
+      "avg_active_time": 0.626374,
+      "idle_ratio": 0.245662,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.687065
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 744,
+      "academic_event_ratio": 0.456989,
+      "non_academic_event_ratio": 0.325269,
+      "switch_count": 466,
+      "switch_rate": 0.931513,
+      "avg_active_time": 0.672394,
+      "idle_ratio": 0.242443,
+      "burst_non_academic_count": 5,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.481109
+    },
+    "class_id": 0,
+    "label": "no_procrastination"
+  },
+  {
+    "features": {
+      "total_events": 1010,
+      "academic_event_ratio": 0.478218,
+      "non_academic_event_ratio": 0.192079,
+      "switch_count": 602,
+      "switch_rate": 0.951879,
+      "avg_active_time": 0.626172,
+      "idle_ratio": 0.232328,
+      "burst_non_academic_count": 6,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.844632
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 910,
+      "academic_event_ratio": 0.637363,
+      "non_academic_event_ratio": 0.257143,
+      "switch_count": 598,
+      "switch_rate": 1.048207,
+      "avg_active_time": 0.626921,
+      "idle_ratio": 0.246268,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.683266
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 868,
+      "academic_event_ratio": 0.33871,
+      "non_academic_event_ratio": 0.388249,
+      "switch_count": 515,
+      "switch_rate": 0.94994,
+      "avg_active_time": 0.624585,
+      "idle_ratio": 0.263837,
+      "burst_non_academic_count": 4,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.681796
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.531,
+      "non_academic_event_ratio": 0.344,
+      "switch_count": 1592,
+      "switch_rate": 1.832524,
+      "avg_active_time": 0.434373,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 358,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 3.144557
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.511,
+      "non_academic_event_ratio": 0.4805,
+      "switch_count": 1644,
+      "switch_rate": 1.093213,
+      "avg_active_time": 0.751912,
+      "idle_ratio": 0.0,
+      "burst_non_academic_count": 491,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.323243
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4995,
+      "non_academic_event_ratio": 0.5005,
+      "switch_count": 1705,
+      "switch_rate": 1.266665,
+      "avg_active_time": 0.673027,
+      "idle_ratio": 0.05768,
+      "burst_non_academic_count": 496,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.583833
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.489,
+      "non_academic_event_ratio": 0.511,
+      "switch_count": 1663,
+      "switch_rate": 1.226805,
+      "avg_active_time": 0.677777,
+      "idle_ratio": 0.057274,
+      "burst_non_academic_count": 492,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584896
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4965,
+      "non_academic_event_ratio": 0.5035,
+      "switch_count": 1663,
+      "switch_rate": 1.233507,
+      "avg_active_time": 0.674094,
+      "idle_ratio": 0.059212,
+      "burst_non_academic_count": 494,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584546
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 1983,
+      "academic_event_ratio": 0.505799,
+      "non_academic_event_ratio": 0.494201,
+      "switch_count": 1637,
+      "switch_rate": 1.206139,
+      "avg_active_time": 0.684429,
+      "idle_ratio": 0.057703,
+      "burst_non_academic_count": 485,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584946
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  },
+  {
+    "features": {
+      "total_events": 2000,
+      "academic_event_ratio": 0.4935,
+      "non_academic_event_ratio": 0.5065,
+      "switch_count": 1660,
+      "switch_rate": 1.229629,
+      "avg_active_time": 0.675001,
+      "idle_ratio": 0.057763,
+      "burst_non_academic_count": 502,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 4.584531
+    },
+    "class_id": 3,
+    "label": "impulsive_browsing"
+  },
+  {
+    "features": {
+      "total_events": 561,
+      "academic_event_ratio": 0.500891,
+      "non_academic_event_ratio": 0.499109,
+      "switch_count": 475,
+      "switch_rate": 1.244019,
+      "avg_active_time": 0.680619,
+      "idle_ratio": 0.058746,
+      "burst_non_academic_count": 148,
+      "focus_ratio": 1.0,
+      "hour_of_day_entropy": 2.812001
+    },
+    "class_id": 4,
+    "label": "deadline_rushing"
+  }
+]

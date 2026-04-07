@@ -22,20 +22,9 @@ async def _fetch_behavior_records(
       Pass 2 — fallback: fetch all user docs, filter in Python after coercion
                (works when start_time is stored as ISO string).
     """
-    # Single-pass optimized query: handles both BSON datetimes and ISO strings (Pass 1 + optimized fallback)
-    start_iso = start_dt.isoformat().replace("+00:00", "Z")
-    end_iso = end_dt.isoformat().replace("+00:00", "Z")
-
     query = {
         "user_id": user_id,
-        "$or": [
-            # BSON Datetime match (standard)
-            {"start_time": {"$gte": start_dt, "$lt": end_dt}},
-            {"timestamp": {"$gte": start_dt, "$lt": end_dt}},
-            # ISO String match (fallback for some clients)
-            {"start_time": {"$gte": start_iso, "$lt": end_iso}},
-            {"timestamp": {"$gte": start_iso, "$lt": end_iso}},
-        ],
+        "start_time": {"$gte": start_dt, "$lt": end_dt},
     }
 
     _logger.info("[Pipeline] Fetching records for %s between %s and %s", user_id, start_dt, end_dt)
@@ -142,6 +131,31 @@ async def _get_active_time_history(
         .limit(n_days)
     )
     return await cursor.to_list(length=None)
+
+async def _get_feature_history(
+    motor_db: AsyncIOMotorDatabase,
+    user_id: str,
+    days: int = 30,
+) -> list[dict]:
+    """Fetch stored feature vectors from procrastination_results.
+
+    Returns list of {date: str, features: dict}, sorted ascending by date.
+    Only includes docs where the 'features' key is present (post-enhancement data).
+    """
+    cursor = (
+        motor_db["procrastination_results"]
+        .find(
+            {"userId": user_id, "features": {"$exists": True}},
+            {"_id": 0, "date": 1, "features": 1},
+        )
+        .sort("date", -1)
+        .limit(days)
+    )
+    docs = await cursor.to_list(length=None)
+    # Reverse to get ascending order
+    docs.reverse()
+    return [{"date": d["date"], "features": d["features"]} for d in docs if d.get("features")]
+
 
 async def _fetch_stored_prediction(
     motor_db: AsyncIOMotorDatabase, user_id: str

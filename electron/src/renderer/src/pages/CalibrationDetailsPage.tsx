@@ -409,8 +409,12 @@ const CalibrationDetailsPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await (window as any).electronAPI.getCalibrationHistory(14) as CalibrationDayRecord[];
-      setRecords(data || []);
+      const data = await (window as any).electronAPI.getCalibrationHistory(90) as CalibrationDayRecord[];
+      // Show the first 14 days (calibration window), not the most recent 14
+      const first14 = [...(data || [])]
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(0, 14);
+      setRecords(first14);
     } catch {
       setError('Could not load calibration history. Is MongoDB connected?');
     } finally {

@@ -29,6 +29,7 @@ async def health_check():
         "enabled": settings.mongodb_sync_enabled,
         "connected": mongo_sync.is_connected if mongo_sync else False,
         "pending_retries": mongo_sync.pending_count if mongo_sync else 0,
+        "last_error": mongo_sync.last_error if mongo_sync else "",
     }
 
     # User ID
