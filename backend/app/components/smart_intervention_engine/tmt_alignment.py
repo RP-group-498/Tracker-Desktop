@@ -64,13 +64,16 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 # Actions in fixed order — must match ACTIONS in bandit.py
-ACTIONS = ["POMODORO", "FIVE_SECOND_RULE", "BREATHING", "VISUALIZATION", "REFRAME"]
+ACTIONS = ["NO_INTERVENTION", "POMODORO", "FIVE_SECOND_RULE", "BREATHING", "VISUALIZATION", "REFRAME"]
 
 # TMT Alignment Matrix: rows = actions, columns = [E, V, I, D]
 # Each row encodes how strongly an intervention targets each TMT component.
 # Values are grounded in the research literature cited in the module docstring.
+# NO_INTERVENTION has all zeros — it targets no deficit, so its relevance
+# score is always 0.0. It only wins when LinUCB learned weights prefer it.
 TMT_ALIGNMENT = np.array([
     # Expectancy  Value  Impulsiveness  Delay
+    [0.0,         0.0,   0.0,           0.0],   # NO_INTERVENTION
     [0.3,         0.1,   0.8,           0.7],   # POMODORO
     [0.3,         0.1,   0.7,           0.5],   # FIVE_SECOND_RULE
     [0.1,         0.1,   0.6,           0.1],   # BREATHING

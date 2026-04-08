@@ -6,24 +6,23 @@
  * Each tick:
  *   1. Check active intervention → skip if busy
  *   2. Check global cooldown → skip if cooling
- *   3. Fetch context vector via getContext() (7-element TMT vector)
- *   4. Evaluate TMT trigger conditions → skip if no risk
- *   5. Hash context → skip if duplicate
- *   6. Remove per-action cooldown violations from candidate list → skip if empty
- *   7. Call /bandit/select (backend uses deficit-weighted LinUCB)
- *   8. Show notification via callback
+ *   3. Fetch context vector via getContext() (7-element two-speed TMT vector)
+ *   4. Hash context → skip if duplicate
+ *   5. Remove per-action cooldown violations from candidate list → skip if empty
+ *   6. Call /bandit/select (backend uses deficit-weighted LinUCB)
+ *   7. If NO_INTERVENTION selected → silent skip with neutral reward
+ *      Otherwise → show notification via callback
  *
- * Response handling is delegated to the page via onSuggestIntervention callback.
- * Urgency-based action filtering removed — deficit-weighted selection handles this.
+ * No rule-based trigger gate — the LinUCB bandit decides both WHETHER and
+ * WHAT to show via the NO_INTERVENTION arm. Deficit-weighted selection handles this.
  */
 
 import { getContext } from '../../../utils/contextBuilder';
-import { shouldTrigger } from './triggerDetector';
 import { CooldownManager } from './cooldownManager';
 import { hashContext, isDuplicateContext, updateHash, resetHash } from './contextHasher';
 
 // All available intervention actions — backend selects best via deficit-weighted LinUCB
-const ALL_ACTIONS = ['FIVE_SECOND_RULE', 'POMODORO', 'BREATHING', 'VISUALIZATION', 'REFRAME'];
+const ALL_ACTIONS = ['NO_INTERVENTION', 'FIVE_SECOND_RULE', 'POMODORO', 'BREATHING', 'VISUALIZATION', 'REFRAME'];
 
 const MONITORING_INTERVAL_MS = 60_000; // 60 seconds
 
@@ -112,31 +111,23 @@ export class MonitoringLoop {
             // Log motivation at every tick (motivation is now at vector[5])
             this.callbacks.onLogMotivation(vector);
 
-            // 4. Evaluate TMT trigger conditions
-            const { triggered } = shouldTrigger(vector);
-            if (!triggered) {
-                this.callbacks.onStatusUpdate('Monitoring — no risk detected');
-                return;
-            }
-
-            // 5. Check for duplicate context
+            // 4. Check for duplicate context
             const ctxHash = hashContext(vector);
             if (isDuplicateContext(ctxHash)) {
                 this.callbacks.onStatusUpdate('Monitoring — context unchanged');
                 return;
             }
 
-            // 6. Remove per-action cooldown violations from all actions
-            // (urgency-based filtering removed — deficit-weighted LinUCB handles selection)
+            // 5. Remove per-action cooldown violations from all actions
             const available = this.cooldown.getAvailableActions(ALL_ACTIONS);
             if (available.length === 0) {
                 this.callbacks.onStatusUpdate('All actions on cooldown');
                 return;
             }
 
-            this.callbacks.onStatusUpdate(`Risk detected! Suggesting intervention...`);
+            this.callbacks.onStatusUpdate('Evaluating intervention...');
 
-            // 7 & 8. Delegate bandit selection + notification to the page
+            // 6 & 7. Delegate bandit selection + notification to the page
             updateHash(ctxHash);
             await this.callbacks.onSuggestIntervention(vector, available);
         } catch (err) {

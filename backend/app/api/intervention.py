@@ -41,7 +41,7 @@ from app.components.smart_intervention_engine.schemas import (
     MotivationLogEntry,
     UserGoal,
 )
-from app.components.PatternDetection.utils_datetime import get_effective_active_time_date
+from app.components.PatternDetection.utils_datetime import get_effective_active_time_date, _coerce_datetime
 from app.config import settings
 
 router = APIRouter()
@@ -97,6 +97,77 @@ def _get_c4_db():
     _c4_client = motor.motor_asyncio.AsyncIOMotorClient(settings.tasks_mongodb_uri)
     _c4_db = _c4_client[settings.tasks_mongodb_database]
     return _c4_db
+
+
+# ---------------------------------------------------------------------------
+# Sliding window helper for two-speed TMT
+# ---------------------------------------------------------------------------
+
+
+async def _fetch_sliding_window(c1_db, user_id: str, now_utc: datetime) -> dict:
+    """Query activity_events for recent sliding-window behavioral signals.
+
+    Returns metrics over the last 5–10 minutes that make the TMT motivation
+    score reactive to real-time behavior (two-speed TMT).
+    """
+    window_10min = now_utc - timedelta(minutes=10)
+    window_5min = now_utc - timedelta(minutes=5)
+
+    # Fetch events from the last 10 minutes (reuses readers.py query pattern)
+    docs_10min = await (
+        c1_db["activity_events"]
+        .find(
+            {"user_id": user_id, "start_time": {"$gte": window_10min, "$lt": now_utc}},
+            {"_id": 0, "start_time": 1, "app_name": 1, "domain": 1, "classification": 1},
+        )
+        .sort("start_time", 1)
+        .to_list(length=500)
+    )
+
+    # Count app switches in the 5-minute window
+    app_switches_5min = 0
+    prev_app = None
+    for doc in docs_10min:
+        app_id = doc.get("app_name") or doc.get("domain") or ""
+        raw_start = doc.get("start_time")
+        start_dt = _coerce_datetime(raw_start)
+        if start_dt and start_dt >= window_5min:
+            if prev_app is not None and app_id != prev_app:
+                app_switches_5min += 1
+        prev_app = app_id
+
+    # Count non-academic events in the 10-minute window
+    non_academic_switches_10min = 0
+    for doc in docs_10min:
+        raw_cat = (doc.get("classification") or {}).get("category", "").strip().lower()
+        if raw_cat not in ("academic", "productivity", "productive"):
+            non_academic_switches_10min += 1
+
+    # Find seconds since last academic activity
+    last_academic_doc = await (
+        c1_db["activity_events"]
+        .find(
+            {"user_id": user_id, "classification.category": "academic"},
+            {"_id": 0, "start_time": 1},
+        )
+        .sort("start_time", -1)
+        .limit(1)
+        .to_list(length=1)
+    )
+
+    seconds_since_last_academic = None
+    if last_academic_doc:
+        last_acad_time = _coerce_datetime(last_academic_doc[0].get("start_time"))
+        if last_acad_time:
+            seconds_since_last_academic = (now_utc - last_acad_time).total_seconds()
+
+    return {
+        "app_switches_5min": app_switches_5min,
+        "non_academic_switches_10min": non_academic_switches_10min,
+        "total_events_10min": len(docs_10min),
+        "seconds_since_last_academic": seconds_since_last_academic,
+        "window_has_data": len(docs_10min) > 0,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -408,7 +479,7 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
     Fetch raw context signals for the current user from Component 1 and Component 4.
 
     Returns raw database values. The Electron frontend (contextBuilder.ts) transforms
-    these into the 9-element TMT context vector — the backend is not responsible for
+    these into the 7-element TMT context vector — the backend is not responsible for
     vector construction.
     """
     user_id = current_user["sub"]
@@ -425,6 +496,13 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
         "assigned_time": 0.0,
         "task_deadline_time": None,
         "has_data": False,
+        "sliding_window": {
+            "app_switches_5min": 0,
+            "non_academic_switches_10min": 0,
+            "total_events_10min": 0,
+            "seconds_since_last_academic": None,
+            "window_has_data": False,
+        },
     }
 
     result = dict(_default)
@@ -514,6 +592,19 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
                 )
         except Exception as e:
             logger.error("[Context] Failed to fetch Component 1 (activity) data: %s", e)
+        # ── Sliding window (two-speed TMT) ────────────────────────────────
+        try:
+            sw = await _fetch_sliding_window(c1_db, user_id, now_utc)
+            result["sliding_window"] = sw
+            logger.info(
+                "[Context] Sliding window: switches_5min=%d non_acad_10min=%d total_10min=%d since_acad=%s",
+                sw["app_switches_5min"],
+                sw["non_academic_switches_10min"],
+                sw["total_events_10min"],
+                sw["seconds_since_last_academic"],
+            )
+        except Exception as e:
+            logger.error("[Context] Sliding window query failed: %s", e)
     else:
         logger.warning("[Context] Component 1 DB is not configured (settings.mongodb_uri is empty)")
 

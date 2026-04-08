@@ -16,9 +16,10 @@
  *   [2] value          = TMT V proxy (max(task_priority, grade_weight))
  *                        Justification: Task is valuable if it matters for ANY reason.
  *                        max() avoids arbitrary weighting (Wigfield & Eccles, 2000)
- *   [3] impulsiveness  = TMT I proxy (non_academic_ratio)
+ *   [3] impulsiveness  = TMT I proxy (two-speed: max of daily ratio, 5-min switch rate, idle time)
  *                        Justification: Off-task proportion directly measures impulse
- *                        susceptibility (Steel, 2007). Single signal, no composite.
+ *                        susceptibility (Steel, 2007). Blended with sliding-window signals
+ *                        for real-time reactivity.
  *   [4] delay          = TMT D proxy (hours_to_deadline normalized)
  *                        Justification: Hyperbolic normalization matches TMT's delay
  *                        discounting curve (Mazur, 1987; Steel, 2007)
@@ -41,6 +42,13 @@ interface BackendContextSignals {
     assigned_time: number;
     task_deadline_time: string | null;
     has_data: boolean;
+    sliding_window?: {
+        app_switches_5min: number;
+        non_academic_switches_10min: number;
+        total_events_10min: number;
+        seconds_since_last_academic: number | null;
+        window_has_data: boolean;
+    };
 }
 
 /**
@@ -64,17 +72,20 @@ interface RawBehavioralSignals {
      * Negative if overdue. Default 168 (1 week) if no deadline.
      */
     hours_to_deadline: number;
-    /**
-     * non_academic_transitions / (total_transitions + 1).
-     * Note: daily total used as proxy for 15-min sliding window
-     * (backend does not yet expose windowed activity data).
-     */
+    /** non_academic_transitions / total_transitions (daily aggregate, slow component) */
     non_academic_ratio: number;
-    /**
-     * total_transitions / 15 — per-minute switch frequency estimate.
-     * Note: approximation using daily total; 15 is a normalization constant.
-     */
+    /** total_transitions / 15 — per-minute switch frequency estimate */
     app_switch_frequency: number;
+
+    // --- Fast components (sliding window, two-speed TMT) ---
+    /** App switches in last 5 min, normalized to [0,1]. 10+ switches = 1.0 */
+    app_switches_5min_normalized: number;
+    /** Non-academic event ratio in last 10 minutes */
+    non_academic_ratio_10min: number;
+    /** Minutes since last academic activity (0 if no data) */
+    minutes_since_last_academic: number;
+    /** Whether sliding window data is available from backend */
+    has_sliding_window: boolean;
 }
 
 /** The four TMT component proxies */
@@ -109,6 +120,25 @@ function toRawSignals(backend: BackendContextSignals): RawBehavioralSignals {
         ? Math.min(backend.time_spent_on_task / backend.assigned_time, 2.0)
         : 0.5;
 
+    // --- Sliding window (two-speed TMT) ---
+    const sw = backend.sliding_window;
+    const hasWindow = sw?.window_has_data ?? false;
+
+    // I_fast: 10+ app switches in 5 min = fully impulsive (1.0)
+    const app_switches_5min_normalized = hasWindow
+        ? clamp(sw!.app_switches_5min / 10, 0, 1)
+        : 0;
+
+    // E_fast input: non-academic ratio in recent 10-min window
+    const non_academic_ratio_10min = hasWindow && sw!.total_events_10min > 0
+        ? sw!.non_academic_switches_10min / sw!.total_events_10min
+        : 0;
+
+    // I_idle: minutes since last academic activity (capped at 30 by consumer)
+    const minutes_since_last_academic = hasWindow && sw!.seconds_since_last_academic !== null
+        ? sw!.seconds_since_last_academic / 60
+        : 0;
+
     return {
         task_completion_rate,
         task_time_ratio,
@@ -119,36 +149,56 @@ function toRawSignals(backend: BackendContextSignals): RawBehavioralSignals {
             ? backend.non_academic_transitions / backend.total_transitions
             : 0.0,
         app_switch_frequency: backend.total_transitions / 15,
+        app_switches_5min_normalized,
+        non_academic_ratio_10min,
+        minutes_since_last_academic,
+        has_sliding_window: hasWindow,
     };
 }
 
 /**
  * Compute the four TMT component proxies from raw behavioral signals.
  *
- * Rule: one signal per TMT component — no composite blends.
- * If blending seems necessary, add a new vector element instead.
+ * Two-speed TMT: I and E blend daily aggregates (slow) with sliding-window
+ * signals (fast) so the motivation score reacts to real-time behavior.
+ * V and D remain slow — they are genuinely stable constructs.
+ *
+ * When sliding-window data is unavailable, falls back to slow-only
+ * (identical to previous behavior).
  */
 export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
-    // Expectancy proxy: task_completion_rate
-    // Justification: Past task success predicts self-efficacy (Bandura, 1977; Klassen et al., 2008)
-    const E = clamp(signals.task_completion_rate, 0, 1);
+    // === Expectancy: two-speed ===
+    // E_slow: past task success predicts self-efficacy (Bandura, 1977)
+    const E_slow = clamp(signals.task_completion_rate, 0, 1);
+    let E: number;
+    if (signals.has_sliding_window) {
+        // E_fast: recent off-task activity lowers momentary self-efficacy
+        const E_fast = clamp(1 - signals.non_academic_ratio_10min, 0, 1);
+        E = clamp(0.6 * E_slow + 0.4 * E_fast, 0, 1);
+    } else {
+        E = E_slow;
+    }
 
-    // Value proxy: max(task_priority, grade_weight)
-    // Justification: A task is valuable if it matters for ANY reason.
-    // max() avoids arbitrary weighting between two indicators of the same construct
-    // (Wigfield & Eccles, 2000). Default 0.3 when no active task.
+    // === Value: unchanged (genuinely slow construct) ===
     const V_raw = Math.max(signals.task_priority, signals.grade_weight);
     const V = V_raw > 0 ? V_raw : 0.3;
 
-    // Impulsiveness proxy: non_academic_ratio
-    // Justification: Proportion of off-task time directly measures impulse susceptibility
-    // (Steel, 2007). Single signal — app_switch_frequency measures the same construct
-    // and blending would reintroduce arbitrary weights.
-    const I = clamp(signals.non_academic_ratio, 0, 1);
+    // === Impulsiveness: two-speed with max() ===
+    // I_slow: daily off-task proportion (Steel, 2007)
+    const I_slow = clamp(signals.non_academic_ratio, 0, 1);
+    let I: number;
+    if (signals.has_sliding_window) {
+        // I_fast: rapid app switching in last 5 minutes
+        const I_fast = signals.app_switches_5min_normalized;
+        // I_idle: time since last academic activity (30+ min idle = 1.0)
+        const I_idle = clamp(signals.minutes_since_last_academic / 30, 0, 1);
+        // Worst-case wins — either sustained daily pattern, recent burst, or inactivity
+        I = Math.max(I_slow, I_fast, I_idle);
+    } else {
+        I = I_slow;
+    }
 
-    // Delay proxy: hyperbolic normalization of hours_to_deadline
-    // Justification: Maps to TMT's delay discounting curve (Mazur, 1987; Steel, 2007)
-    // D approaches 1.0 for far deadlines, 0.0 for imminent/overdue ones.
+    // === Delay: unchanged (genuinely slow construct) ===
     const D = signals.hours_to_deadline <= 0
         ? 0.0   // overdue = no delay, deadline arrived
         : signals.hours_to_deadline / (1 + signals.hours_to_deadline);
@@ -205,6 +255,15 @@ export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSi
             dominant_deficit: deficitLabels[dominantIndex],
         },
     );
+
+    console.log('[LinUCB] Two-speed inputs:', {
+        I_slow: Number(signals.non_academic_ratio.toFixed(4)),
+        I_fast: Number(signals.app_switches_5min_normalized.toFixed(4)),
+        I_idle: Number(clamp(signals.minutes_since_last_academic / 30, 0, 1).toFixed(4)),
+        E_slow: Number(signals.task_completion_rate.toFixed(4)),
+        E_fast_input: Number(signals.non_academic_ratio_10min.toFixed(4)),
+        has_sliding_window: signals.has_sliding_window,
+    });
 
     return vector;
 }

@@ -87,6 +87,14 @@ interface ElectronAPI {
     intervention: InterventionAPI;
 }
 
+interface SlidingWindow {
+    app_switches_5min: number;
+    non_academic_switches_10min: number;
+    total_events_10min: number;
+    seconds_since_last_academic: number | null;
+    window_has_data: boolean;
+}
+
 interface ContextSignals {
     total_transitions: number;
     non_academic_transitions: number;
@@ -98,6 +106,7 @@ interface ContextSignals {
     assigned_time: number;
     task_deadline_time: string | null;
     has_data: boolean;
+    sliding_window?: SlidingWindow;
 }
 
 interface InterventionAPI {
