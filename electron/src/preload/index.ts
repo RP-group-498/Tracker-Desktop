@@ -111,13 +111,14 @@ interface InterventionAPI {
     generateReframeText: (goal: string) => Promise<{ text: string }>;
     getContext: () => Promise<ContextSignals>;
     notifyActions: (data: { title: string; body: string; strategy: string }) => void;
-    onNotificationResponse: (callback: (data: { strategy: string; action: string }) => void) => void;
+    onNotificationResponse: (callback: (data: { strategy: string; action: string }) => void) => () => void;
     updateTrayTimer: (label: string) => void;
     clearTray: () => void;
+    notify: (data: { title: string; body: string }) => void;
     showWindow: () => void;
     pomodoroStarted: () => void;
     pomodoroStopped: () => void;
-    onPomodoroIdleResponse: (callback: (data: { action: string }) => void) => void;
+    onPomodoroIdleResponse: (callback: (data: { action: string }) => void) => () => void;
 }
 
 // Additional API for intervention popup windows (used by intervention-notification.html)
@@ -271,15 +272,20 @@ const electronAPI: ElectronAPI = {
         getContext: () => ipcRenderer.invoke('intervention:get-context'),
         notifyActions: (data) => ipcRenderer.send('intervention:notify-actions', data),
         onNotificationResponse: (callback) => {
-            ipcRenderer.on('notification-action-response', (_event, data) => callback(data));
+            const listener = (_event: Electron.IpcRendererEvent, data: { strategy: string; action: string }) => callback(data);
+            ipcRenderer.on('notification-action-response', listener);
+            return () => ipcRenderer.removeListener('notification-action-response', listener);
         },
         updateTrayTimer: (label) => ipcRenderer.send('intervention:tray-update', { label }),
         clearTray: () => ipcRenderer.send('intervention:tray-clear'),
+        notify: (data) => ipcRenderer.send('intervention:notify', data),
         showWindow: () => ipcRenderer.send('intervention:window-show'),
         pomodoroStarted: () => ipcRenderer.send('intervention:pomodoro-started'),
         pomodoroStopped: () => ipcRenderer.send('intervention:pomodoro-stopped'),
         onPomodoroIdleResponse: (callback) => {
-            ipcRenderer.on('intervention:pomodoro-idle', (_event, data) => callback(data));
+            const listener = (_event: Electron.IpcRendererEvent, data: { action: string }) => callback(data);
+            ipcRenderer.on('intervention:pomodoro-idle', listener);
+            return () => ipcRenderer.removeListener('intervention:pomodoro-idle', listener);
         },
     },
 };

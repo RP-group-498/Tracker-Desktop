@@ -1,14 +1,14 @@
 /**
  * TMT Context Builder
  * Fetches live signals from Component 1 and Component 4 via the backend
- * and builds a 9-element TMT-grounded context vector for the LinUCB bandit.
+ * and builds a 7-element TMT-grounded context vector for the LinUCB bandit.
  *
  * Architecture:
  *   Layer 1: Raw behavioral signals (no composites)
  *   Layer 2: TMT proxy mapping (one clean proxy per TMT component)
- *   Layer 3: Context vector construction (9 elements, zero redundancy)
+ *   Layer 3: Context vector construction (7 elements, zero redundancy)
  *
- * Context vector layout (d = 9):
+ * Context vector layout (d = 7):
  *   [0] bias           = 1.0 (constant)
  *   [1] expectancy     = TMT E proxy (task_completion_rate)
  *                        Justification: Past task success predicts self-efficacy
@@ -24,12 +24,7 @@
  *                        discounting curve (Mazur, 1987; Steel, 2007)
  *   [5] motivation     = TMT score: clamp((E*V) / (1 + I*D), 0, 1)
  *   [6] deficit_code   = dominant TMT deficit (ordinal: 0.0=E / 0.33=V / 0.67=I / 1.0=D)
- *   [7] session_dur    = session duration normalized (0-1, caps at 4h = 240 min)
- *   [8] time_of_day    = current_hour / 24
  */
-
-// Module-level session timer — tracks how long monitoring has been active
-let sessionStartTime: number | null = null;
 
 /**
  * Raw signals returned by the backend /context endpoint.
@@ -80,10 +75,6 @@ interface RawBehavioralSignals {
      * Note: approximation using daily total; 15 is a normalization constant.
      */
     app_switch_frequency: number;
-    /** Minutes elapsed since monitoring session started */
-    session_duration_minutes: number;
-    /** Current hour of day, 0–23 */
-    current_hour: number;
 }
 
 /** The four TMT component proxies */
@@ -100,15 +91,8 @@ function clamp(v: number, lo: number, hi: number): number {
 
 /**
  * Map backend signals to structured RawBehavioralSignals.
- * Initializes the session timer on first call.
  */
 function toRawSignals(backend: BackendContextSignals): RawBehavioralSignals {
-    // Initialize session timer on first call
-    if (sessionStartTime === null) {
-        sessionStartTime = Date.now();
-        console.log('[ContextBuilder] Session timer started');
-    }
-
     // hours_to_deadline: negative = overdue, default 168 (1 week) if no deadline
     let hours_to_deadline = 168;
     if (backend.task_deadline_time) {
@@ -131,10 +115,10 @@ function toRawSignals(backend: BackendContextSignals): RawBehavioralSignals {
         task_priority: backend.task_priority,
         grade_weight: backend.grade_weight_normalized,
         hours_to_deadline,
-        non_academic_ratio: backend.non_academic_transitions / (backend.total_transitions + 1),
+        non_academic_ratio: backend.total_transitions > 0
+            ? backend.non_academic_transitions / backend.total_transitions
+            : 0.0,
         app_switch_frequency: backend.total_transitions / 15,
-        session_duration_minutes: (Date.now() - sessionStartTime!) / 60_000,
-        current_hour: new Date().getHours(),
     };
 }
 
@@ -173,10 +157,10 @@ export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
 }
 
 /**
- * Build the 9-element TMT context vector.
+ * Build the 7-element TMT context vector.
  *
- * Every element is either a TMT component, a derived TMT quantity,
- * or a justified contextual factor. Zero redundancy.
+ * Every element is either a TMT component or a derived TMT quantity.
+ * Zero redundancy.
  */
 export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSignals): number[] {
     const { E, V, I, D } = proxies;
@@ -197,10 +181,6 @@ export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSi
     // Encode as normalized ordinal: 0.0=Expectancy, 0.33=Value, 0.67=Impulsiveness, 1.0=Delay
     const deficit_code = dominantIndex / 3.0;
 
-    // Contextual features
-    const session_norm = Math.min(signals.session_duration_minutes / 240, 1.0);
-    const time_of_day = signals.current_hour / 24.0;
-
     const vector = [
         1.0,          // [0] bias
         E,            // [1] expectancy
@@ -209,43 +189,28 @@ export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSi
         D,            // [4] delay
         M_clamped,    // [5] motivation
         deficit_code, // [6] dominant deficit code
-        session_norm, // [7] session duration
-        time_of_day,  // [8] time of day
     ];
 
     const deficitLabels = ['expectancy', 'value', 'impulsiveness', 'delay'];
-    const f = (n: number) => n.toFixed(3);
-
     console.log(
-        '%c[ContextBuilder] TMT Proxies',
-        'font-weight:bold;color:#6366f1',
-        `\n  E (expectancy)    = ${f(E)}` +
-        `\n  V (value)         = ${f(V)}` +
-        `\n  I (impulsiveness) = ${f(I)}` +
-        `\n  D (delay)         = ${f(D)}` +
-        `\n  M (motivation)    = ${f(M_clamped)}` +
-        `\n  Dominant deficit  → ${deficitLabels[dominantIndex].toUpperCase()} (${f(maxDeficit)})`,
-    );
-
-    console.log(
-        '%c[ContextBuilder] Context Vector (d=9)',
-        'font-weight:bold;color:#6366f1',
-        `\n  [0] bias          = ${f(vector[0])}` +
-        `\n  [1] expectancy    = ${f(vector[1])}` +
-        `\n  [2] value         = ${f(vector[2])}` +
-        `\n  [3] impulsiveness = ${f(vector[3])}` +
-        `\n  [4] delay         = ${f(vector[4])}` +
-        `\n  [5] motivation    = ${f(vector[5])}` +
-        `\n  [6] deficit_code  = ${f(vector[6])}  (${deficitLabels[dominantIndex]})` +
-        `\n  [7] session_dur   = ${f(vector[7])}` +
-        `\n  [8] time_of_day   = ${f(vector[8])}`,
+        '[LinUCB] Context vector features:',
+        {
+            x0_bias: vector[0],
+            x1_expectancy: Number(vector[1].toFixed(4)),
+            x2_value: Number(vector[2].toFixed(4)),
+            x3_impulsiveness: Number(vector[3].toFixed(4)),
+            x4_delay: Number(vector[4].toFixed(4)),
+            x5_motivation: Number(vector[5].toFixed(4)),
+            x6_deficit_code: Number(vector[6].toFixed(4)),
+            dominant_deficit: deficitLabels[dominantIndex],
+        },
     );
 
     return vector;
 }
 
 /**
- * Fetch live context signals from the backend and return the 9-element TMT vector.
+ * Fetch live context signals from the backend and return the 7-element TMT vector.
  *
  * Pipeline: backend signals → RawBehavioralSignals → TMTProxies → context vector
  */
@@ -264,11 +229,3 @@ export async function getContext(): Promise<number[]> {
     }
 }
 
-/**
- * Reset the session timer. Call when monitoring is stopped so that
- * session_duration_minutes resets correctly on next start.
- */
-export function resetSessionTimer(): void {
-    sessionStartTime = null;
-    console.log('[ContextBuilder] Session timer reset');
-}

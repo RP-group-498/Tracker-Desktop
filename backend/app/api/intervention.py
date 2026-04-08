@@ -6,7 +6,7 @@ Ports all endpoints from component3/backend/main.py, using
 settings.intervention_mongodb_uri instead of a hardcoded connection string.
 
 Bandit architecture:
-  - Context: 9-element TMT-grounded vector [bias, E, V, I, D, M, deficit_code, session_dur, time_of_day]
+  - Context: 7-element TMT-grounded vector [bias, E, V, I, D, M, deficit_code]
   - Selection: Deficit-weighted LinUCB — ucb_score * (1 + relevance)
   - Update: Discounted LinUCB (GAMMA = 0.995) for non-stationary adaptation
   - Logging: Full TMT traceability per bandit event
@@ -15,7 +15,7 @@ Bandit architecture:
 import asyncio
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any, List
 
 import numpy as np
@@ -41,6 +41,7 @@ from app.components.smart_intervention_engine.schemas import (
     MotivationLogEntry,
     UserGoal,
 )
+from app.components.PatternDetection.utils_datetime import get_effective_active_time_date
 from app.config import settings
 
 router = APIRouter()
@@ -150,6 +151,20 @@ def _extract_tmt_components(x: List[float]) -> tuple:
     return E, V, I, D, deficit_E, deficit_V, deficit_I, deficit_D, dominant_deficit
 
 
+def _to_behavior_stage(motivation: float, impulsiveness: float) -> str:
+    """
+    Human-readable behavior stage for logs.
+    Helps interpret motivation + distraction into a quick state label.
+    """
+    if motivation < 0.40:
+        return "high-risk procrastination"
+    if impulsiveness > 0.50 and motivation < 0.60:
+        return "distraction-driven drift"
+    if motivation < 0.70:
+        return "fragile engagement"
+    return "stable focus"
+
+
 # ---------------------------------------------------------------------------
 # User goal endpoints
 # ---------------------------------------------------------------------------
@@ -196,9 +211,9 @@ async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] =
          - (1 + relevance) ensures no action is completely zeroed out
       6. Return action with highest weighted score
     """
-    if len(req.x) != 9:
+    if len(req.x) != 7:
         raise HTTPException(
-            status_code=400, detail="Context vector must have exactly 9 elements."
+            status_code=400, detail="Context vector must have exactly 7 elements."
         )
 
     user_id = current_user["sub"]
@@ -206,19 +221,6 @@ async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] =
 
     # Extract TMT components and compute deficits
     E, V, I, D, deficit_E, deficit_V, deficit_I, deficit_D, dominant_deficit = _extract_tmt_components(req.x)
-
-    logger.info(
-        "[Bandit Select] user=%s context_vector=%s",
-        user_id, req.x,
-    )
-    logger.info(
-        "[Bandit Select] tmt_proxies E=%.3f V=%.3f I=%.3f D=%.3f M=%.3f",
-        E, V, I, D, float(req.x[5]),
-    )
-    logger.info(
-        "[Bandit Select] deficits E=%.3f V=%.3f I=%.3f D=%.3f dominant=%s",
-        deficit_E, deficit_V, deficit_I, deficit_D, dominant_deficit,
-    )
 
     # Compute relevance scores from TMT alignment matrix
     relevance = compute_relevance_scores(deficit_E, deficit_V, deficit_I, deficit_D)
@@ -239,17 +241,33 @@ async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] =
         weighted_score = ucb_score * (1.0 + relevance[action])
         ucb_scores_dict[action] = ucb_score
         weighted_scores_dict[action] = weighted_score
-        logger.debug(
-            "[Bandit Select] action=%s ucb=%.4f relevance=%.4f weighted=%.4f",
-            action, ucb_score, relevance[action], weighted_score,
-        )
         if weighted_score > best_score:
             best_score = weighted_score
             best_action = action
 
+    # Summarize ranking quality (winner vs runner-up) for explainability.
+    ranking = sorted(weighted_scores_dict.items(), key=lambda kv: kv[1], reverse=True)
+    second_action, second_score = (ranking[1] if len(ranking) > 1 else ("N/A", float("nan")))
+    margin = float(best_score - second_score) if second_action != "N/A" else float("nan")
+    motivation = float(req.x[5])
+    behavior_stage = _to_behavior_stage(motivation, I)
     logger.info(
-        "[Bandit Select] selected=%s weighted_score=%.4f relevance_scores=%s",
-        best_action, best_score, relevance,
+        "[Behavior Select] user=%s stage=%s dominant_deficit=%s "
+        "M=%.3f I=%.3f E=%.3f V=%.3f D=%.3f "
+        "selected=%s score=%.4f runner_up=%s score=%.4f margin=%.4f",
+        user_id,
+        behavior_stage,
+        dominant_deficit,
+        motivation,
+        I,
+        E,
+        V,
+        D,
+        best_action,
+        best_score,
+        second_action,
+        second_score,
+        margin,
     )
 
     db = _get_db()
@@ -272,9 +290,9 @@ async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] =
 @router.post("/bandit/update")
 async def bandit_update(req: BanditUpdateRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Update the discounted LinUCB model after observing a user reward."""
-    if len(req.x) != 9:
+    if len(req.x) != 7:
         raise HTTPException(
-            status_code=400, detail="Context vector must have exactly 9 elements."
+            status_code=400, detail="Context vector must have exactly 7 elements."
         )
 
     if req.action not in ACTIONS:
@@ -286,25 +304,52 @@ async def bandit_update(req: BanditUpdateRequest, current_user: Dict[str, Any] =
     E, V, I, D, deficit_E, deficit_V, deficit_I, deficit_D, dominant_deficit = _extract_tmt_components(req.x)
     relevance = compute_relevance_scores(deficit_E, deficit_V, deficit_I, deficit_D)
 
-    logger.info(
-        "[Bandit Update] user=%s action=%s reward=%.2f button=%s",
-        user_id, req.action, req.reward, req.button,
-    )
-    logger.info("[Bandit Update] context_vector=%s", req.x)
-    logger.info(
-        "[Bandit Update] tmt_proxies E=%.3f V=%.3f I=%.3f D=%.3f dominant_deficit=%s",
-        E, V, I, D, dominant_deficit,
-    )
-
     x = np.array(req.x, dtype=float)
     arm = await _load_arm(user_id, req.action)
-    arm.update(x, req.reward)
-    await _save_arm(user_id, req.action, arm)
 
+    # Snapshot parameters so logs can describe learning impact for this response.
+    A_before = arm.A.copy()
+    b_before = arm.b.copy()
+    n_updates_before = arm.n_updates
+    theta_before = np.linalg.inv(A_before) @ b_before
+    expected_reward_before = float(theta_before @ x)
+
+    arm.update(x, req.reward)
+
+    A_after = arm.A
+    b_after = arm.b
+    n_updates_after = arm.n_updates
+    theta_after = np.linalg.inv(A_after) @ b_after
+    expected_reward_after = float(theta_after @ x)
+
+    # Compact learning diagnostics (no large matrix dumps).
+    delta_A_fro = float(np.linalg.norm(A_after - A_before, ord="fro"))
+    delta_b_norm = float(np.linalg.norm(b_after - b_before))
+    expected_reward_delta = expected_reward_after - expected_reward_before
+    motivation = float(req.x[5])
+    behavior_stage = _to_behavior_stage(motivation, I)
     logger.info(
-        "[Bandit Update] arm updated: n_updates=%d gamma=%.4f",
-        arm.n_updates, GAMMA,
+        "[Behavior Update] user=%s action=%s response=%s reward=%.2f "
+        "stage=%s dominant_deficit=%s M=%.3f I=%.3f "
+        "expected_reward_for_state %.4f->%.4f (Δ=%.4f) "
+        "model_shift Δ||A||F=%.6f Δ||b||=%.6f n_updates=%d->%d",
+        user_id,
+        req.action,
+        req.button,
+        req.reward,
+        behavior_stage,
+        dominant_deficit,
+        motivation,
+        I,
+        expected_reward_before,
+        expected_reward_after,
+        expected_reward_delta,
+        delta_A_fro,
+        delta_b_norm,
+        n_updates_before,
+        n_updates_after,
     )
+    await _save_arm(user_id, req.action, arm)
 
     db = _get_db()
     await db.bandit_events.insert_one({
@@ -367,6 +412,7 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
     vector construction.
     """
     user_id = current_user["sub"]
+    logger.info("[Context] Building context for logged-in user_id=%s", user_id)
 
     _default = {
         "total_transitions": 0,
@@ -387,17 +433,89 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
     c1_db = _get_c1_db()
     if c1_db is not None:
         try:
-            today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            now_utc = datetime.now(timezone.utc)
+            today_str, _, _ = get_effective_active_time_date(now_utc)
+            lk_tz = timezone(timedelta(hours=5, minutes=30))
+            now_lk = now_utc.astimezone(lk_tz)
+            logger.info(
+                "[Context] Querying Component 1 active_time for userId=%s effective_date=%s utc_now=%s local_now=%s",
+                user_id,
+                today_str,
+                now_utc.isoformat(),
+                now_lk.isoformat(),
+            )
+            projection = {
+                "_id": 0,
+                "date": 1,
+                "userId": 1,
+                "user_id": 1,
+                "totalAppSwitches": 1,
+                "nonAcademicAppSwitches": 1,
+                # defensive alternatives in case upstream naming differs
+                "total_app_switches": 1,
+                "non_academic_app_switches": 1,
+            }
+
+            # Attempt order:
+            # 1) exact match with canonical fields (userId + today's date)
+            # 2) exact match with alternate user key (user_id + today's date)
+            # 3) latest document for canonical key
+            # 4) latest document for alternate key
             doc = await c1_db.active_time.find_one(
                 {"userId": user_id, "date": today_str},
-                {"_id": 0, "totalAppSwitches": 1, "nonAcademicAppSwitches": 1},
+                projection,
             )
+            source = "userId+date(today)"
+            if not doc:
+                doc = await c1_db.active_time.find_one(
+                    {"user_id": user_id, "date": today_str},
+                    projection,
+                )
+                source = "user_id+date(today)"
+            if not doc:
+                doc = await c1_db.active_time.find_one(
+                    {"userId": user_id},
+                    projection,
+                    sort=[("date", -1)],
+                )
+                source = "latest userId"
+            if not doc:
+                doc = await c1_db.active_time.find_one(
+                    {"user_id": user_id},
+                    projection,
+                    sort=[("date", -1)],
+                )
+                source = "latest user_id"
+
             if doc:
-                result["total_transitions"] = int(doc.get("totalAppSwitches", 0) or 0)
-                result["non_academic_transitions"] = int(doc.get("nonAcademicAppSwitches", 0) or 0)
+                total_switches = doc.get("totalAppSwitches", doc.get("total_app_switches", 0))
+                non_acad_switches = doc.get("nonAcademicAppSwitches", doc.get("non_academic_app_switches", 0))
+                result["total_transitions"] = int(total_switches or 0)
+                result["non_academic_transitions"] = int(non_acad_switches or 0)
                 result["has_data"] = True
+                total = result["total_transitions"]
+                impulsiveness_ratio = result["non_academic_transitions"] / total if total > 0 else 0.0
+                logger.info(
+                    "[Context] Component 1 hit for userId=%s via=%s doc_date=%s doc_userId=%s doc_user_id=%s totalAppSwitches=%s nonAcademicAppSwitches=%s impulsiveness_ratio=%.4f",
+                    user_id,
+                    source,
+                    doc.get("date"),
+                    doc.get("userId"),
+                    doc.get("user_id"),
+                    result["total_transitions"],
+                    result["non_academic_transitions"],
+                    impulsiveness_ratio,
+                )
+            else:
+                logger.warning(
+                    "[Context] No Component 1 active_time document found for userId=%s using attempts: userId/date, user_id/date, latest userId, latest user_id (today=%s)",
+                    user_id,
+                    today_str,
+                )
         except Exception as e:
             logger.error("[Context] Failed to fetch Component 1 (activity) data: %s", e)
+    else:
+        logger.warning("[Context] Component 1 DB is not configured (settings.mongodb_uri is empty)")
 
     # ── Component 4: adaptive_time_estimation / completed_tasks ─────────────
     c4_db = _get_c4_db()
@@ -479,6 +597,13 @@ async def get_context(current_user: Dict[str, Any] = Depends(get_current_user)):
         except Exception as e:
             logger.error("[Context] Failed to fetch Component 4 (tasks) data: %s", e)
 
+    logger.info(
+        "[Context] Final payload for user_id=%s: total_transitions=%s non_academic_transitions=%s has_data=%s",
+        user_id,
+        result["total_transitions"],
+        result["non_academic_transitions"],
+        result["has_data"],
+    )
     return result
 
 
