@@ -106,7 +106,6 @@ const ScoreCard: React.FC<Props> = ({ report, daysSinceStart, dominantSeverity }
         <div className="score-right">
           {((report.confidence ?? 0) > 0 || (report.focusProbability ?? 0) > 0) && (
             <p className="score-breakdown">
-              ML confidence: {Math.round((report.confidence ?? 0) * 100)}% ·
               Focus: {Math.round((report.focusProbability ?? 0) * 100)}%
             </p>
           )}

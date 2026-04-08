@@ -10,26 +10,6 @@ interface Props {
   daysSinceStart: number;
 }
 
-// Mini ring SVG for efficiency
-function EfficiencyRing({ pct, color }: { pct: number; color: string }) {
-  const R    = 22;
-  const circ = 2 * Math.PI * R;
-  const fill = circ * (pct / 100);
-  return (
-    <svg viewBox="0 0 52 52" className="feedback-efficiency-ring">
-      <circle cx="26" cy="26" r={R} className="efficiency-ring-bg" />
-      <circle
-        cx="26" cy="26" r={R}
-        className="efficiency-ring-fill"
-        stroke={color}
-        strokeDasharray={`${fill} ${circ - fill}`}
-        strokeDashoffset="0"
-        style={{ transform: 'rotate(-90deg)', transformOrigin: '26px 26px' }}
-      />
-    </svg>
-  );
-}
-
 const EFFICIENCY_COLOR: Record<string, string> = {
   'efficiency-good':   '#22c55e',
   'efficiency-medium': '#eab308',
@@ -71,18 +51,6 @@ const FeedbackCard: React.FC<Props> = ({
   return (
     <div className="card feedback-card">
       <p className="section-label">Personalised Feedback</p>
-
-      {/* Efficiency ring + text */}
-      <div className="feedback-efficiency-block">
-        <EfficiencyRing pct={academicPct} color={effColor} />
-        <div className="feedback-efficiency-text">
-          <div className="feedback-efficiency-pct" style={{ color: effColor }}>
-            {academicPct}%
-          </div>
-          <div className="feedback-efficiency-label">Study Efficiency</div>
-          <div className="feedback-efficiency-desc">{effDesc}</div>
-        </div>
-      </div>
 
       {/* Goal bar */}
       {at.expectedStudyMinutes > 0 && (

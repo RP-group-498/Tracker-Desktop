@@ -64,35 +64,66 @@ def _detect_patterns_pure(
 
     # Pattern 2 — Inactivity / No Engagement
     academic_in_window = today_active.get("academicMinutes", 0)
-    full_day_academic  = today_active.get("fullDayAcademicMinutes", academic_in_window)
-    # Trigger if focus-window academic < threshold OR full-day academic < expected
-    if (academic_in_window < INACTIVITY_THRESHOLD * expected_minutes
-            or full_day_academic < expected_minutes):
-        study_days = calibration.get("studyDays", ["Mon", "Tue", "Wed", "Thu", "Fri"])
-        is_working_day = today_active.get("day", "")[:3] in study_days
-        if is_working_day:
-            intensity = max(0.0, 1.0 - (full_day_academic / max(expected_minutes, 1)))
-            ratio = full_day_academic / max(expected_minutes, 1)
-            inactivity_patterns.append(
-                {
-                    "type": "prolonged_inactivity",
-                    "severity": _severity_from_ratio(intensity),
-                    "evidence": (
-                        f"Academic time {full_day_academic}m vs expected {int(expected_minutes)}m "
-                        f"({ratio:.0%} of goal). Daily goals not completed."
-                    ),
-                    "exit_strategy": _EXIT_STRATEGIES["prolonged_inactivity"],
-                }
-            )
+    full_day_academic  = today_active.get(
+        "fullDayAcademicMinutes", academic_in_window
+    )
+
+    study_days = calibration.get("studyDays", ["Mon", "Tue", "Wed", "Thu", "Fri"])
+    is_working_day = today_active.get("day", "")[:3] in study_days
+
+    if is_working_day:
+        # FIRST: Check if daily goal is met → NO inactivity at all
+        if full_day_academic >= expected_minutes:
+            pass  # User did enough → do NOT flag inactivity
+
         else:
-            inactivity_patterns.append(
-                {
-                    "type": "no_engagement",
-                    "severity": "low",
-                    "evidence": "No academic activity recorded. Today is not a scheduled study day.",
-                    "exit_strategy": _EXIT_STRATEGIES["no_engagement"],
-                }
-            )
+            # --- Case A: Low focus during study window ---
+            focus_threshold = INACTIVITY_THRESHOLD * expected_minutes
+
+            if academic_in_window < focus_threshold:
+                focus_ratio = academic_in_window / max(focus_threshold, 1)
+                intensity = max(0.0, 1.0 - focus_ratio)
+
+                inactivity_patterns.append(
+                    {
+                        "type": "prolonged_inactivity",
+                        "severity": _severity_from_ratio(intensity),
+                        "evidence": (
+                            f"Low focus during study window: {academic_in_window}m vs expected "
+                            f"{int(focus_threshold)}m."
+                        ),
+                        "exit_strategy": _EXIT_STRATEGIES["prolonged_inactivity"],
+                    }
+                )
+
+            # --- Case B: Missed daily goal (fallback) ---
+            else:
+                ratio = full_day_academic / max(expected_minutes, 1)
+                intensity = max(0.0, 1.0 - ratio)
+
+                inactivity_patterns.append(
+                    {
+                        "type": "prolonged_inactivity",
+                        "severity": _severity_from_ratio(intensity),
+                        "evidence": (
+                            f"Academic time {full_day_academic}m vs expected "
+                            f"{int(expected_minutes)}m ({ratio:.0%} of goal). "
+                            f"Daily study goal not completed."
+                        ),
+                        "exit_strategy": _EXIT_STRATEGIES["prolonged_inactivity"],
+                    }
+                )
+
+    # --- Case C: Not a study day ---
+    else:
+        inactivity_patterns.append(
+            {
+                "type": "no_engagement",
+                "severity": "low",
+                "evidence": "No academic activity recorded. Today is not a scheduled study day.",
+                "exit_strategy": _EXIT_STRATEGIES["no_engagement"],
+            }
+        )
 
     # Pattern 3 — Impulsive Browsing
     if has_activity:
