@@ -1,5 +1,5 @@
 import React from 'react';
-import { Report, ActiveTimeInfo, HistoryDay } from './types';
+import { Report, ActiveTimeInfo, HistoryDay, PatternResult } from './types';
 import { patternLabel, severityClass } from './helpers';
 
 interface Props {
@@ -7,6 +7,7 @@ interface Props {
   activeTime: ActiveTimeInfo;
   daysSinceStart: number;
   chartHistory: HistoryDay[];
+  patterns?: PatternResult[];
 }
 
 const RecommendationsCard: React.FC<Props> = ({
@@ -14,7 +15,9 @@ const RecommendationsCard: React.FC<Props> = ({
   activeTime: at,
   daysSinceStart,
   chartHistory,
+  patterns,
 }) => {
+  const displayPatterns = patterns ?? report.patterns;
   const riskScore = report.prediction?.nextDayProcrastinationRisk;
 
   return (
@@ -29,9 +32,9 @@ const RecommendationsCard: React.FC<Props> = ({
             Patterns and recommendations will appear once activity is recorded.
           </p>
         </div>
-      ) : report.patterns.length > 0 ? (
+      ) : displayPatterns.length > 0 ? (
         <div className="pattern-list">
-          {report.patterns.map((p, i) => (
+          {displayPatterns.map((p, i) => (
             <div key={i} className="pattern-item">
               <div className="pattern-header">
                 <span className={`badge badge-sm ${severityClass(p.severity)}`}>{p.severity}</span>

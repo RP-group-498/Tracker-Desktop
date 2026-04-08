@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import '../styles/ProcrastinationPage.css';
 
-import { CalibrationDay, Report, AnomalyAlert, DeadlineItem, HistoryDay } from '../components/procrastination/types';
+import { CalibrationDay, Report, AnomalyAlert, DeadlineItem, HistoryDay, PatternResult } from '../components/procrastination/types';
 
 import PatternNotification  from '../components/procrastination/PatternNotification';
 import ScoreCard            from '../components/procrastination/ScoreCard';
@@ -119,8 +119,24 @@ const ProcrastinationPage: React.FC = () => {
       )
     : report.level ?? 'none';
 
+  // If deadline_rushing is the dominant pattern but absent from patterns array, inject it
+  const hasDeadlineRushing = report.patterns.some(p => p.type === 'deadline_rushing');
+  const displayPatterns: PatternResult[] =
+    report.dominantPattern === 'deadline_rushing' && !hasDeadlineRushing
+      ? [
+          {
+            type: 'deadline_rushing',
+            severity: report.level ?? 'high',
+            evidence: 'You are falling behind on your study goal with deadlines approaching.',
+            exit_strategy:
+              'Break remaining work into 2–3 focused sessions today. Temporarily block non-academic apps during your study window.',
+          },
+          ...report.patterns,
+        ]
+      : report.patterns;
+
   // Only show notifications when past calibration phase
-  const notificationPatterns = daysSinceStart >= 7 ? report.patterns : [];
+  const notificationPatterns = daysSinceStart >= 7 ? displayPatterns : [];
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -162,6 +178,7 @@ const ProcrastinationPage: React.FC = () => {
           activeTime={at}
           daysSinceStart={daysSinceStart}
           chartHistory={chartHistory}
+          patterns={displayPatterns}
         />
         <TodaySummaryCard report={report} />
       </div>
