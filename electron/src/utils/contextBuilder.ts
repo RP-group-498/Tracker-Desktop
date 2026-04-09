@@ -10,19 +10,14 @@
  *
  * Context vector layout (d = 7):
  *   [0] bias           = 1.0 (constant)
- *   [1] expectancy     = TMT E proxy (task_completion_rate)
- *                        Justification: Past task success predicts self-efficacy
+ *   [1] expectancy     = TMT E proxy (two-speed: 60% task_completion_rate + 40% recent focus)
  *                        (Bandura, 1977; Klassen et al., 2008)
- *   [2] value          = TMT V proxy (max(task_priority, grade_weight))
- *                        Justification: Task is valuable if it matters for ANY reason.
- *                        max() avoids arbitrary weighting (Wigfield & Eccles, 2000)
+ *   [2] value          = TMT V proxy (two-speed: objective importance × subjective engagement)
+ *                        (Wigfield & Eccles, 2000; Blunt & Pychyl, 2000)
  *   [3] impulsiveness  = TMT I proxy (two-speed: max of daily ratio, 5-min switch rate, idle time)
- *                        Justification: Off-task proportion directly measures impulse
- *                        susceptibility (Steel, 2007). Blended with sliding-window signals
- *                        for real-time reactivity.
- *   [4] delay          = TMT D proxy (hours_to_deadline normalized)
- *                        Justification: Hyperbolic normalization matches TMT's delay
- *                        discounting curve (Mazur, 1987; Steel, 2007)
+ *                        (Steel, 2007)
+ *   [4] delay          = TMT D proxy (two-speed: hyperbolic distance × progress deficit)
+ *                        (Mazur, 1987; Steel, 2007; Carver & Scheier, 1998)
  *   [5] motivation     = TMT score: clamp((E*V) / (1 + I*D), 0, 1)
  *   [6] deficit_code   = dominant TMT deficit (ordinal: 0.0=E / 0.33=V / 0.67=I / 1.0=D)
  */
@@ -86,6 +81,8 @@ interface RawBehavioralSignals {
     minutes_since_last_academic: number;
     /** Whether sliding window data is available from backend */
     has_sliding_window: boolean;
+    /** Whether the current task has a valid time estimate (assigned_time > 0) */
+    has_time_estimate: boolean;
 }
 
 /** The four TMT component proxies */
@@ -153,15 +150,16 @@ function toRawSignals(backend: BackendContextSignals): RawBehavioralSignals {
         non_academic_ratio_10min,
         minutes_since_last_academic,
         has_sliding_window: hasWindow,
+        has_time_estimate: backend.assigned_time > 0,
     };
 }
 
 /**
  * Compute the four TMT component proxies from raw behavioral signals.
  *
- * Two-speed TMT: I and E blend daily aggregates (slow) with sliding-window
- * signals (fast) so the motivation score reacts to real-time behavior.
- * V and D remain slow — they are genuinely stable constructs.
+ * Two-speed TMT: All four components blend daily aggregates (slow) with
+ * sliding-window or task-progress signals (fast) so the motivation score
+ * reacts to real-time behavior.
  *
  * When sliding-window data is unavailable, falls back to slow-only
  * (identical to previous behavior).
@@ -179,9 +177,23 @@ export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
         E = E_slow;
     }
 
-    // === Value: unchanged (genuinely slow construct) ===
+    // === Value: two-speed ===
+    // V_slow: objective task importance (Wigfield & Eccles, 2000)
     const V_raw = Math.max(signals.task_priority, signals.grade_weight);
-    const V = V_raw > 0 ? V_raw : 0.3;
+    const V_slow = V_raw > 0 ? V_raw : 0.3;
+    let V: number;
+    if (signals.has_sliding_window) {
+        // V_fast: subjective value erosion from distraction behavior.
+        // If the user keeps switching to non-academic apps, the task isn't
+        // holding their attention — a behavioral signal of low perceived value
+        // (Blunt & Pychyl, 2000; Steel, 2007 — task aversiveness).
+        const V_fast = clamp(1 - signals.non_academic_ratio_10min, 0, 1);
+        // Multiplicative blend: objective value × subjective engagement.
+        // Floor at 50% — distraction can halve perceived value, not zero it.
+        V = V_slow * Math.max(V_fast, 0.5);
+    } else {
+        V = V_slow;
+    }
 
     // === Impulsiveness: two-speed with max() ===
     // I_slow: daily off-task proportion (Steel, 2007)
@@ -198,10 +210,23 @@ export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
         I = I_slow;
     }
 
-    // === Delay: unchanged (genuinely slow construct) ===
-    const D = signals.hours_to_deadline <= 0
+    // === Delay: two-speed ===
+    // D_slow: temporal distance via hyperbolic discounting (Mazur, 1987; Steel, 2007)
+    const D_slow = signals.hours_to_deadline <= 0
         ? 0.0   // overdue = no delay, deadline arrived
         : signals.hours_to_deadline / (1 + signals.hours_to_deadline);
+    let D: number;
+    if (signals.has_time_estimate) {
+        // D_progress: progress deficit modifier (Carver & Scheier, 1998).
+        // When time_spent_ratio approaches 2.0 (double the estimate),
+        // the deadline feels imminent regardless of calendar time.
+        // task_time_ratio is time_spent / assigned_time, capped at 2.0.
+        const D_progress = clamp(1 - signals.task_time_ratio / 2, 0, 1);
+        // Multiplicative: calendar distance × progress factor
+        D = D_slow * D_progress;
+    } else {
+        D = D_slow;
+    }
 
     return { E, V, I, D };
 }
@@ -257,12 +282,17 @@ export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSi
     );
 
     console.log('[LinUCB] Two-speed inputs:', {
+        E_slow: Number(signals.task_completion_rate.toFixed(4)),
+        E_fast_input: Number(signals.non_academic_ratio_10min.toFixed(4)),
+        V_slow: Number(Math.max(signals.task_priority, signals.grade_weight).toFixed(4)),
+        V_fast_input: Number(signals.non_academic_ratio_10min.toFixed(4)),
         I_slow: Number(signals.non_academic_ratio.toFixed(4)),
         I_fast: Number(signals.app_switches_5min_normalized.toFixed(4)),
         I_idle: Number(clamp(signals.minutes_since_last_academic / 30, 0, 1).toFixed(4)),
-        E_slow: Number(signals.task_completion_rate.toFixed(4)),
-        E_fast_input: Number(signals.non_academic_ratio_10min.toFixed(4)),
+        D_slow_input: Number(signals.hours_to_deadline.toFixed(2)),
+        D_progress_input: Number(signals.task_time_ratio.toFixed(4)),
         has_sliding_window: signals.has_sliding_window,
+        has_time_estimate: signals.has_time_estimate,
     });
 
     return vector;

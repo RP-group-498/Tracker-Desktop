@@ -127,15 +127,26 @@ export class PythonBridge extends EventEmitter {
             this.emit('started');
             return true;
         } catch (err: any) {
-            // Otherwise try to clear the port in development.
-            if (process.env.NODE_ENV === 'development') {
-                await this.tryKillListenersOnPort(PYTHON_PORT);
-                // Give the OS a moment to release the socket.
-                await new Promise((r) => setTimeout(r, 250));
-            }
+            // Port is occupied by a non-healthy process — kill it and wait
+            // for the port to be released before spawning a new one.
+            await this.tryKillListenersOnPort(PYTHON_PORT);
+            await this.waitForPortFree(PYTHON_PORT, 5000);
         }
 
         return false;
+    }
+
+    /**
+     * Wait until a port is free, polling every 250ms up to the given timeout.
+     * Throws if the port is still occupied after the deadline.
+     */
+    private async waitForPortFree(port: number, timeoutMs: number): Promise<void> {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+            if (await this.isPortFree(port)) return;
+            await new Promise((r) => setTimeout(r, 250));
+        }
+        console.warn(`[PythonBridge] Port ${port} still occupied after ${timeoutMs}ms — will attempt spawn anyway`);
     }
 
     private isPortFree(port: number): Promise<boolean> {
@@ -152,8 +163,6 @@ export class PythonBridge extends EventEmitter {
     }
 
     private tryKillListenersOnPort(port: number): Promise<void> {
-        // Best-effort, dev-only cleanup. Avoids adding dependencies.
-        // macOS/Linux: lsof -t -iTCP:<port> -sTCP:LISTEN
         if (process.platform === 'darwin' || process.platform === 'linux') {
             return new Promise((resolve) => {
                 execFile('lsof', ['-t', `-iTCP:${port}`, '-sTCP:LISTEN'], (error, stdout) => {
@@ -166,16 +175,28 @@ export class PythonBridge extends EventEmitter {
                         .filter((n) => Number.isFinite(n) && n > 0);
                     if (pids.length === 0) return resolve();
 
-                    console.warn(`[PythonBridge] Port ${port} is in use; attempting to terminate listener PID(s): ${pids.join(', ')}`);
+                    console.warn(`[PythonBridge] Port ${port} is in use; terminating listener PID(s): ${pids.join(', ')}`);
                     for (const pid of pids) {
                         try {
                             process.kill(pid, 'SIGTERM');
                         } catch {
-                            // ignore
+                            // already gone
                         }
                     }
-                    // Give processes time to exit.
-                    setTimeout(resolve, 500);
+
+                    // After 1s, SIGKILL any that are still alive.
+                    setTimeout(() => {
+                        for (const pid of pids) {
+                            try {
+                                process.kill(pid, 0); // test if still alive
+                                console.warn(`[PythonBridge] PID ${pid} did not exit after SIGTERM, sending SIGKILL`);
+                                process.kill(pid, 'SIGKILL');
+                            } catch {
+                                // already gone
+                            }
+                        }
+                        resolve();
+                    }, 1000);
                 });
             });
         }
