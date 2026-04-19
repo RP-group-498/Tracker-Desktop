@@ -19,7 +19,8 @@ class AdaptiveTimeEstimator:
     Predicts task completion time using machine learning.
     """
 
-    def __init__(self, model_path: str = 'data/models/sbert_model'):
+    # def __init__(self, model_path: str = 'data/models/sbert_model'):
+    def __init__(self, model_path: str = 'sentence-transformers/all-MiniLM-L6-v2'):
         """
         Initialize the estimator.
 

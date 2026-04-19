@@ -548,7 +548,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estimated Time</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>System Estimated Time</span>
             <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#6366f1' }}>{formatTime(estimatedTime)}</span>
           </div>
 
@@ -583,9 +583,9 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Method</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8b5cf6', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estimation Mode</span>
             <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#475569', textTransform: 'capitalize' }}>
-              {task.method === 'cold_start' ? 'Fresh Start' : task.method === 'warm_start' ? 'Guided Session' : task.method.replace('_', ' ')}
+              {task.method === 'cold_start' ? 'Cold Start' : task.method === 'warm_start' ? 'Warm Start' : task.method.replace('_', ' ')}
             </span>
           </div>
 
@@ -604,7 +604,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
   const activeTasks = tasks.filter(t => activeTaskIds.includes(t.id))
 
   return (
-    <div className="container">
+    <div className="w-full h-full">
       {!embedded && (
         <nav className="navbar">
           <div className="nav-brand" />
@@ -630,53 +630,90 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
         </div>
       )}
 
-      {/* Global Active Task Widget */}
-      {activeTasks.length > 0 && activeTasks.map(task => {
-        const timer = taskTimersRef.current[task.id]
-        if (!timer) return null;
-        return (
-          <div key={task.id} style={{
-            position: 'fixed', top: '4.5rem', right: '1rem', zIndex: 9998,
-            backgroundColor: '#ffffff', border: '2px solid #6366f1', borderRadius: '12px',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-            padding: '16px 20px', width: '340px', display: 'flex', flexDirection: 'column', gap: '8px',
-            animation: 'modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+      {/* Global Active Task Widget — all running tasks in one scrollable panel */}
+      {activeTasks.length > 0 && (
+        <div style={{
+          position: 'fixed', top: '4.5rem', right: '1rem', zIndex: 9998,
+          backgroundColor: '#ffffff', border: '2px solid #6366f1', borderRadius: '14px',
+          boxShadow: '0 10px 30px -5px rgba(99, 102, 241, 0.18), 0 4px 12px rgba(0,0,0,0.08)',
+          width: '360px', display: 'flex', flexDirection: 'column',
+          animation: 'modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+          overflow: 'hidden'
+        }}>
+          {/* Widget Header */}
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '12px 18px', borderBottom: '1px solid #e0e7ff',
+            backgroundColor: '#f5f3ff'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Task</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 800, color: timer.isPaused ? '#f59e0b' : '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <span style={{ width: '8px', height: '8px', backgroundColor: timer.isPaused ? '#f59e0b' : '#10b981', borderRadius: '50%', display: 'inline-block' }}></span>
-                {timer.isPaused ? 'PAUSED' : 'RUNNING'}
-              </span>
-            </div>
-            
-            <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={task.name}>
-              {task.name}
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#334155', fontFamily: 'monospace' }}>
-                {formatElapsed(getElapsed(task.id))}
-              </span>
-              
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {timer.isPaused ? (
-                  <button onClick={() => resumeTask(task.id)} style={{ backgroundColor: '#f1f5f9', color: '#f59e0b', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.15s ease' }}>
-                    ▶ Resume
-                  </button>
-                ) : (
-                  <button onClick={() => pauseTask(task.id)} style={{ backgroundColor: '#f1f5f9', color: '#f59e0b', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.15s ease' }}>
-                    ⏸ Pause
-                  </button>
-                )}
-                <button onClick={() => markTaskComplete(task.id)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.15s ease', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)' }}>
-                  ✓ Complete
-                </button>
-              </div>
-            </div>
+            <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              ⚡ Active Tasks ({activeTasks.length})
+            </span>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8' }}>
+              {activeTasks.filter(t => !taskTimersRef.current[t.id]?.isPaused).length} running · {activeTasks.filter(t => taskTimersRef.current[t.id]?.isPaused).length} paused
+            </span>
           </div>
-        )
-      })}
+
+          {/* Task Rows */}
+          <div style={{ maxHeight: '420px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+            {activeTasks.map((task, idx) => {
+              const timer = taskTimersRef.current[task.id]
+              if (!timer) return null
+              const isRunning = !timer.isPaused
+              return (
+                <div key={task.id} style={{
+                  padding: '12px 18px',
+                  borderBottom: idx < activeTasks.length - 1 ? '1px solid #f1f5f9' : 'none',
+                  display: 'flex', flexDirection: 'column', gap: '8px',
+                  backgroundColor: isRunning ? '#fafffe' : '#fffbf0'
+                }}>
+                  {/* Task name + status dot */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
+                      backgroundColor: isRunning ? '#10b981' : '#f59e0b',
+                      boxShadow: isRunning ? '0 0 0 3px rgba(16,185,129,0.15)' : '0 0 0 3px rgba(245,158,11,0.15)'
+                    }} />
+                    <span style={{
+                      fontWeight: 700, color: '#1e293b', fontSize: '0.88rem',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1
+                    }} title={task.name}>
+                      {task.name}
+                    </span>
+                    <span style={{
+                      fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em',
+                      color: isRunning ? '#10b981' : '#f59e0b', flexShrink: 0
+                    }}>
+                      {isRunning ? 'Running' : 'Paused'}
+                    </span>
+                  </div>
+
+                  {/* Timer + Buttons */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#334155', fontFamily: 'monospace' }}>
+                      {formatElapsed(getElapsed(task.id))}
+                    </span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {timer.isPaused ? (
+                        <button onClick={() => resumeTask(task.id)} style={{ backgroundColor: '#fef3c7', color: '#d97706', border: '1px solid #fcd34d', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}>
+                          ▶ Resume
+                        </button>
+                      ) : (
+                        <button onClick={() => pauseTask(task.id)} style={{ backgroundColor: '#fef3c7', color: '#d97706', border: '1px solid #fcd34d', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}>
+                          ⏸ Pause
+                        </button>
+                      )}
+                      <button onClick={() => markTaskComplete(task.id)} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem', boxShadow: '0 2px 4px rgba(16,185,129,0.2)' }}>
+                        ✓ Done
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="main-content">
 
@@ -898,6 +935,16 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                               </span>
                               <span className={`priority-badge ${task.priority}`}>{task.priority}</span>
                             </div>
+                            {task.method && task.method !== 'unknown' && (
+                              <div className="todo-meta-item">
+                                <span style={{ color: '#8b5cf6' }}>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                                </span>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#8b5cf6', backgroundColor: '#EDE9FE', padding: '2px 6px', borderRadius: '4px' }}>
+                                  {task.method === 'cold_start' ? 'Cold Start' : task.method === 'warm_start' ? 'Warm Start' : task.method.replace('_', ' ')}
+                                </span>
+                              </div>
+                            )}
                             {isFailed && (
                               <div className="todo-meta-item" style={{ gridColumn: 'span 2' }}>
                                 <span style={{ color: '#ef4444' }}>

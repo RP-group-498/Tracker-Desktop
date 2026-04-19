@@ -122,11 +122,29 @@ class TaskPrioritizationComponent(ComponentBase):
         task_description = extracted_data.get("task_description", "")
         ai_suggested_difficulty = int(extracted_data.get("ai_suggested_difficulty", 3) or 3)
 
+        print("\n" + "=" * 60)
+        print("[STEP 2] Difficulty Prediction")
+        print(f"  task_description raw value : '{task_description}'")
+        print(f"  task_description is empty  : {not task_description.strip()}")
+        print(f"  predictor loaded           : {self._predictor.loaded if self._predictor else False}")
+        print(f"  Task Description : {task_description[:80]}{'...' if len(task_description) > 80 else ''}")
+        print(f"  AI Suggested     : {ai_suggested_difficulty}/5")
+
         if self._predictor:
             ml_difficulty, ml_confidence = self._predictor.predict_difficulty(task_description)
-            difficulty_rating = ml_difficulty if ml_confidence >= 50 else ai_suggested_difficulty
+            print(f"  ML Predicted     : {ml_difficulty}/5  |  Confidence: {ml_confidence:.1f}%")
+            if ml_confidence >= 50:
+                difficulty_rating = ml_difficulty
+                print(f"  Decision         : Using ML difficulty (confidence >= 50%)")
+            else:
+                difficulty_rating = ai_suggested_difficulty
+                print(f"  Decision         : Using AI difficulty (ML confidence too low: {ml_confidence:.1f}%)")
         else:
             difficulty_rating = ai_suggested_difficulty
+            print(f"  Decision         : Using AI difficulty (ML model not loaded)")
+
+        print(f"  Final Difficulty : {difficulty_rating}/5")
+        print("=" * 60)
 
         # Step 3: MCDM calculation
         urgency_score = calculate_urgency_score(days_left)
@@ -134,6 +152,15 @@ class TaskPrioritizationComponent(ComponentBase):
         difficulty_score = calculate_difficulty_score(difficulty_rating)
         final_score = calculate_final_score(urgency_score, impact_score, difficulty_score)
         priority_label = get_priority_label(final_score)
+
+        print("\n[STEP 3] MCDM Calculation")
+        print(f"  Days Left        : {days_left}")
+        print(f"  Urgency Score    : {urgency_score:.2f}")
+        print(f"  Impact Score     : {impact_score:.2f}")
+        print(f"  Difficulty Score : {difficulty_score:.2f}")
+        print(f"  Final Score      : {round(final_score, 2)}")
+        print(f"  Priority Label   : {priority_label}")
+        print("=" * 60 + "\n")
 
         # Step 4: Build result
         import numpy as np
