@@ -124,6 +124,15 @@ export function registerInterventionHandlers(
         notification.show();
     });
 
+    // ── Plain OS notification (no action buttons) ──────────────────────────
+    ipcMain.on('intervention:notify', (_event, data: { title: string; body: string }) => {
+        const notification = new Notification({
+            title: data.title,
+            body: data.body,
+        });
+        notification.show();
+    });
+
     // ── Tray timer ────────────────────────────────────────────────────────
 
     ipcMain.on('intervention:tray-update', (_event, data: { label: string }) => {

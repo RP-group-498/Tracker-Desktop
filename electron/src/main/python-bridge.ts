@@ -4,10 +4,11 @@
  * Manages the Python FastAPI backend process and provides HTTP client for API calls.
  */
 
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, ChildProcess, execFile } from 'child_process';
 import path from 'path';
 import { EventEmitter } from 'events';
 import http from 'http';
+import net from 'net';
 
 const PYTHON_PORT = 8001;
 const HEALTH_CHECK_INTERVAL = 10000; // 10 seconds
@@ -23,6 +24,7 @@ interface ApiResponse<T = unknown> {
 export class PythonBridge extends EventEmitter {
     private process: ChildProcess | null = null;
     private isRunning = false;
+    private ownsProcess = false;
     private healthCheckTimer: NodeJS.Timeout | null = null;
     private restartAttempts = 0;
     private backendDir: string;
@@ -53,6 +55,10 @@ export class PythonBridge extends EventEmitter {
         console.log('[PythonBridge] Starting Python backend...');
 
         try {
+            const reused = await this.ensureBackendAvailable();
+            if (reused) {
+                return;
+            }
             await this.spawnProcess();
             await this.waitForReady();
             this.startHealthCheck();
@@ -74,7 +80,7 @@ export class PythonBridge extends EventEmitter {
 
         this.stopHealthCheck();
 
-        if (this.process) {
+        if (this.process && this.ownsProcess) {
             this.process.kill('SIGTERM');
 
             // Force kill after timeout
@@ -96,7 +102,107 @@ export class PythonBridge extends EventEmitter {
         }
 
         this.isRunning = false;
+        this.ownsProcess = false;
         this.emit('stopped');
+    }
+
+    /**
+     * Ensure backend is either already healthy on the port, or the port is free.
+     *
+     * This prevents restart loops when an orphaned uvicorn process is still
+     * holding the port (common during dev hot reload / crashes).
+     */
+    private async ensureBackendAvailable(): Promise<boolean> {
+        const portFree = await this.isPortFree(PYTHON_PORT);
+        if (portFree) return false;
+
+        // Port is taken: if the service is healthy, just reuse it.
+        try {
+            await this.healthCheck();
+            console.log('[PythonBridge] Backend already running on port', PYTHON_PORT);
+            this.isRunning = true;
+            this.ownsProcess = false;
+            this.startHealthCheck();
+            this.restartAttempts = 0;
+            this.emit('started');
+            return true;
+        } catch (err: any) {
+            // Port is occupied by a non-healthy process — kill it and wait
+            // for the port to be released before spawning a new one.
+            await this.tryKillListenersOnPort(PYTHON_PORT);
+            await this.waitForPortFree(PYTHON_PORT, 5000);
+        }
+
+        return false;
+    }
+
+    /**
+     * Wait until a port is free, polling every 250ms up to the given timeout.
+     * Throws if the port is still occupied after the deadline.
+     */
+    private async waitForPortFree(port: number, timeoutMs: number): Promise<void> {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+            if (await this.isPortFree(port)) return;
+            await new Promise((r) => setTimeout(r, 250));
+        }
+        console.warn(`[PythonBridge] Port ${port} still occupied after ${timeoutMs}ms — will attempt spawn anyway`);
+    }
+
+    private isPortFree(port: number): Promise<boolean> {
+        return new Promise((resolve) => {
+            const server = net.createServer();
+            server.unref();
+            server.once('error', (e: any) => {
+                resolve(e?.code !== 'EADDRINUSE');
+            });
+            server.listen({ host: '127.0.0.1', port }, () => {
+                server.close(() => resolve(true));
+            });
+        });
+    }
+
+    private tryKillListenersOnPort(port: number): Promise<void> {
+        if (process.platform === 'darwin' || process.platform === 'linux') {
+            return new Promise((resolve) => {
+                execFile('lsof', ['-t', `-iTCP:${port}`, '-sTCP:LISTEN'], (error, stdout) => {
+                    if (error || !stdout) return resolve();
+                    const pids = stdout
+                        .split('\n')
+                        .map((s) => s.trim())
+                        .filter(Boolean)
+                        .map((s) => Number(s))
+                        .filter((n) => Number.isFinite(n) && n > 0);
+                    if (pids.length === 0) return resolve();
+
+                    console.warn(`[PythonBridge] Port ${port} is in use; terminating listener PID(s): ${pids.join(', ')}`);
+                    for (const pid of pids) {
+                        try {
+                            process.kill(pid, 'SIGTERM');
+                        } catch {
+                            // already gone
+                        }
+                    }
+
+                    // After 1s, SIGKILL any that are still alive.
+                    setTimeout(() => {
+                        for (const pid of pids) {
+                            try {
+                                process.kill(pid, 0); // test if still alive
+                                console.warn(`[PythonBridge] PID ${pid} did not exit after SIGTERM, sending SIGKILL`);
+                                process.kill(pid, 'SIGKILL');
+                            } catch {
+                                // already gone
+                            }
+                        }
+                        resolve();
+                    }, 1000);
+                });
+            });
+        }
+
+        // Windows: leave as no-op for now.
+        return Promise.resolve();
     }
 
     /**
@@ -132,6 +238,7 @@ export class PythonBridge extends EventEmitter {
                 },
                 stdio: ['ignore', 'pipe', 'pipe'],
             });
+            this.ownsProcess = true;
 
             this.process.stdout?.on('data', (data) => {
                 console.log(`[Python] ${data.toString().trim()}`);

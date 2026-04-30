@@ -32,9 +32,7 @@ from .isolation_forest import IsolationForestDetector
 from .adaptive_trainer import maybe_retrain
 from .procrast_patterns import _detect_patterns_pure
 from .mongodb_tasks import get_near_deadline_tasks
-
-# Sri Lanka timezone (UTC+5:30) — used for pipeline date cutoff
-_LK = timezone(timedelta(hours=5, minutes=30))
+from .utils_datetime import get_effective_active_time_date
 
 # Module-level singletons — lazy model loading happens inside each class
 _hmm  = HMMDetector()
@@ -61,8 +59,8 @@ async def run_procrastination_pipeline(
     Args:
         motor_db:    Async Motor database handle.
         user_id:     Target user identifier.
-        target_date: UTC datetime to analyse. Defaults to yesterday when
-                     called before 23:00 UTC, today at/after 23:00 UTC.
+        target_date: UTC datetime to analyse. If omitted, uses the pipeline's
+                     LK-based 11 PM cutoff date rule.
 
     Returns:
         {
@@ -78,17 +76,17 @@ async def run_procrastination_pipeline(
     # ------------------------------------------------------------------
     # STEP 1 — Resolve analysis date
     # ------------------------------------------------------------------
-    now_utc = target_date or datetime.now(timezone.utc)
     if target_date is None:
-        now_lk = now_utc.astimezone(_LK)
-        if now_lk.hour < 23:          # LK 11 PM cutoff (UTC+5:30)
-            now_utc = now_utc - timedelta(days=1)
-    now = now_utc
-    today         = now.date()
-    today_str     = today.strftime("%Y-%m-%d")
-    day_str       = today.strftime("%A")
-    start_dt      = datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
-    end_dt        = start_dt + timedelta(days=1)
+        today_str, start_dt, end_dt = get_effective_active_time_date()
+        today = start_dt.date()
+    else:
+        target = target_date if target_date.tzinfo else target_date.replace(tzinfo=timezone.utc)
+        today = target.date()
+        today_str = today.strftime("%Y-%m-%d")
+        start_dt = datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
+        end_dt = start_dt + timedelta(days=1)
+
+    day_str = today.strftime("%A")
 
     next_day_dt   = datetime(today.year, today.month, today.day) + timedelta(days=1)
     next_day_str  = next_day_dt.strftime("%Y-%m-%d")
