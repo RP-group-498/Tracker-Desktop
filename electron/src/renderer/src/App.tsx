@@ -30,6 +30,8 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'calibration', label: 'Settings' },
 ];
 
+const APP_LOGO_SRC = '/icon.png';
+
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
     pythonRunning: false,
@@ -208,9 +210,7 @@ const AppContent: React.FC<{
       <aside className="w-20 sm:w-56 lg:w-64 glass-card rounded-none border-r border-slate-200/60 flex flex-col shrink-0 z-10 relative shadow-none">
         <div className="p-6 pb-8">
           <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-purple-600 flex items-center justify-center">
-              <Zap size={14} className="text-white" fill="currentColor" />
-            </div>
+            <img src={APP_LOGO_SRC} alt="App logo" className="w-6 h-6 rounded-md object-cover" />
             Focus
           </h1>
         </div>
