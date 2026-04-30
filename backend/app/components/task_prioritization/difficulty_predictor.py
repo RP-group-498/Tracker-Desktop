@@ -1,8 +1,29 @@
 """ML-based difficulty prediction for assignment tasks using v2 model."""
 
 import pickle
+import sys
+import types
 from pathlib import Path
 from typing import Optional, Tuple
+
+
+def _patch_mpnet_fast_tokenizer():
+    """
+    Compatibility shim for transformers >= 5.x which removed tokenization_mpnet_fast.
+    The v2 .pkl model was serialized with an older transformers that had this module.
+    We inject a fake module that maps the fast tokenizer class to the slow one so
+    pickle deserialization does not fail.
+    """
+    module_path = "transformers.models.mpnet.tokenization_mpnet_fast"
+    if module_path not in sys.modules:
+        try:
+            from transformers.models.mpnet.tokenization_mpnet import MPNetTokenizer
+            fake_module = types.ModuleType(module_path)
+            # The pickled object expects MPNetTokenizerFast; alias it to the slow tokenizer
+            fake_module.MPNetTokenizerFast = MPNetTokenizer
+            sys.modules[module_path] = fake_module
+        except Exception:
+            pass  # If even this fails, let the original error surface
 
 
 class DifficultyPredictor:
@@ -44,6 +65,7 @@ class DifficultyPredictor:
             raise FileNotFoundError(f"Model file not found: {model_path}")
 
         print(f"Loading v2 model from: {model_path}")
+        _patch_mpnet_fast_tokenizer()  # Compatibility shim for transformers 5.x
         with open(model_path, "rb") as f:
             model_dict = pickle.load(f)
 
