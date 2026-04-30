@@ -786,11 +786,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                         >
                           <div className="day-number">{cell.day}</div>
                           {failedCount > 0 && (
-                            <div style={{
-                              fontSize: '0.62rem', color: '#ef4444', fontWeight: 800,
-                              marginTop: '2px', textAlign: 'center', lineHeight: '1.2',
-                              maxWidth: '100%', wordBreak: 'break-word'
-                            }}>
+                            <div className="calendar-missed-label">
                               {failedCount === 1 ? '1 task missed' : `${failedCount} missed`}
                             </div>
                           )}

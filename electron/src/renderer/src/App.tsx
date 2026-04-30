@@ -176,7 +176,7 @@ const App: React.FC = () => {
   );
 };
 
-import { LayoutDashboard, CheckSquare, Zap, Activity, Settings, LogOut, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Zap, Activity, Settings, LogOut, BarChart2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 /** Inner component that can use InterventionContext */
 const AppContent: React.FC<{
@@ -186,6 +186,7 @@ const AppContent: React.FC<{
   user: any;
   logout: () => void;
 }> = ({ state, activeTab, setActiveTab, user, logout }) => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const {
     showBreathing, setShowBreathing,
     showVisualization, setShowVisualization,
@@ -207,12 +208,32 @@ const AppContent: React.FC<{
   return (
     <div className="min-h-screen flex bg-slate-50 text-slate-800 font-sans overflow-hidden lg:h-screen">
       {/* Sidebar Navigation */}
-      <aside className="w-20 sm:w-56 lg:w-64 glass-card rounded-none border-r border-slate-200/60 flex flex-col shrink-0 z-10 relative shadow-none">
+      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-20 sm:w-56 lg:w-64'} glass-card rounded-none border-r border-slate-200/60 flex flex-col shrink-0 z-10 relative shadow-none transition-all duration-200`}>
         <div className="p-6 pb-8">
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <img src={APP_LOGO_SRC} alt="App logo" className="w-6 h-6 rounded-md object-cover" />
-            Focus
-          </h1>
+          <div className="flex items-center justify-between gap-2">
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <img src={APP_LOGO_SRC} alt="App logo" className="w-6 h-6 rounded-md object-cover" />
+              {!sidebarCollapsed && <span>Focus</span>}
+            </h1>
+            {!sidebarCollapsed && (
+              <button
+                onClick={() => setSidebarCollapsed(true)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Collapse sidebar"
+              >
+                <PanelLeftClose size={16} />
+              </button>
+            )}
+            {sidebarCollapsed && (
+              <button
+                onClick={() => setSidebarCollapsed(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Expand sidebar"
+              >
+                <PanelLeftOpen size={16} />
+              </button>
+            )}
+          </div>
         </div>
 
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
@@ -222,7 +243,7 @@ const AppContent: React.FC<{
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 outline-none
+                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 outline-none
                   ${isActive
                     ? 'bg-purple-50 text-purple-700 shadow-sm'
                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
@@ -231,26 +252,30 @@ const AppContent: React.FC<{
                 <div className={`${isActive ? 'text-purple-600' : 'text-slate-400'}`}>
                   {getTabIcon(tab.id)}
                 </div>
-                {tab.label}
+                {!sidebarCollapsed && tab.label}
               </button>
             );
           })}
         </nav>
 
         <div className="p-4 mt-auto border-t border-slate-100">
-          <div className="flex items-center justify-between px-2 mb-4">
-            <div className="flex items-center gap-2">
+          <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between px-2'} mb-4`}>
+            <div className={`flex items-center ${sidebarCollapsed ? '' : 'gap-2'}`}>
               <div className={`w-2 h-2 rounded-full ${state.pythonRunning && state.extensionConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-yellow-500'}`} />
+              {!sidebarCollapsed && (
               <span className="text-xs font-medium text-slate-500">
                 {state.pythonRunning && state.extensionConnected ? 'All systems active' : 'Connecting...'}
               </span>
+              )}
             </div>
           </div>
 
-          <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between">
-            <div className="truncate pr-2 text-xs font-medium text-slate-600">
-              {user?.email || 'User'}
-            </div>
+          <div className={`bg-slate-50 rounded-xl p-3 flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+            {!sidebarCollapsed && (
+              <div className="truncate pr-2 text-xs font-medium text-slate-600">
+                {user?.email || 'User'}
+              </div>
+            )}
             <button
               onClick={logout}
               className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"

@@ -29,7 +29,6 @@
     --border-color: var(--border-glass, #dee2e6);
 }
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: var(--dark-bg);
     color: var(--text-primary);
     min-height: 100vh;
