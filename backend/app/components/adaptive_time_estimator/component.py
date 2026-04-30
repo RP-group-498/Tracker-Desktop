@@ -31,7 +31,8 @@ class AdaptiveTimeEstimatorComponent(ComponentBase):
         self._initialized = False
         self.estimator = None
 
-        model_path = str(Path("./data/models/sbert_model"))
+        # model_path = str(Path("./data/models/sbert_model"))
+        model_path = 'sentence-transformers/all-MiniLM-L6-v2'
         if "model_path" in config:
             model_path = config["model_path"]
 

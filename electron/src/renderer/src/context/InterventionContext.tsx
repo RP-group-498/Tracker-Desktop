@@ -13,6 +13,7 @@ import { CooldownManager } from '../utils/cooldownManager';
 import { useAuth } from './AuthContext';
 
 const ACTION_TO_STRATEGY: Record<string, string> = {
+    NO_INTERVENTION: 'no_intervention',
     FIVE_SECOND_RULE: '5_second_rule',
     POMODORO: 'pomodoro',
     BREATHING: 'breathing',
@@ -21,6 +22,7 @@ const ACTION_TO_STRATEGY: Record<string, string> = {
 };
 
 const ACTION_NOTIFICATIONS: Record<string, { title: string; body: string | null }> = {
+    NO_INTERVENTION: { title: 'No Intervention', body: null },
     FIVE_SECOND_RULE: { title: '5-Second Rule', body: 'Count down 5-4-3-2-1 and move!' },
     POMODORO: { title: 'Pomodoro Session', body: 'Ready to focus for 25 minutes?' },
     BREATHING: { title: 'Time for a Breath', body: 'Take a moment to calm your mind.' },
@@ -87,6 +89,7 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     const computeReward = (button: string): number => {
         if (button === 'start') return 1.0;
+        if (button === 'no_intervention') return 0.5;
         if (button === 'not_now' || button === 'reject') return 0.4;
         return 0.2;
     };
@@ -106,7 +109,6 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
                 button,
                 alpha: 1.0,
             });
-            console.log(`[Bandit] Updated — action=${action} reward=${reward} n_updates=${(data as any)?.n_updates}`);
         } catch (err) {
             console.warn('[Bandit] Update error:', err);
         }
@@ -138,6 +140,10 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
     }, []);
 
     const startBreakTimer = useCallback(() => {
+        window.electronAPI.intervention.notify({
+            title: 'Pomodoro Break',
+            body: 'Great focus session. Take a 5-minute break.',
+        });
         let timeLeft = 5 * 60;
         const update = () => {
             const m = Math.floor(timeLeft / 60);
@@ -151,6 +157,10 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
             if (timeLeft <= 0) {
                 clearInterval(breakIntervalRef.current!);
                 breakIntervalRef.current = null;
+                window.electronAPI.intervention.notify({
+                    title: 'Pomodoro',
+                    body: "Let's get back to work.",
+                });
                 window.electronAPI.intervention.clearTray();
                 setPomodoroActive(false);
                 window.electronAPI.intervention.pomodoroStopped();
@@ -213,9 +223,18 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
                 alpha: 1.0,
             });
             const { action } = result as { action: string; allowed_actions: string[] };
-            console.log(`[MonitoringLoop] Bandit selected: ${action}`);
-            setMonitorStatus(`Triggered → ${action}`);
 
+            if (action === 'NO_INTERVENTION') {
+                // Bandit decided no intervention is needed — silent skip
+                await logMotivation(vector, action);
+                await sendBanditUpdate(action, vector, 0.5, 'no_intervention');
+                cooldownRef.current.applyCooldown(action, 'no_intervention');
+                cooldownRef.current.setActiveIntervention(null);
+                setMonitorStatus('Monitoring — no intervention needed');
+                return;
+            }
+
+            setMonitorStatus(`Triggered → ${action}`);
             await logMotivation(vector, action);
             setLastInterventionTs(Date.now());
 
@@ -226,7 +245,7 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
             cooldownRef.current.setActiveIntervention(null);
             setMonitorStatus(`Error: ${(err as Error)?.message ?? 'unknown'}`);
         }
-    }, [userId, triggerBanditNotification, logMotivation]);
+    }, [userId, triggerBanditNotification, logMotivation, sendBanditUpdate]);
 
     // ── Toggle monitoring loop on/off ─────────────────────────────────
 
@@ -311,13 +330,14 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
             }
         };
 
-        window.electronAPI.intervention.onNotificationResponse(handler);
+        const unsubscribe = window.electronAPI.intervention.onNotificationResponse(handler);
+        return () => unsubscribe();
     }, [sendBanditUpdate, startPomodoroTimer, startFiveSecondCountdown]);
 
     // ── Pomodoro idle prompt handler ──────────────────────────────────
 
     useEffect(() => {
-        window.electronAPI.intervention.onPomodoroIdleResponse((data: { action: string }) => {
+        const unsubscribe = window.electronAPI.intervention.onPomodoroIdleResponse((data: { action: string }) => {
             if (data.action === 'stop') {
                 // Stop pomodoro timer
                 if (pomodoroIntervalRef.current) {
@@ -342,6 +362,7 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
             }
             // 'continue' — main process resets idle check, nothing to do in renderer
         });
+        return () => unsubscribe();
     }, [sendBanditUpdate]);
 
     // ── Cleanup on unmount (provider unmount = logout) ────────────────

@@ -87,6 +87,14 @@ interface ElectronAPI {
     intervention: InterventionAPI;
 }
 
+interface SlidingWindow {
+    app_switches_5min: number;
+    non_academic_switches_10min: number;
+    total_events_10min: number;
+    seconds_since_last_academic: number | null;
+    window_has_data: boolean;
+}
+
 interface ContextSignals {
     total_transitions: number;
     non_academic_transitions: number;
@@ -98,6 +106,7 @@ interface ContextSignals {
     assigned_time: number;
     task_deadline_time: string | null;
     has_data: boolean;
+    sliding_window?: SlidingWindow;
 }
 
 interface InterventionAPI {
@@ -111,13 +120,14 @@ interface InterventionAPI {
     generateReframeText: (goal: string) => Promise<{ text: string }>;
     getContext: () => Promise<ContextSignals>;
     notifyActions: (data: { title: string; body: string; strategy: string }) => void;
-    onNotificationResponse: (callback: (data: { strategy: string; action: string }) => void) => void;
+    onNotificationResponse: (callback: (data: { strategy: string; action: string }) => void) => () => void;
     updateTrayTimer: (label: string) => void;
     clearTray: () => void;
+    notify: (data: { title: string; body: string }) => void;
     showWindow: () => void;
     pomodoroStarted: () => void;
     pomodoroStopped: () => void;
-    onPomodoroIdleResponse: (callback: (data: { action: string }) => void) => void;
+    onPomodoroIdleResponse: (callback: (data: { action: string }) => void) => () => void;
 }
 
 // Additional API for intervention popup windows (used by intervention-notification.html)
@@ -271,15 +281,20 @@ const electronAPI: ElectronAPI = {
         getContext: () => ipcRenderer.invoke('intervention:get-context'),
         notifyActions: (data) => ipcRenderer.send('intervention:notify-actions', data),
         onNotificationResponse: (callback) => {
-            ipcRenderer.on('notification-action-response', (_event, data) => callback(data));
+            const listener = (_event: Electron.IpcRendererEvent, data: { strategy: string; action: string }) => callback(data);
+            ipcRenderer.on('notification-action-response', listener);
+            return () => ipcRenderer.removeListener('notification-action-response', listener);
         },
         updateTrayTimer: (label) => ipcRenderer.send('intervention:tray-update', { label }),
         clearTray: () => ipcRenderer.send('intervention:tray-clear'),
+        notify: (data) => ipcRenderer.send('intervention:notify', data),
         showWindow: () => ipcRenderer.send('intervention:window-show'),
         pomodoroStarted: () => ipcRenderer.send('intervention:pomodoro-started'),
         pomodoroStopped: () => ipcRenderer.send('intervention:pomodoro-stopped'),
         onPomodoroIdleResponse: (callback) => {
-            ipcRenderer.on('intervention:pomodoro-idle', (_event, data) => callback(data));
+            const listener = (_event: Electron.IpcRendererEvent, data: { action: string }) => callback(data);
+            ipcRenderer.on('intervention:pomodoro-idle', listener);
+            return () => ipcRenderer.removeListener('intervention:pomodoro-idle', listener);
         },
     },
 };

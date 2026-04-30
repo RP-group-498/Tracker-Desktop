@@ -21,9 +21,9 @@ Algorithm (per arm a):
 Parameters are stored in MongoDB (bandit_models collection) and loaded/saved
 by intervention.py on every request. This module is pure numpy — no db access.
 
-Context vector (d = 9):
+Context vector (d = 7):
   [0] bias, [1] expectancy, [2] value, [3] impulsiveness, [4] delay,
-  [5] motivation, [6] deficit_code, [7] session_dur, [8] time_of_day
+  [5] motivation, [6] deficit_code
 """
 
 import logging
@@ -33,7 +33,7 @@ from typing import List
 logger = logging.getLogger(__name__)
 
 # Context vector dimension — must stay in sync with contextBuilder.ts
-D = 9
+D = 7
 
 # Discount factor for non-stationary user behavior adaptation.
 # Older observations are exponentially down-weighted before each update.
@@ -45,6 +45,7 @@ GAMMA = 0.995
 MIN_DIAGONAL = 0.01
 
 ACTIONS: List[str] = [
+    "NO_INTERVENTION",
     "FIVE_SECOND_RULE",
     "POMODORO",
     "BREATHING",

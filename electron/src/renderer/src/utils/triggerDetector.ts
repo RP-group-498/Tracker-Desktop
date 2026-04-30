@@ -4,12 +4,11 @@
  * Evaluates whether the current context vector indicates procrastination risk
  * and determines if an intervention should be triggered.
  *
- * Context vector layout (d = 9):
- *   [0] bias           [1] expectancy
- *   [2] value          [3] impulsiveness
+ * Context vector layout (d = 7):
+ *   [0] bias           [1] expectancy (two-speed)
+ *   [2] value          [3] impulsiveness (two-speed)
  *   [4] delay          [5] motivation
- *   [6] deficit_code   [7] session_dur
- *   [8] time_of_day
+ *   [6] deficit_code
  *
  * Old threshold-based triggers removed. New TMT deficit-based trigger replaces
  * the five old rules (non_academic_ratio > 0.35, switching_score > 0.60,

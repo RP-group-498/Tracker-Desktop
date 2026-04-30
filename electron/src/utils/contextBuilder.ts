@@ -1,35 +1,26 @@
 /**
  * TMT Context Builder
  * Fetches live signals from Component 1 and Component 4 via the backend
- * and builds a 9-element TMT-grounded context vector for the LinUCB bandit.
+ * and builds a 7-element TMT-grounded context vector for the LinUCB bandit.
  *
  * Architecture:
  *   Layer 1: Raw behavioral signals (no composites)
  *   Layer 2: TMT proxy mapping (one clean proxy per TMT component)
- *   Layer 3: Context vector construction (9 elements, zero redundancy)
+ *   Layer 3: Context vector construction (7 elements, zero redundancy)
  *
- * Context vector layout (d = 9):
+ * Context vector layout (d = 7):
  *   [0] bias           = 1.0 (constant)
- *   [1] expectancy     = TMT E proxy (task_completion_rate)
- *                        Justification: Past task success predicts self-efficacy
+ *   [1] expectancy     = TMT E proxy (two-speed: 60% task_completion_rate + 40% recent focus)
  *                        (Bandura, 1977; Klassen et al., 2008)
- *   [2] value          = TMT V proxy (max(task_priority, grade_weight))
- *                        Justification: Task is valuable if it matters for ANY reason.
- *                        max() avoids arbitrary weighting (Wigfield & Eccles, 2000)
- *   [3] impulsiveness  = TMT I proxy (non_academic_ratio)
- *                        Justification: Off-task proportion directly measures impulse
- *                        susceptibility (Steel, 2007). Single signal, no composite.
- *   [4] delay          = TMT D proxy (hours_to_deadline normalized)
- *                        Justification: Hyperbolic normalization matches TMT's delay
- *                        discounting curve (Mazur, 1987; Steel, 2007)
+ *   [2] value          = TMT V proxy (two-speed: objective importance × subjective engagement)
+ *                        (Wigfield & Eccles, 2000; Blunt & Pychyl, 2000)
+ *   [3] impulsiveness  = TMT I proxy (two-speed: max of daily ratio, 5-min switch rate, idle time)
+ *                        (Steel, 2007)
+ *   [4] delay          = TMT D proxy (two-speed: hyperbolic distance × progress deficit)
+ *                        (Mazur, 1987; Steel, 2007; Carver & Scheier, 1998)
  *   [5] motivation     = TMT score: clamp((E*V) / (1 + I*D), 0, 1)
  *   [6] deficit_code   = dominant TMT deficit (ordinal: 0.0=E / 0.33=V / 0.67=I / 1.0=D)
- *   [7] session_dur    = session duration normalized (0-1, caps at 4h = 240 min)
- *   [8] time_of_day    = current_hour / 24
  */
-
-// Module-level session timer — tracks how long monitoring has been active
-let sessionStartTime: number | null = null;
 
 /**
  * Raw signals returned by the backend /context endpoint.
@@ -46,6 +37,13 @@ interface BackendContextSignals {
     assigned_time: number;
     task_deadline_time: string | null;
     has_data: boolean;
+    sliding_window?: {
+        app_switches_5min: number;
+        non_academic_switches_10min: number;
+        total_events_10min: number;
+        seconds_since_last_academic: number | null;
+        window_has_data: boolean;
+    };
 }
 
 /**
@@ -69,21 +67,22 @@ interface RawBehavioralSignals {
      * Negative if overdue. Default 168 (1 week) if no deadline.
      */
     hours_to_deadline: number;
-    /**
-     * non_academic_transitions / (total_transitions + 1).
-     * Note: daily total used as proxy for 15-min sliding window
-     * (backend does not yet expose windowed activity data).
-     */
+    /** non_academic_transitions / total_transitions (daily aggregate, slow component) */
     non_academic_ratio: number;
-    /**
-     * total_transitions / 15 — per-minute switch frequency estimate.
-     * Note: approximation using daily total; 15 is a normalization constant.
-     */
+    /** total_transitions / 15 — per-minute switch frequency estimate */
     app_switch_frequency: number;
-    /** Minutes elapsed since monitoring session started */
-    session_duration_minutes: number;
-    /** Current hour of day, 0–23 */
-    current_hour: number;
+
+    // --- Fast components (sliding window, two-speed TMT) ---
+    /** App switches in last 5 min, normalized to [0,1]. 10+ switches = 1.0 */
+    app_switches_5min_normalized: number;
+    /** Non-academic event ratio in last 10 minutes */
+    non_academic_ratio_10min: number;
+    /** Minutes since last academic activity (0 if no data) */
+    minutes_since_last_academic: number;
+    /** Whether sliding window data is available from backend */
+    has_sliding_window: boolean;
+    /** Whether the current task has a valid time estimate (assigned_time > 0) */
+    has_time_estimate: boolean;
 }
 
 /** The four TMT component proxies */
@@ -100,15 +99,8 @@ function clamp(v: number, lo: number, hi: number): number {
 
 /**
  * Map backend signals to structured RawBehavioralSignals.
- * Initializes the session timer on first call.
  */
 function toRawSignals(backend: BackendContextSignals): RawBehavioralSignals {
-    // Initialize session timer on first call
-    if (sessionStartTime === null) {
-        sessionStartTime = Date.now();
-        console.log('[ContextBuilder] Session timer started');
-    }
-
     // hours_to_deadline: negative = overdue, default 168 (1 week) if no deadline
     let hours_to_deadline = 168;
     if (backend.task_deadline_time) {
@@ -125,58 +117,125 @@ function toRawSignals(backend: BackendContextSignals): RawBehavioralSignals {
         ? Math.min(backend.time_spent_on_task / backend.assigned_time, 2.0)
         : 0.5;
 
+    // --- Sliding window (two-speed TMT) ---
+    const sw = backend.sliding_window;
+    const hasWindow = sw?.window_has_data ?? false;
+
+    // I_fast: 10+ app switches in 5 min = fully impulsive (1.0)
+    const app_switches_5min_normalized = hasWindow
+        ? clamp(sw!.app_switches_5min / 10, 0, 1)
+        : 0;
+
+    // E_fast input: non-academic ratio in recent 10-min window
+    const non_academic_ratio_10min = hasWindow && sw!.total_events_10min > 0
+        ? sw!.non_academic_switches_10min / sw!.total_events_10min
+        : 0;
+
+    // I_idle: minutes since last academic activity (capped at 30 by consumer)
+    const minutes_since_last_academic = hasWindow && sw!.seconds_since_last_academic !== null
+        ? sw!.seconds_since_last_academic / 60
+        : 0;
+
     return {
         task_completion_rate,
         task_time_ratio,
         task_priority: backend.task_priority,
         grade_weight: backend.grade_weight_normalized,
         hours_to_deadline,
-        non_academic_ratio: backend.non_academic_transitions / (backend.total_transitions + 1),
+        non_academic_ratio: backend.total_transitions > 0
+            ? backend.non_academic_transitions / backend.total_transitions
+            : 0.0,
         app_switch_frequency: backend.total_transitions / 15,
-        session_duration_minutes: (Date.now() - sessionStartTime!) / 60_000,
-        current_hour: new Date().getHours(),
+        app_switches_5min_normalized,
+        non_academic_ratio_10min,
+        minutes_since_last_academic,
+        has_sliding_window: hasWindow,
+        has_time_estimate: backend.assigned_time > 0,
     };
 }
 
 /**
  * Compute the four TMT component proxies from raw behavioral signals.
  *
- * Rule: one signal per TMT component — no composite blends.
- * If blending seems necessary, add a new vector element instead.
+ * Two-speed TMT: All four components blend daily aggregates (slow) with
+ * sliding-window or task-progress signals (fast) so the motivation score
+ * reacts to real-time behavior.
+ *
+ * When sliding-window data is unavailable, falls back to slow-only
+ * (identical to previous behavior).
  */
 export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
-    // Expectancy proxy: task_completion_rate
-    // Justification: Past task success predicts self-efficacy (Bandura, 1977; Klassen et al., 2008)
-    const E = clamp(signals.task_completion_rate, 0, 1);
+    // === Expectancy: two-speed ===
+    // E_slow: past task success predicts self-efficacy (Bandura, 1977)
+    const E_slow = clamp(signals.task_completion_rate, 0, 1);
+    let E: number;
+    if (signals.has_sliding_window) {
+        // E_fast: recent off-task activity lowers momentary self-efficacy
+        const E_fast = clamp(1 - signals.non_academic_ratio_10min, 0, 1);
+        E = clamp(0.6 * E_slow + 0.4 * E_fast, 0, 1);
+    } else {
+        E = E_slow;
+    }
 
-    // Value proxy: max(task_priority, grade_weight)
-    // Justification: A task is valuable if it matters for ANY reason.
-    // max() avoids arbitrary weighting between two indicators of the same construct
-    // (Wigfield & Eccles, 2000). Default 0.3 when no active task.
+    // === Value: two-speed ===
+    // V_slow: objective task importance (Wigfield & Eccles, 2000)
     const V_raw = Math.max(signals.task_priority, signals.grade_weight);
-    const V = V_raw > 0 ? V_raw : 0.3;
+    const V_slow = V_raw > 0 ? V_raw : 0.3;
+    let V: number;
+    if (signals.has_sliding_window) {
+        // V_fast: subjective value erosion from distraction behavior.
+        // If the user keeps switching to non-academic apps, the task isn't
+        // holding their attention — a behavioral signal of low perceived value
+        // (Blunt & Pychyl, 2000; Steel, 2007 — task aversiveness).
+        const V_fast = clamp(1 - signals.non_academic_ratio_10min, 0, 1);
+        // Multiplicative blend: objective value × subjective engagement.
+        // Floor at 50% — distraction can halve perceived value, not zero it.
+        V = V_slow * Math.max(V_fast, 0.5);
+    } else {
+        V = V_slow;
+    }
 
-    // Impulsiveness proxy: non_academic_ratio
-    // Justification: Proportion of off-task time directly measures impulse susceptibility
-    // (Steel, 2007). Single signal — app_switch_frequency measures the same construct
-    // and blending would reintroduce arbitrary weights.
-    const I = clamp(signals.non_academic_ratio, 0, 1);
+    // === Impulsiveness: two-speed with max() ===
+    // I_slow: daily off-task proportion (Steel, 2007)
+    const I_slow = clamp(signals.non_academic_ratio, 0, 1);
+    let I: number;
+    if (signals.has_sliding_window) {
+        // I_fast: rapid app switching in last 5 minutes
+        const I_fast = signals.app_switches_5min_normalized;
+        // I_idle: time since last academic activity (30+ min idle = 1.0)
+        const I_idle = clamp(signals.minutes_since_last_academic / 30, 0, 1);
+        // Worst-case wins — either sustained daily pattern, recent burst, or inactivity
+        I = Math.max(I_slow, I_fast, I_idle);
+    } else {
+        I = I_slow;
+    }
 
-    // Delay proxy: hyperbolic normalization of hours_to_deadline
-    // Justification: Maps to TMT's delay discounting curve (Mazur, 1987; Steel, 2007)
-    // D approaches 1.0 for far deadlines, 0.0 for imminent/overdue ones.
-    const D = signals.hours_to_deadline <= 0
+    // === Delay: two-speed ===
+    // D_slow: temporal distance via hyperbolic discounting (Mazur, 1987; Steel, 2007)
+    const D_slow = signals.hours_to_deadline <= 0
         ? 0.0   // overdue = no delay, deadline arrived
         : signals.hours_to_deadline / (1 + signals.hours_to_deadline);
+    let D: number;
+    if (signals.has_time_estimate) {
+        // D_progress: progress deficit modifier (Carver & Scheier, 1998).
+        // When time_spent_ratio approaches 2.0 (double the estimate),
+        // the deadline feels imminent regardless of calendar time.
+        // task_time_ratio is time_spent / assigned_time, capped at 2.0.
+        const D_progress = clamp(1 - signals.task_time_ratio / 2, 0, 1);
+        // Multiplicative: calendar distance × progress factor
+        D = D_slow * D_progress;
+    } else {
+        D = D_slow;
+    }
 
     return { E, V, I, D };
 }
 
 /**
- * Build the 9-element TMT context vector.
+ * Build the 7-element TMT context vector.
  *
- * Every element is either a TMT component, a derived TMT quantity,
- * or a justified contextual factor. Zero redundancy.
+ * Every element is either a TMT component or a derived TMT quantity.
+ * Zero redundancy.
  */
 export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSignals): number[] {
     const { E, V, I, D } = proxies;
@@ -197,10 +256,6 @@ export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSi
     // Encode as normalized ordinal: 0.0=Expectancy, 0.33=Value, 0.67=Impulsiveness, 1.0=Delay
     const deficit_code = dominantIndex / 3.0;
 
-    // Contextual features
-    const session_norm = Math.min(signals.session_duration_minutes / 240, 1.0);
-    const time_of_day = signals.current_hour / 24.0;
-
     const vector = [
         1.0,          // [0] bias
         E,            // [1] expectancy
@@ -209,43 +264,42 @@ export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSi
         D,            // [4] delay
         M_clamped,    // [5] motivation
         deficit_code, // [6] dominant deficit code
-        session_norm, // [7] session duration
-        time_of_day,  // [8] time of day
     ];
 
     const deficitLabels = ['expectancy', 'value', 'impulsiveness', 'delay'];
-    const f = (n: number) => n.toFixed(3);
-
     console.log(
-        '%c[ContextBuilder] TMT Proxies',
-        'font-weight:bold;color:#6366f1',
-        `\n  E (expectancy)    = ${f(E)}` +
-        `\n  V (value)         = ${f(V)}` +
-        `\n  I (impulsiveness) = ${f(I)}` +
-        `\n  D (delay)         = ${f(D)}` +
-        `\n  M (motivation)    = ${f(M_clamped)}` +
-        `\n  Dominant deficit  → ${deficitLabels[dominantIndex].toUpperCase()} (${f(maxDeficit)})`,
+        '[LinUCB] Context vector features:',
+        {
+            x0_bias: vector[0],
+            x1_expectancy: Number(vector[1].toFixed(4)),
+            x2_value: Number(vector[2].toFixed(4)),
+            x3_impulsiveness: Number(vector[3].toFixed(4)),
+            x4_delay: Number(vector[4].toFixed(4)),
+            x5_motivation: Number(vector[5].toFixed(4)),
+            x6_deficit_code: Number(vector[6].toFixed(4)),
+            dominant_deficit: deficitLabels[dominantIndex],
+        },
     );
 
-    console.log(
-        '%c[ContextBuilder] Context Vector (d=9)',
-        'font-weight:bold;color:#6366f1',
-        `\n  [0] bias          = ${f(vector[0])}` +
-        `\n  [1] expectancy    = ${f(vector[1])}` +
-        `\n  [2] value         = ${f(vector[2])}` +
-        `\n  [3] impulsiveness = ${f(vector[3])}` +
-        `\n  [4] delay         = ${f(vector[4])}` +
-        `\n  [5] motivation    = ${f(vector[5])}` +
-        `\n  [6] deficit_code  = ${f(vector[6])}  (${deficitLabels[dominantIndex]})` +
-        `\n  [7] session_dur   = ${f(vector[7])}` +
-        `\n  [8] time_of_day   = ${f(vector[8])}`,
-    );
+    console.log('[LinUCB] Two-speed inputs:', {
+        E_slow: Number(signals.task_completion_rate.toFixed(4)),
+        E_fast_input: Number(signals.non_academic_ratio_10min.toFixed(4)),
+        V_slow: Number(Math.max(signals.task_priority, signals.grade_weight).toFixed(4)),
+        V_fast_input: Number(signals.non_academic_ratio_10min.toFixed(4)),
+        I_slow: Number(signals.non_academic_ratio.toFixed(4)),
+        I_fast: Number(signals.app_switches_5min_normalized.toFixed(4)),
+        I_idle: Number(clamp(signals.minutes_since_last_academic / 30, 0, 1).toFixed(4)),
+        D_slow_input: Number(signals.hours_to_deadline.toFixed(2)),
+        D_progress_input: Number(signals.task_time_ratio.toFixed(4)),
+        has_sliding_window: signals.has_sliding_window,
+        has_time_estimate: signals.has_time_estimate,
+    });
 
     return vector;
 }
 
 /**
- * Fetch live context signals from the backend and return the 9-element TMT vector.
+ * Fetch live context signals from the backend and return the 7-element TMT vector.
  *
  * Pipeline: backend signals → RawBehavioralSignals → TMTProxies → context vector
  */
@@ -264,11 +318,3 @@ export async function getContext(): Promise<number[]> {
     }
 }
 
-/**
- * Reset the session timer. Call when monitoring is stopped so that
- * session_duration_minutes resets correctly on next start.
- */
-export function resetSessionTimer(): void {
-    sessionStartTime = null;
-    console.log('[ContextBuilder] Session timer reset');
-}
