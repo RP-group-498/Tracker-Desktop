@@ -359,9 +359,9 @@ const SmartInterventionPage: React.FC = () => {
     };
 
     return (
-        <div className="sie-page p-4 space-y-4">
+        <div className="sie-page p-2 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
             {/* Demo buttons */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
                 <h3 className="text-sm font-semibold text-gray-800 mb-1">Try the Interventions</h3>
                 <p className="text-xs text-gray-500 mb-3">Click any button to trigger an OS notification</p>
                 <div className="sie-demo-buttons">
@@ -384,28 +384,28 @@ const SmartInterventionPage: React.FC = () => {
             </div>
 
             {/* Smart Intervention — LinUCB */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-                <h3 className="text-sm font-semibold text-gray-800 mb-1">Smart Intervention — LinUCB</h3>
-                <p className="text-xs text-gray-500 mb-3">Context is built from live behavioral and task data</p>
+            <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
+                <h3 className="text-base font-semibold text-slate-800 mb-1 tracking-tight">Smart Intervention — LinUCB</h3>
+                <p className="text-sm text-slate-500 mb-4">Context is built from live behavioral and task data</p>
 
                 <button
-                    className="sie-intervention-btn"
+                    className="w-full sm:w-auto px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50"
                     disabled={suggestDisabled}
                     onClick={handleSuggest}
                 >
                     Suggest Best Intervention
                 </button>
                 {suggestStatus && (
-                    <p className="text-xs text-gray-400 text-center mt-1">{suggestStatus}</p>
+                    <p className="text-sm text-slate-400 mt-3">{suggestStatus}</p>
                 )}
             </div>
 
             {/* Auto-Monitor — Trigger & Cooldown */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
+                <div className="flex items-start sm:items-center justify-between gap-3 mb-2">
                     <div>
-                        <h3 className="text-sm font-semibold text-gray-800" style={{ margin: 0 }}>Auto-Monitor</h3>
-                        <p className="text-xs text-gray-500" style={{ margin: 0 }}>
+                        <h3 className="text-sm font-semibold text-gray-800 m-0">Auto-Monitor</h3>
+                        <p className="text-xs text-gray-500 m-0">
                             Checks every 60s and triggers interventions automatically
                         </p>
                     </div>
@@ -423,7 +423,7 @@ const SmartInterventionPage: React.FC = () => {
             </div>
 
             {/* Motivation Over Time */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
                 <h3 className="text-sm font-semibold text-gray-800 mb-1">Motivation Over Time</h3>
                 <p className="text-xs text-gray-500">Computed motivation score per context event</p>
 
@@ -454,7 +454,7 @@ const SmartInterventionPage: React.FC = () => {
             </div>
 
             {/* Personalize */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
                 <h3 className="text-sm font-semibold text-gray-800 mb-1">Personalize</h3>
                 <p className="text-xs text-gray-500">Set your life goal to personalize reframing</p>
                 <div className="sie-goal-row">

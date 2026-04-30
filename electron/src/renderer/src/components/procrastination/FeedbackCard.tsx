@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChartColumn, PartyPopper } from 'lucide-react';
 import { ActiveTimeInfo } from './types';
 import { efficiencyClass, goalBarClass } from './helpers';
 
@@ -31,7 +32,7 @@ const FeedbackCard: React.FC<Props> = ({
       <div className="card feedback-card">
         <p className="section-label">Personalised Feedback</p>
         <div className="no-data-pending">
-          <div className="no-data-pending-icon">📊</div>
+          <div className="no-data-pending-icon"><ChartColumn size={24} /></div>
           <p className="no-data-pending-text">No activity yet today</p>
           <p className="no-data-pending-sub">
             Keep the app running — feedback will appear once your first session is recorded.
@@ -71,7 +72,8 @@ const FeedbackCard: React.FC<Props> = ({
             {at.fullDayAcademicMinutes} / {at.expectedStudyMinutes} mins
             {goalMinsRemaining > 0
               ? ` — ${goalMinsRemaining} mins remaining`
-              : ' — Goal met! 🎉'}
+              : ' — Goal met!'}
+            {goalMinsRemaining <= 0 && <PartyPopper size={14} style={{ marginLeft: 6, verticalAlign: 'text-bottom' }} />}
           </p>
         </div>
       )}

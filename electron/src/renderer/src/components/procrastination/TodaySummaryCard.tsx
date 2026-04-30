@@ -1,4 +1,5 @@
 import React from 'react';
+import { BookOpen, Globe, BriefcaseBusiness, Repeat2 } from 'lucide-react';
 import { Report } from './types';
 
 interface Props {
@@ -6,7 +7,7 @@ interface Props {
 }
 
 interface StatProps {
-  icon: string;
+  icon: React.ReactNode;
   value: number;
   unit?: string;
   label: string;
@@ -37,28 +38,28 @@ const TodaySummaryCard: React.FC<Props> = ({ report }) => {
       </p>
       <div className="today-summary-grid">
         <Stat
-          icon="📚"
+          icon={<BookOpen size={18} />}
           value={at.fullDayAcademicMinutes}
           unit="m"
           label="Academic"
           color="#22c55e"
         />
         <Stat
-          icon="🌐"
+          icon={<Globe size={18} />}
           value={at.fullDayNonAcademicMinutes}
           unit="m"
           label="Non-Academic"
           color="#ef4444"
         />
         <Stat
-          icon="💼"
+          icon={<BriefcaseBusiness size={18} />}
           value={at.fullDayProductivityMinutes}
           unit="m"
           label="Productivity"
           color="#f97316"
         />
         <Stat
-          icon="🔄"
+          icon={<Repeat2 size={18} />}
           value={at.fullDayTotalAppSwitches}
           label="Total Switches"
           color="#6366f1"

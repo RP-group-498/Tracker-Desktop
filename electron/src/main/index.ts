@@ -50,6 +50,18 @@ const appState: AppState = {
     desktopEventCount: 0,
 };
 
+function getAppIconPath(): string {
+    const assetsDir = path.join(__dirname, '../../assets');
+    if (process.platform === 'darwin') {
+        // .icns is for packaged app metadata; runtime APIs are more reliable with png.
+        return path.join(assetsDir, 'icon.png');
+    }
+    if (process.platform === 'win32') {
+        return path.join(assetsDir, 'icon.ico');
+    }
+    return path.join(assetsDir, 'icon.png');
+}
+
 /**
  * Create the main browser window
  */
@@ -68,7 +80,7 @@ function createWindow(): void {
             nodeIntegration: false,
             contextIsolation: true,
         },
-        icon: path.join(__dirname, '../../assets/icon.ico'),
+        icon: getAppIconPath(),
     });
 
     // Load the renderer
@@ -299,6 +311,14 @@ app.on('ready', async () => {
         }
     }
     nativeMessagingServer = new NativeMessagingServer(pythonBridge);
+
+    if (process.platform === 'darwin' && app.dock) {
+        try {
+            app.dock.setIcon(getAppIconPath());
+        } catch (error) {
+            console.error('[Main] Failed to set dock icon:', error);
+        }
+    }
 
     // Set up IPC handlers BEFORE creating window so they're ready when renderer loads
     setupIpcHandlers(ipcMain, () => appState, pythonBridge, nativeMessagingServer);

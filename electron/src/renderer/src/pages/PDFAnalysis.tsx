@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { FileText } from 'lucide-react'
 import { TaskData, Subtask } from '../types/tasks'
 import { useAuth } from '../context/AuthContext'
 import '../styles/pages.css'
@@ -345,7 +346,7 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
                       }
                     }}
                   >
-                    <div className="upload-icon">📄</div>
+                    <div className="upload-icon"><FileText size={56} /></div>
                     <p className="upload-text">Drag and drop your PDF here or click to browse</p>
                     <input
                       ref={fileInputRef}

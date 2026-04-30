@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ArrowLeftRight, MoonStar, Globe, AlarmClock, CircleAlert, Check } from 'lucide-react';
 import { PatternResult } from './types';
 import { patternLabel, severityClass, SEVERITY_BORDER } from './helpers';
 
@@ -8,15 +9,15 @@ interface Props {
   patterns: PatternResult[];
 }
 
-const PATTERN_ICON: Record<string, { emoji: string; bg: string }> = {
-  frequent_task_switching: { emoji: '↔️', bg: '#fff7ed' },
-  prolonged_inactivity:   { emoji: '💤', bg: '#f0fdf4' },
-  impulsive_browsing:     { emoji: '🌐', bg: '#fef9c3' },
-  deadline_rushing:       { emoji: '⏰', bg: '#fef2f2' },
-  no_engagement:          { emoji: '😶', bg: '#f1f5f9' },
+const PATTERN_ICON: Record<string, { icon: React.ReactNode; bg: string }> = {
+  frequent_task_switching: { icon: <ArrowLeftRight size={16} />, bg: '#fff7ed' },
+  prolonged_inactivity:   { icon: <MoonStar size={16} />, bg: '#f0fdf4' },
+  impulsive_browsing:     { icon: <Globe size={16} />, bg: '#fef9c3' },
+  deadline_rushing:       { icon: <AlarmClock size={16} />, bg: '#fef2f2' },
+  no_engagement:          { icon: <CircleAlert size={16} />, bg: '#f1f5f9' },
 };
 
-const DEFAULT_ICON = { emoji: '⚠️', bg: '#fff7ed' };
+const DEFAULT_ICON = { icon: <CircleAlert size={16} />, bg: '#fff7ed' };
 
 const PatternNotification: React.FC<Props> = ({ patterns }) => {
   const [states, setStates] = useState<NotifState[]>(() =>
@@ -48,7 +49,7 @@ const PatternNotification: React.FC<Props> = ({ patterns }) => {
               {/* Icon + title */}
               <div className="pattern-notif-left">
                 <div className="pattern-notif-icon" style={{ background: icon.bg }}>
-                  {icon.emoji}
+                  {icon.icon}
                 </div>
                 <div className="pattern-notif-title-row">
                   <span className="pattern-notif-title">{patternLabel(p.type)}</span>
@@ -68,7 +69,9 @@ const PatternNotification: React.FC<Props> = ({ patterns }) => {
                   </button>
                 ) : (
                   <button className="pattern-notif-dismiss-btn" onClick={() => handleDismiss(i)}>
-                    Got it ✓
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      Got it <Check size={14} />
+                    </span>
                   </button>
                 )}
               </div>

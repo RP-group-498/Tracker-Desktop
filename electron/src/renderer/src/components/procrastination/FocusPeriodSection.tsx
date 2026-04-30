@@ -1,4 +1,5 @@
 import React from 'react';
+import { BookOpen, Globe, Zap, Repeat2 } from 'lucide-react';
 import { ActiveTimeInfo } from './types';
 import { efficiencyClass } from './helpers';
 
@@ -8,7 +9,7 @@ interface Props {
 }
 
 interface StatCardProps {
-  icon: string;
+  icon: React.ReactNode;
   iconBg: string;
   label: string;
   value: number;
@@ -72,7 +73,7 @@ const FocusPeriodSection: React.FC<Props> = ({ activeTime: at, academicPct }) =>
 
       <div className="focus-period-grid">
         <StatCard
-          icon="📚"
+          icon={<BookOpen size={18} />}
           iconBg="#dcfce7"
           label="Academic Time"
           value={at.academicMinutes}
@@ -82,7 +83,7 @@ const FocusPeriodSection: React.FC<Props> = ({ activeTime: at, academicPct }) =>
           valueColor="#15803d"
         />
         <StatCard
-          icon="🌐"
+          icon={<Globe size={18} />}
           iconBg="#fee2e2"
           label="Non-Academic Time"
           value={at.nonAcademicMinutes}
@@ -92,7 +93,7 @@ const FocusPeriodSection: React.FC<Props> = ({ activeTime: at, academicPct }) =>
           valueColor="#b91c1c"
         />
         <StatCard
-          icon="⚡"
+          icon={<Zap size={18} />}
           iconBg="#e0e7ff"
           label="Study Efficiency"
           value={academicPct}
@@ -106,7 +107,7 @@ const FocusPeriodSection: React.FC<Props> = ({ activeTime: at, academicPct }) =>
           valueColor={effColor}
         />
         <StatCard
-          icon="🔄"
+          icon={<Repeat2 size={18} />}
           iconBg="#fff7ed"
           label="App Switches"
           value={at.appSwitches}

@@ -541,3 +541,48 @@
   0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(16, 185, 129, 0.6); }
   50% { opacity: 0.5; box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); }
 }
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .sie-goal-row {
+    flex-direction: column;
+  }
+
+  .sie-chart-container {
+    height: 180px;
+  }
+
+  .sie-time-filter-btn {
+    flex: 1 1 calc(25% - 6px);
+    text-align: center;
+    min-width: 56px;
+  }
+}
+
+/* Unified glass styles */
+.sie-demo-btn,
+.sie-time-filter-btn,
+.sie-goal-input,
+.sie-save-btn,
+.sie-monitor-toggle {
+  border-radius: var(--glass-radius-sm);
+}
+
+.sie-demo-btn,
+.sie-goal-input,
+.sie-time-filter-btn,
+.sie-modal,
+.sie-modal-cancel {
+  background: var(--surface-glass-soft);
+  border: 1px solid var(--border-glass-strong);
+  color: var(--text-primary);
+  backdrop-filter: blur(10px);
+}
+
+.sie-save-btn,
+.sie-modal-confirm,
+.sie-time-filter-btn.active {
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  border: 1px solid rgba(124, 58, 237, 0.35);
+  color: #ffffff;
+}

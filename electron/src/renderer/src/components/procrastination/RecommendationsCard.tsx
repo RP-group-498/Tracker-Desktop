@@ -1,4 +1,5 @@
 import React from 'react';
+import { Lightbulb, CheckCircle2 } from 'lucide-react';
 import { Report, ActiveTimeInfo, HistoryDay, PatternResult } from './types';
 import { patternLabel, severityClass } from './helpers';
 
@@ -26,7 +27,7 @@ const RecommendationsCard: React.FC<Props> = ({
 
       {at.status === 'no_logs' && daysSinceStart === 0 ? (
         <div className="no-data-pending">
-          <div className="no-data-pending-icon">💡</div>
+          <div className="no-data-pending-icon"><Lightbulb size={24} /></div>
           <p className="no-data-pending-text">No data yet</p>
           <p className="no-data-pending-sub">
             Patterns and recommendations will appear once activity is recorded.
@@ -48,7 +49,10 @@ const RecommendationsCard: React.FC<Props> = ({
           ))}
         </div>
       ) : (
-        <p className="recommendations-good">✓ No patterns detected — great work!</p>
+        <p className="recommendations-good">
+          <CheckCircle2 size={16} />
+          No patterns detected — great work!
+        </p>
       )}
 
       {daysSinceStart < 3 && (

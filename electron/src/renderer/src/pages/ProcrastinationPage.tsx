@@ -27,6 +27,7 @@ const ProcrastinationPage: React.FC = () => {
   const [deadlines,       setDeadlines]       = useState<DeadlineItem[]>([]);
   const [chartHistory,    setChartHistory]    = useState<HistoryDay[]>([]);
   const [daysSinceStart,  setDaysSinceStart]  = useState<number>(0);
+  const [showAdvanced,    setShowAdvanced]    = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -184,9 +185,22 @@ const ProcrastinationPage: React.FC = () => {
       </div>
 
       {/* Below-grid sections */}
-      <AnomalySection anomalies={anomalies} daysSinceStart={daysSinceStart} />
-      <TrendChart chartHistory={chartHistory} daysSinceStart={daysSinceStart} />
-      <DeadlineCard deadlines={deadlines} />
+      <div className="mt-8 flex justify-center pb-8">
+        <button 
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="px-5 py-2.5 text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors border border-purple-100"
+        >
+          {showAdvanced ? 'Hide Advanced Data' : 'View Advanced Data'}
+        </button>
+      </div>
+
+      {showAdvanced && (
+        <div className="animate-fade-in-up pb-8 space-y-6">
+          <AnomalySection anomalies={anomalies} daysSinceStart={daysSinceStart} />
+          <TrendChart chartHistory={chartHistory} daysSinceStart={daysSinceStart} />
+          <DeadlineCard deadlines={deadlines} />
+        </div>
+      )}
 
     </div>
   );

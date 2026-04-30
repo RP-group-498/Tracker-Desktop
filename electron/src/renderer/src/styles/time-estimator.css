@@ -758,3 +758,61 @@ button.btn-sm:hover:not(:disabled) {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+@media (max-width: 1024px) {
+    .main-content {
+        padding: 1.25rem;
+    }
+
+    .card-header,
+    .card-body {
+        padding: 1.1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-days {
+        gap: 8px;
+    }
+
+    .todo-meta,
+    .modal-task-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        width: min(94vw, 750px);
+    }
+
+    .modal-body {
+        max-height: 58vh;
+        padding: 1rem;
+    }
+}
+
+/* Glass unification layer */
+.main-content {
+    background: var(--surface-page);
+}
+
+.card,
+.todo-item,
+.modal-content,
+.modal-task-item {
+    background: var(--surface-glass);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--glass-radius-lg);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(14px);
+}
+
+.filter-btn.active,
+.calendar-nav .btn-icon,
+.btn-icon {
+    background: var(--surface-glass-strong);
+    border: 1px solid var(--border-glass-strong);
+}

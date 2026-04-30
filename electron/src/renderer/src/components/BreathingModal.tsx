@@ -75,29 +75,31 @@ const BreathingModal: React.FC<BreathingModalProps> = ({ onClose, onAbort }) => 
     };
 
     return (
-        <div className="sie-breathing-modal">
-            <div className="sie-breathing-container">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-300 p-4">
+            <div className="glass-modal p-6 sm:p-8 max-w-md w-full text-center animate-in zoom-in-95 duration-300 max-h-[92vh] overflow-y-auto">
                 {showAbortPrompt ? (
                     <>
-                        <div className="sie-breathing-text">Are you sure you want to abort?</div>
-                        <div className="sie-breathing-instruction">Your breathing session is paused.</div>
-                        <div style={{ marginTop: 20, display: 'flex', gap: 10, justifyContent: 'center' }}>
-                            <button className="sie-modal-btn" onClick={handleAbort}>Yes, abort</button>
-                            <button className="sie-modal-btn" onClick={handleContinue}>No, continue</button>
+                        <div className="text-xl font-bold text-slate-800 mb-2 tracking-tight">Are you sure you want to abort?</div>
+                        <div className="text-sm text-slate-500 mb-6">Your breathing session is paused.</div>
+                        <div className="mt-8 flex gap-3 justify-center">
+                            <button className="glass-button px-5 py-2.5 text-sm font-medium transition-colors shadow-sm" onClick={handleAbort}>Yes, abort</button>
+                            <button className="px-5 py-2.5 bg-purple-600 text-white hover:bg-purple-700 rounded-xl text-sm font-medium transition-colors shadow-sm" onClick={handleContinue}>No, continue</button>
                         </div>
                     </>
                 ) : (
                     <>
-                        <div className="sie-breathing-circle" />
-                        <div className="sie-breathing-text">{breathText}</div>
-                        <div className="sie-breathing-instruction">{breathInstruction}</div>
-                        <div className="sie-breathing-counter">{cycleLabel}</div>
-                        <div style={{ marginTop: 20, display: 'flex', gap: 10, justifyContent: 'center' }}>
+                        <div className="mx-auto w-24 h-24 rounded-full border-4 border-purple-100 flex items-center justify-center mb-6 animate-pulse">
+                            <div className="w-16 h-16 rounded-full bg-purple-100/50" />
+                        </div>
+                        <div className="text-2xl font-bold text-purple-900 mb-2 tracking-tight">{breathText}</div>
+                        <div className="text-base text-slate-500 mb-6">{breathInstruction}</div>
+                        <div className="text-xs font-semibold text-purple-400 uppercase tracking-widest">{cycleLabel}</div>
+                        <div className="mt-8 flex gap-3 justify-center">
                             {!done && (
-                                <button className="sie-modal-btn" onClick={onClose}>Cancel</button>
+                                <button className="glass-button px-5 py-2.5 text-sm font-medium transition-colors shadow-sm" onClick={onClose}>Cancel</button>
                             )}
                             {done && (
-                                <button className="sie-modal-btn" onClick={onClose}>Complete</button>
+                                <button className="px-5 py-2.5 bg-purple-600 text-white hover:bg-purple-700 rounded-xl text-sm font-medium transition-colors shadow-sm" onClick={onClose}>Complete</button>
                             )}
                         </div>
                     </>

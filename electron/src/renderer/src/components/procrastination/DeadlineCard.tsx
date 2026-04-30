@@ -1,4 +1,5 @@
 import React from 'react';
+import { Zap } from 'lucide-react';
 import { DeadlineItem } from './types';
 import { deadlineBadgeClass } from './helpers';
 
@@ -15,7 +16,10 @@ const DeadlineCard: React.FC<Props> = ({ deadlines }) => {
       <div className="deadline-header-row">
         <p className="section-label">Deadlines This Week</p>
         <span className="deadline-alert-badge">
-          ⚡ {urgentDeadlines.length} Task{urgentDeadlines.length !== 1 ? 's' : ''} Due Soon
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Zap size={14} />
+            {urgentDeadlines.length} Task{urgentDeadlines.length !== 1 ? 's' : ''} Due Soon
+          </span>
         </span>
       </div>
       <p className="section-sub">These tasks are due within 5 days. Stay focused.</p>

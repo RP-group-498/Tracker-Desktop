@@ -72,32 +72,32 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({ onClose, onAbor
     };
 
     return (
-        <div className="sie-viz-modal">
-            <div className="sie-viz-background" ref={particleContainerRef} />
-            <div className="sie-viz-container">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-300 p-4">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none" ref={particleContainerRef} />
+            <div className="glass-modal p-6 sm:p-8 max-w-md w-full text-center animate-in zoom-in-95 duration-300 relative z-10 max-h-[92vh] overflow-y-auto">
                 {showAbortPrompt ? (
                     <>
-                        <div className="sie-viz-portal">
-                            <div className="sie-viz-text">Are you sure?</div>
+                        <div className="mx-auto w-32 h-32 rounded-full bg-gradient-to-tr from-purple-100 to-white border border-purple-50 flex items-center justify-center mb-6 shadow-inner">
+                            <div className="text-xl font-bold text-slate-800 tracking-tight">Are you sure?</div>
                         </div>
-                        <div className="sie-viz-instruction">Your visualization session is paused.</div>
-                        <div className="sie-viz-actions">
-                            <button className="sie-modal-btn" onClick={handleAbort}>Yes, abort</button>
-                            <button className="sie-modal-btn" onClick={handleContinue}>No, continue</button>
+                        <div className="text-sm text-slate-500 mb-6">Your visualization session is paused.</div>
+                        <div className="mt-8 flex gap-3 justify-center">
+                            <button className="glass-button px-5 py-2.5 text-sm font-medium transition-colors shadow-sm" onClick={handleAbort}>Yes, abort</button>
+                            <button className="px-5 py-2.5 bg-purple-600 text-white hover:bg-purple-700 rounded-xl text-sm font-medium transition-colors shadow-sm" onClick={handleContinue}>No, continue</button>
                         </div>
                     </>
                 ) : (
                     <>
-                        <div className="sie-viz-portal">
-                            <div className="sie-viz-text">{vizText}</div>
+                        <div className="mx-auto w-32 h-32 rounded-full bg-gradient-to-tr from-purple-100 to-white border border-purple-50 flex items-center justify-center mb-6 shadow-inner animate-pulse">
+                            <div className="text-2xl font-bold text-purple-900 tracking-tight">{vizText}</div>
                         </div>
-                        <div className="sie-viz-instruction">{vizInstruction}</div>
-                        <div className="sie-viz-counter">
+                        <div className="text-base text-slate-500 mb-6">{vizInstruction}</div>
+                        <div className="text-xs font-semibold text-purple-400 uppercase tracking-widest">
                             {done ? 'Visualization Complete' : `${timeLeft}s remaining`}
                         </div>
-                        <div className="sie-viz-actions">
-                            {!done && <button className="sie-modal-btn" onClick={onClose}>Cancel</button>}
-                            {done && <button className="sie-modal-btn" onClick={onClose}>Complete</button>}
+                        <div className="mt-8 flex gap-3 justify-center">
+                            {!done && <button className="glass-button px-5 py-2.5 text-sm font-medium transition-colors shadow-sm" onClick={onClose}>Cancel</button>}
+                            {done && <button className="px-5 py-2.5 bg-purple-600 text-white hover:bg-purple-700 rounded-xl text-sm font-medium transition-colors shadow-sm" onClick={onClose}>Complete</button>}
                         </div>
                     </>
                 )}

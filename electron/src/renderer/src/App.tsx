@@ -127,8 +127,8 @@ const App: React.FC = () => {
   // If goal check finished and goal is missing, show the Welcome/Personalize step instead of the dashboard
   if (needsGoal) {
     return (
-      <div className="flex h-screen bg-gray-50 items-center justify-center p-6">
-        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 space-y-6 border border-gray-100">
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4 sm:p-6">
+        <div className="glass-card max-w-md w-full p-6 sm:p-8 space-y-6">
           <div className="text-center">
             <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Welcome!</h2>
             <p className="text-sm text-gray-500">
@@ -140,7 +140,7 @@ const App: React.FC = () => {
             <input
               type="text"
               placeholder="e.g. Become a Doctor, Get a 4.0 GPA"
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow bg-gray-50 focus:bg-white"
+              className="glass-input w-full px-4 py-3 focus:outline-none transition-shadow"
               value={goalInput}
               onChange={(e) => setGoalInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSaveGoal(); }}
@@ -174,6 +174,8 @@ const App: React.FC = () => {
   );
 };
 
+import { LayoutDashboard, CheckSquare, Zap, Activity, Settings, LogOut, BarChart2 } from 'lucide-react';
+
 /** Inner component that can use InterventionContext */
 const AppContent: React.FC<{
   state: AppState;
@@ -188,63 +190,108 @@ const AppContent: React.FC<{
     abortBreathing, abortVisualization,
   } = useInterventionContext();
 
+  const getTabIcon = (id: Tab) => {
+    switch (id) {
+      case 'procrastination': return <LayoutDashboard size={18} />;
+      case 'tasks': return <CheckSquare size={18} />;
+      case 'intervention': return <Zap size={18} />;
+      case 'dashboard': return <Activity size={18} />;
+      case 'calibration-details': return <BarChart2 size={18} />;
+      case 'calibration': return <Settings size={18} />;
+      default: return <LayoutDashboard size={18} />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* Header */}
-      <header className="px-4 pt-4 pb-2 flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold text-gray-800">Focus App</h1>
-          <p className="text-sm text-gray-500">Procrastination Detection System</p>
+    <div className="min-h-screen flex bg-slate-50 text-slate-800 font-sans overflow-hidden lg:h-screen">
+      {/* Sidebar Navigation */}
+      <aside className="w-20 sm:w-56 lg:w-64 glass-card rounded-none border-r border-slate-200/60 flex flex-col shrink-0 z-10 relative shadow-none">
+        <div className="p-6 pb-8">
+          <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-purple-600 flex items-center justify-center">
+              <Zap size={14} className="text-white" fill="currentColor" />
+            </div>
+            Focus
+          </h1>
         </div>
-        <div className="flex items-center gap-4">
-          {user && <span className="text-sm text-gray-600">Logged in as {user.email || 'User'}</span>}
-          <button
-            onClick={logout}
-            className="px-3 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded transition-colors"
-          >
-            Sign Out
-          </button>
-        </div>
-      </header>
 
-      {/* Tab Bar */}
-      <nav className="flex border-b border-gray-200 px-4 bg-white">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors ${activeTab === tab.id
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+          {TABS.map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 outline-none
+                  ${isActive
+                    ? 'bg-purple-50 text-purple-700 shadow-sm'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                  }`}
+              >
+                <div className={`${isActive ? 'text-purple-600' : 'text-slate-400'}`}>
+                  {getTabIcon(tab.id)}
+                </div>
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
 
-      {/* Tab Content */}
-      <main className="flex-1 overflow-y-auto">
-        {activeTab === 'procrastination' && <ProcrastinationPage />}
-        {activeTab === 'dashboard' && (
-          <div className="p-4 space-y-4">
-            <ConnectionIndicator
-              pythonRunning={state.pythonRunning}
-              extensionConnected={state.extensionConnected}
-            />
-            <StatusPanel
-              sessionId={state.currentSessionId}
-              eventCount={state.eventCount}
-              pythonRunning={state.pythonRunning}
-              extensionConnected={state.extensionConnected}
-            />
+        <div className="p-4 mt-auto border-t border-slate-100">
+          <div className="flex items-center justify-between px-2 mb-4">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${state.pythonRunning && state.extensionConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-yellow-500'}`} />
+              <span className="text-xs font-medium text-slate-500">
+                {state.pythonRunning && state.extensionConnected ? 'All systems active' : 'Connecting...'}
+              </span>
+            </div>
           </div>
-        )}
 
-        {activeTab === 'tasks' && <TaskPrioritizationTab />}
-        {activeTab === 'intervention' && <SmartInterventionPage />}
-        {activeTab === 'calibration-details' && <CalibrationDetailsPage />}
-        {activeTab === 'calibration' && <CalibrationPage />}
+          <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between">
+            <div className="truncate pr-2 text-xs font-medium text-slate-600">
+              {user?.email || 'User'}
+            </div>
+            <button
+              onClick={logout}
+              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto relative bg-slate-50/50">
+        <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 min-h-full">
+          {/* Header area replaced by context inside tabs, keeping clean */}
+          <div className="animate-fade-in-up">
+            {activeTab === 'procrastination' && <ProcrastinationPage />}
+            {activeTab === 'dashboard' && (
+              <div className="space-y-6 max-w-3xl">
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">System Status</h2>
+                  <p className="text-sm text-slate-500 mt-1">Monitor background processes and extension connection.</p>
+                </div>
+                <ConnectionIndicator
+                  pythonRunning={state.pythonRunning}
+                  extensionConnected={state.extensionConnected}
+                />
+                <StatusPanel
+                  sessionId={state.currentSessionId}
+                  eventCount={state.eventCount}
+                  pythonRunning={state.pythonRunning}
+                  extensionConnected={state.extensionConnected}
+                />
+              </div>
+            )}
+            {activeTab === 'tasks' && <TaskPrioritizationTab />}
+            {activeTab === 'intervention' && <SmartInterventionPage />}
+            {activeTab === 'calibration-details' && <CalibrationDetailsPage />}
+            {activeTab === 'calibration' && <CalibrationPage />}
+          </div>
+        </div>
       </main>
 
       {/* Modals — rendered at app level so they survive tab switches */}

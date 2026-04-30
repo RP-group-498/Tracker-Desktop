@@ -514,3 +514,70 @@
     color: var(--text-main);
     font-weight: 800;
 }
+
+@media (max-width: 1024px) {
+    .main-content {
+        padding: 1.25rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .tabs {
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
+    }
+
+    .tab-link {
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
+        white-space: nowrap;
+    }
+
+    .upload-area {
+        padding: 1.5rem 1rem;
+    }
+
+    .file-info,
+    .subtask-header,
+    .subtasks-actions,
+    .slider-container,
+    .time-comparison {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .score-item {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .score-value {
+        text-align: left;
+    }
+}
+
+/* Glass unification layer */
+.main-content {
+    background: var(--surface-page);
+}
+
+.card,
+.subtasks-list li,
+.info-item,
+.scores-container,
+.time-adjustment {
+    background: var(--surface-glass);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--glass-radius-lg);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(12px);
+}
+
+.text-input-area textarea,
+.form-control,
+.upload-area,
+.file-info {
+    background: var(--surface-glass-soft);
+    border-color: var(--border-glass-strong);
+}
