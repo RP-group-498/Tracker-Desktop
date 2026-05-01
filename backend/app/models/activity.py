@@ -1,104 +1,66 @@
-"""SQLAlchemy models for activity tracking."""
+"""Pydantic models for activity tracking."""
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean, JSON, Text
-from sqlalchemy.orm import relationship
-
-from app.core.database import Base
+from typing import Optional, Dict, Any
+from pydantic import BaseModel, Field
 
 
-class BrowserSession(Base):
-    """Browser tracking session."""
-
-    __tablename__ = "browser_sessions"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(String(36), unique=True, index=True, nullable=False)
-    user_id = Column(String(36), nullable=True)
-    start_time = Column(DateTime, nullable=False, default=datetime.utcnow)
-    end_time = Column(DateTime, nullable=True)
-    status = Column(String(20), default="active")  # active, paused, ended
-
-    # Relationships
-    activities = relationship("ActivityEvent", back_populates="session", cascade="all, delete-orphan")
-
-    def __repr__(self) -> str:
-        return f"<BrowserSession {self.session_id} ({self.status})>"
-
-
-class Classification(Base):
+class Classification(BaseModel):
     """Classification result for an activity."""
-
-    __tablename__ = "classifications"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    category = Column(String(50), nullable=False)  # academic, productivity, neutral, non_academic
-    confidence = Column(Float, nullable=False)
-    source = Column(String(50), nullable=False)  # stub, database, rules, model, user
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-
-    # Relationships
-    activities = relationship("ActivityEvent", back_populates="classification")
-
-    def __repr__(self) -> str:
-        return f"<Classification {self.category} ({self.confidence:.2f})>"
+    category: str = Field(..., description="academic, productivity, neutral, non_academic")
+    confidence: float
+    source: str = Field(..., description="stub, database, rules, model, user")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class ActivityEvent(Base):
+class ActivityEvent(BaseModel):
     """Activity event from browser extension or desktop tracker."""
-
-    __tablename__ = "activity_events"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    event_id = Column(String(36), unique=True, index=True, nullable=False)
-    user_id = Column(String(36), nullable=True, index=True)  # User identifier
-
-    # Session reference
-    session_id = Column(String(36), ForeignKey("browser_sessions.session_id"), nullable=True, index=True)
-
-    # Source identification
-    source = Column(String(20), default="browser", index=True)  # browser, desktop
-    activity_type = Column(String(20), default="webpage")  # webpage, application
-
+    event_id: str
+    user_id: Optional[str] = None
+    session_id: Optional[str] = None
+    source: str = "browser"  # browser, desktop
+    activity_type: str = "webpage"  # webpage, application
+    
     # Timestamps
-    timestamp = Column(DateTime, nullable=False, index=True)
-    start_time = Column(DateTime, nullable=False)
-    end_time = Column(DateTime, nullable=True)
+    timestamp: datetime
+    start_time: datetime
+    end_time: Optional[datetime] = None
 
     # URL/Domain info (for browser events)
-    url = Column(Text, nullable=False)
-    domain = Column(String(255), nullable=False, index=True)
-    path = Column(String(1024), nullable=True)
-    title = Column(String(512), nullable=True)
+    url: str
+    domain: str
+    path: Optional[str] = None
+    title: Optional[str] = None
 
     # Desktop-specific fields
-    app_name = Column(String(255), nullable=True, index=True)  # Application name (desktop only)
-    app_path = Column(Text, nullable=True)  # Application executable path (desktop only)
-    window_title = Column(String(512), nullable=True)  # Window title (desktop only)
+    app_name: Optional[str] = None
+    app_path: Optional[str] = None
+    window_title: Optional[str] = None
 
     # Time tracking
-    active_time = Column(Integer, default=0)  # milliseconds
-    idle_time = Column(Integer, default=0)  # milliseconds
+    active_time: int = 0  # milliseconds
+    idle_time: int = 0  # milliseconds
 
     # Tab info (for browser events)
-    tab_id = Column(Integer, nullable=True)
-    window_id = Column(Integer, nullable=True)
-    is_incognito = Column(Boolean, default=False)
+    tab_id: Optional[int] = None
+    window_id: Optional[int] = None
+    is_incognito: bool = False
 
-    # Enrichment data (stored as JSON) - browser only
-    url_components = Column(JSON, nullable=True)
-    title_hints = Column(JSON, nullable=True)
-    engagement = Column(JSON, nullable=True)
-    context_data = Column(JSON, nullable=True)  # youtube, google, social context
+    # Enrichment data
+    url_components: Optional[Dict[str, Any]] = None
+    title_hints: Optional[Dict[str, Any]] = None
+    engagement: Optional[Dict[str, Any]] = None
+    context_data: Optional[Dict[str, Any]] = None
 
-    # Classification reference
-    classification_id = Column(Integer, ForeignKey("classifications.id"), nullable=True)
+    # Embedded Classification
+    classification: Optional[Classification] = None
 
-    # Relationships
-    session = relationship("BrowserSession", back_populates="activities")
-    classification = relationship("Classification", back_populates="activities")
 
-    def __repr__(self) -> str:
-        if self.source == "desktop":
-            return f"<ActivityEvent {self.event_id} (desktop: {self.app_name})>"
-        return f"<ActivityEvent {self.event_id} (browser: {self.domain})>"
+class BrowserSession(BaseModel):
+    """Browser tracking session."""
+    session_id: str
+    user_id: Optional[str] = None
+    start_time: datetime = Field(default_factory=datetime.utcnow)
+    end_time: Optional[datetime] = None
+    status: str = "active"  # active, paused, ended
+

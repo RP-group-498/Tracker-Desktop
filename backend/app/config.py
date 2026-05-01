@@ -16,8 +16,7 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     debug: bool = False
 
-    # Database
-    database_url: str = "sqlite+aiosqlite:///./data/focusapp_v2.db"
+    # Database (MongoDB configuration only)
 
     # MongoDB (for research team sync)
     mongodb_uri: str = ""  # e.g. "mongodb+srv://user:pass@cluster.mongodb.net/"

@@ -27,16 +27,19 @@ const StatusPanel: React.FC<Props> = ({
 }) => {
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [currentActivity, setCurrentActivity] = useState<Activity | null>(null);
+  const [todayActivities, setTodayActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [current, stream] = await Promise.all([
+        const [current, stream, today] = await Promise.all([
           window.electronAPI.getCurrentActivitySession(),
-          window.electronAPI.getEventStream(30)
+          window.electronAPI.getEventStream(30),
+          window.electronAPI.getTodayActivity()
         ]);
         setCurrentActivity(current || null);
         setRecentActivities(stream || []);
+        setTodayActivities(today || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
@@ -47,6 +50,22 @@ const StatusPanel: React.FC<Props> = ({
 
     return () => clearInterval(interval);
   }, []);
+
+  const formatTimeOffset = (isoString: string): string => {
+    // Add 5.30 hours for SLST display
+    const date = new Date(isoString);
+    date.setHours(date.getHours() + 5);
+    date.setMinutes(date.getMinutes() + 30);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDuration = (ms: number | undefined): string => {
+    if (!ms) return '0s';
+    const seconds = Math.floor(ms / 1000);
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}m ${seconds % 60}s`;
+  };
 
   const formatTime = (isoString: string): string => {
     const date = new Date(isoString);
@@ -177,6 +196,63 @@ const StatusPanel: React.FC<Props> = ({
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Today's Full Activity List */}
+      <div className="glass-card p-6 rounded-xl border border-slate-200/60 bg-white/80 shadow-sm overflow-hidden flex flex-col mt-8 h-[500px]">
+        <div className="pb-4 border-b border-slate-100 bg-transparent flex justify-between items-center shrink-0">
+          <div className="text-sm font-bold text-slate-800 uppercase tracking-wider">Today's Activity Log</div>
+          <div className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">{todayActivities.length} total events</div>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto mt-2">
+          {todayActivities.length > 0 ? (
+            <div className="w-full text-left">
+              <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-slate-500 uppercase tracking-wider py-3 border-b border-slate-100 sticky top-0 bg-white/95 backdrop-blur z-10 px-2">
+                <div className="col-span-2">Time</div>
+                <div className="col-span-4">Activity</div>
+                <div className="col-span-2">Duration</div>
+                <div className="col-span-2">Category</div>
+                <div className="col-span-2 text-right">Method</div>
+              </div>
+              <div className="divide-y divide-slate-50">
+                {todayActivities.map((activity, idx) => (
+                  <div key={activity.event_id || idx} className="grid grid-cols-12 gap-4 items-center py-3 px-2 hover:bg-slate-50/80 transition-colors">
+                    <div className="col-span-2 text-xs font-mono text-slate-500">
+                      {formatTimeOffset(activity.timestamp)}
+                    </div>
+                    <div className="col-span-4 min-w-0 pr-4">
+                      <div className="text-sm font-medium text-slate-800 truncate" title={activity.title || activity.domain}>
+                        {activity.title || activity.domain}
+                      </div>
+                      <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                        {activity.domain === 'desktop' ? 'Desktop App' : activity.domain}
+                      </div>
+                    </div>
+                    <div className="col-span-2 text-xs font-mono text-slate-600">
+                      {formatDuration(activity.active_time)}
+                    </div>
+                    <div className="col-span-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${getCategoryColor(activity.classification?.category)}`}>
+                        {formatCategory(activity.classification?.category)}
+                      </span>
+                    </div>
+                    <div className="col-span-2 text-right">
+                      <span className="px-2 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded text-[10px] font-semibold uppercase tracking-wider">
+                        {activity.classification?.source || 'UNKNOWN'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-slate-400">
+              <ActivityIcon className="w-8 h-8 mb-2 opacity-50" />
+              <p>No activity recorded today</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

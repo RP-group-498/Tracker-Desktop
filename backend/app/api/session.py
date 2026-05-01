@@ -2,17 +2,15 @@
 
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.database import get_db
-from app.models.activity import BrowserSession, ActivityEvent
+from app.models.activity import BrowserSession
 from app.schemas.session import SessionCreate, SessionResponse, SessionUpdate
 from app.api.deps import get_current_user
-from typing import Dict, Any
 
 router = APIRouter()
 
@@ -20,27 +18,21 @@ router = APIRouter()
 @router.post("", response_model=SessionResponse)
 async def create_session(
     session_data: SessionCreate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: Dict[str, Any] = Depends(get_current_user)
 ):
-    """
-    Create a new browser tracking session.
-
-    Called when the desktop app starts or when manually starting a new session.
-    Returns session_id to be sent to the browser extension.
-    """
+    """Create a new browser tracking session."""
     session_id = str(uuid.uuid4())
+    now = datetime.utcnow()
 
     new_session = BrowserSession(
         session_id=session_id,
         user_id=current_user["sub"],
-        start_time=datetime.utcnow(),
+        start_time=now,
         status="active",
     )
 
-    db.add(new_session)
-    await db.commit()
-    await db.refresh(new_session)
+    await db.browser_sessions.insert_one(new_session.model_dump())
 
     return SessionResponse(
         session_id=new_session.session_id,
@@ -54,37 +46,29 @@ async def create_session(
 
 @router.get("/current", response_model=Optional[SessionResponse])
 async def get_current_session(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Get the current active session, if any."""
-    result = await db.execute(
-        select(BrowserSession)
-        .where(
-            BrowserSession.status == "active",
-            BrowserSession.user_id == current_user["sub"]
-        )
-        .order_by(BrowserSession.start_time.desc())
-        .limit(1)
+    session = await db.browser_sessions.find_one(
+        {"status": "active", "user_id": current_user["sub"]},
+        sort=[("start_time", -1)]
     )
-    session = result.scalar_one_or_none()
 
     if not session:
         return None
 
     # Count activities
-    count_result = await db.execute(
-        select(func.count(ActivityEvent.id))
-        .where(ActivityEvent.session_id == session.session_id)
+    activity_count = await db.activity_events.count_documents(
+        {"session_id": session["session_id"]}
     )
-    activity_count = count_result.scalar() or 0
 
     return SessionResponse(
-        session_id=session.session_id,
-        user_id=session.user_id,
-        start_time=session.start_time,
-        end_time=session.end_time,
-        status=session.status,
+        session_id=session["session_id"],
+        user_id=session.get("user_id"),
+        start_time=session["start_time"],
+        end_time=session.get("end_time"),
+        status=session["status"],
         activity_count=activity_count,
     )
 
@@ -92,34 +76,29 @@ async def get_current_session(
 @router.get("/{session_id}", response_model=SessionResponse)
 async def get_session(
     session_id: str,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Get a specific session by ID."""
-    result = await db.execute(
-        select(BrowserSession).where(
-            BrowserSession.session_id == session_id,
-            BrowserSession.user_id == current_user["sub"]
-        )
-    )
-    session = result.scalar_one_or_none()
+    session = await db.browser_sessions.find_one({
+        "session_id": session_id,
+        "user_id": current_user["sub"]
+    })
 
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
     # Count activities
-    count_result = await db.execute(
-        select(func.count(ActivityEvent.id))
-        .where(ActivityEvent.session_id == session.session_id)
+    activity_count = await db.activity_events.count_documents(
+        {"session_id": session_id}
     )
-    activity_count = count_result.scalar() or 0
 
     return SessionResponse(
-        session_id=session.session_id,
-        user_id=session.user_id,
-        start_time=session.start_time,
-        end_time=session.end_time,
-        status=session.status,
+        session_id=session["session_id"],
+        user_id=session.get("user_id"),
+        start_time=session["start_time"],
+        end_time=session.get("end_time"),
+        status=session["status"],
         activity_count=activity_count,
     )
 
@@ -128,45 +107,46 @@ async def get_session(
 async def update_session(
     session_id: str,
     update_data: SessionUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Update a session (e.g., pause, resume, end)."""
-    result = await db.execute(
-        select(BrowserSession).where(
-            BrowserSession.session_id == session_id,
-            BrowserSession.user_id == current_user["sub"]
-        )
-    )
-    session = result.scalar_one_or_none()
+    session = await db.browser_sessions.find_one({
+        "session_id": session_id,
+        "user_id": current_user["sub"]
+    })
 
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    updates = {}
     if update_data.status:
-        session.status = update_data.status
+        updates["status"] = update_data.status
 
     if update_data.end_time:
-        session.end_time = update_data.end_time
-    elif update_data.status == "ended" and not session.end_time:
-        session.end_time = datetime.utcnow()
+        updates["end_time"] = update_data.end_time
+    elif update_data.status == "ended" and not session.get("end_time"):
+        updates["end_time"] = datetime.utcnow()
 
-    await db.commit()
-    await db.refresh(session)
+    if updates:
+        await db.browser_sessions.update_one(
+            {"session_id": session_id},
+            {"$set": updates}
+        )
+        # Refresh session
+        session.update(updates)
 
     # Count activities
-    count_result = await db.execute(
-        select(func.count(ActivityEvent.id))
-        .where(ActivityEvent.session_id == session.session_id)
+    activity_count = await db.activity_events.count_documents(
+        {"session_id": session_id}
     )
-    activity_count = count_result.scalar() or 0
 
     return SessionResponse(
-        session_id=session.session_id,
-        user_id=session.user_id,
-        start_time=session.start_time,
-        end_time=session.end_time,
-        status=session.status,
+        session_id=session["session_id"],
+        user_id=session.get("user_id"),
+        start_time=session["start_time"],
+        end_time=session.get("end_time"),
+        status=session["status"],
         activity_count=activity_count,
     )
 
@@ -174,39 +154,34 @@ async def update_session(
 @router.post("/{session_id}/end", response_model=SessionResponse)
 async def end_session(
     session_id: str,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """End a session."""
-    result = await db.execute(
-        select(BrowserSession).where(
-            BrowserSession.session_id == session_id,
-            BrowserSession.user_id == current_user["sub"]
-        )
-    )
-    session = result.scalar_one_or_none()
+    session = await db.browser_sessions.find_one({
+        "session_id": session_id,
+        "user_id": current_user["sub"]
+    })
 
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    session.status = "ended"
-    session.end_time = datetime.utcnow()
-
-    await db.commit()
-    await db.refresh(session)
+    end_time = datetime.utcnow()
+    await db.browser_sessions.update_one(
+        {"session_id": session_id},
+        {"$set": {"status": "ended", "end_time": end_time}}
+    )
 
     # Count activities
-    count_result = await db.execute(
-        select(func.count(ActivityEvent.id))
-        .where(ActivityEvent.session_id == session.session_id)
+    activity_count = await db.activity_events.count_documents(
+        {"session_id": session_id}
     )
-    activity_count = count_result.scalar() or 0
 
     return SessionResponse(
-        session_id=session.session_id,
-        user_id=session.user_id,
-        start_time=session.start_time,
-        end_time=session.end_time,
-        status=session.status,
+        session_id=session["session_id"],
+        user_id=session.get("user_id"),
+        start_time=session["start_time"],
+        end_time=end_time,
+        status="ended",
         activity_count=activity_count,
     )

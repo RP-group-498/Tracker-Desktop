@@ -14,7 +14,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from app.services.mongodb_sync import get_mongodb_sync
+from app.core.database import db_config
 from app.api.deps import get_current_user
 from fastapi import Depends
 from typing import Dict, Any
@@ -24,14 +24,12 @@ router = APIRouter()
 
 
 def _get_motor_db():
-    sync = get_mongodb_sync()
-    if sync is None or (not sync.is_connected) or (sync._db is None):
-        reason = f" Reason: {sync.last_error}" if (sync and sync.last_error) else ""
+    if db_config.db is None:
         raise HTTPException(
             status_code=503,
-            detail=f"MongoDB not connected.{reason}",
+            detail="MongoDB not connected.",
         )
-    return sync._db
+    return db_config.db
 
 
 
