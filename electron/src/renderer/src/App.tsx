@@ -294,15 +294,7 @@ const AppContent: React.FC<{
           <div className="animate-fade-in-up">
             {activeTab === 'procrastination' && <ProcrastinationPage />}
             {activeTab === 'dashboard' && (
-              <div className="space-y-6 max-w-3xl">
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">System Status</h2>
-                  <p className="text-sm text-slate-500 mt-1">Monitor background processes and extension connection.</p>
-                </div>
-                <ConnectionIndicator
-                  pythonRunning={state.pythonRunning}
-                  extensionConnected={state.extensionConnected}
-                />
+              <div className="space-y-6 max-w-5xl mx-auto w-full">
                 <StatusPanel
                   sessionId={state.currentSessionId}
                   eventCount={state.eventCount}

@@ -71,7 +71,19 @@ export function setupIpcHandlers(
 
     // Get recent activity
     ipcMain.handle('get-recent-activity', async (_event, limit: number = 50) => {
-        const result = await pythonBridge.request('GET', `/activity/recent?limit=${limit}`);
+        const result = await pythonBridge.request('GET', `/activity?limit=${limit}`);
+        return result.data;
+    });
+
+    // Get current activity session (latest activity)
+    ipcMain.handle('get-current-activity-session', async () => {
+        const result = await pythonBridge.request('GET', '/activity/current-session');
+        return result.data;
+    });
+
+    // Get event stream
+    ipcMain.handle('get-event-stream', async (_event, minutes: number = 30) => {
+        const result = await pythonBridge.request('GET', `/activity/stream?minutes=${minutes}`);
         return result.data;
     });
 

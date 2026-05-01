@@ -31,6 +31,8 @@ interface ElectronAPI {
 
     // Activity
     getRecentActivity: (limit?: number) => Promise<Activity[]>;
+    getCurrentActivitySession: () => Promise<Activity | null>;
+    getEventStream: (minutes?: number) => Promise<Activity[]>;
     getActivityStats: () => Promise<ActivityStats>;
 
     // Components
@@ -223,6 +225,8 @@ const electronAPI: ElectronAPI = {
 
     // Activity
     getRecentActivity: (limit = 50) => ipcRenderer.invoke('get-recent-activity', limit),
+    getCurrentActivitySession: () => ipcRenderer.invoke('get-current-activity-session'),
+    getEventStream: (minutes = 30) => ipcRenderer.invoke('get-event-stream', minutes),
     getActivityStats: () => ipcRenderer.invoke('get-activity-stats'),
 
     // Components

@@ -249,6 +249,73 @@ async def get_recent_activity(
     ]
 
 
+@router.get("/current-session", response_model=Optional[ActivityEventResponse])
+async def get_current_session(
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Get the most recent active session activity."""
+    query = select(ActivityEvent).options(selectinload(ActivityEvent.classification))
+    query = query.where(ActivityEvent.user_id == current_user["sub"])
+    query = query.order_by(ActivityEvent.timestamp.desc()).limit(1)
+
+    result = await db.execute(query)
+    event = result.scalar_one_or_none()
+
+    if not event:
+        return None
+
+    return ActivityEventResponse(
+        event_id=event.event_id,
+        domain=event.domain,
+        title=event.title or "",
+        active_time=event.active_time,
+        timestamp=event.timestamp,
+        classification=ClassificationResult(
+            category=event.classification.category,
+            confidence=event.classification.confidence,
+            source=event.classification.source,
+        ) if event.classification else None,
+    )
+
+
+@router.get("/stream", response_model=List[ActivityEventResponse])
+async def get_event_stream(
+    minutes: int = Query(30, ge=1),
+    db: AsyncSession = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Get event stream for the last X minutes."""
+    from datetime import timedelta
+    
+    query = select(ActivityEvent).options(selectinload(ActivityEvent.classification))
+    query = query.where(ActivityEvent.user_id == current_user["sub"])
+    
+    time_threshold = datetime.utcnow() - timedelta(minutes=minutes)
+    query = query.where(ActivityEvent.timestamp >= time_threshold)
+    
+    query = query.order_by(ActivityEvent.timestamp.desc())
+
+    result = await db.execute(query)
+    events = result.scalars().all()
+
+    return [
+        ActivityEventResponse(
+            event_id=e.event_id,
+            domain=e.domain,
+            title=e.title or "",
+            active_time=e.active_time,
+            timestamp=e.timestamp,
+            classification=ClassificationResult(
+                category=e.classification.category,
+                confidence=e.classification.confidence,
+                source=e.classification.source,
+            ) if e.classification else None,
+        )
+        for e in events
+    ]
+
+
 @router.get("/stats", response_model=ActivityStatsResponse)
 async def get_activity_stats(
     session_id: Optional[str] = None,
