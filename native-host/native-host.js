@@ -60,9 +60,9 @@ function sendMessage(message) {
 }
 
 /**
- * Forward a message to the Electron app via HTTP.
+ * Forward a message to the Electron app via HTTP (single attempt).
  */
-function forwardToElectron(message) {
+function forwardToElectronOnce(message) {
     return new Promise((resolve, reject) => {
         const postData = JSON.stringify(message);
 
@@ -94,7 +94,6 @@ function forwardToElectron(message) {
         });
 
         req.on('error', (e) => {
-            log(`Error forwarding to Electron: ${e.message}`);
             reject(e);
         });
 
@@ -106,6 +105,32 @@ function forwardToElectron(message) {
         req.write(postData);
         req.end();
     });
+}
+
+/**
+ * Forward a message to the Electron app via HTTP.
+ * Retries on ECONNREFUSED (Electron not ready yet) for connect/heartbeat messages.
+ */
+async function forwardToElectron(message) {
+    const maxRetries = message.type === 'connect' ? 15 : 3;
+    const retryDelay = 2000; // 2 seconds between retries
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await forwardToElectronOnce(message);
+            return response;
+        } catch (e) {
+            const isConnectionRefused = e.message && e.message.includes('ECONNREFUSED');
+
+            if (isConnectionRefused && attempt < maxRetries) {
+                log(`Electron not ready, retry ${attempt}/${maxRetries} in ${retryDelay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+            } else {
+                log(`Error forwarding to Electron: ${e.message}`);
+                throw e;
+            }
+        }
+    }
 }
 
 /**
