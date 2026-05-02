@@ -19,6 +19,8 @@ accelerate>=0.24.0
 # Task Prioritization
 google-genai>=0.2.0
 google-generativeai>=0.8.0
+anthropic>=0.20.0
+
 xgboost>=2.0.0
 sentence-transformers>=3.0.0
 pandas>=2.2.0
