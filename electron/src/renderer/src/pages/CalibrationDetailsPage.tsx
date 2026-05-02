@@ -311,7 +311,7 @@ const CalibrationDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="p-2 space-y-4 sm:space-y-6 max-w-4xl">
+    <div className="p-2 space-y-4 sm:space-y-6 w-full">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-2">

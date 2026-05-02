@@ -124,11 +124,10 @@ const CalibrationPage: React.FC<CalibrationPageProps> = ({ pythonRunning, extens
             </p>
           </div>
           <button
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
-              monitorEnabled
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${monitorEnabled
                 ? 'bg-green-500 text-white shadow-sm'
                 : 'bg-slate-200 text-slate-500 hover:bg-slate-300'
-            }`}
+              }`}
             onClick={toggleMonitor}
           >
             {monitorEnabled ? 'ON' : 'OFF'}
@@ -155,11 +154,10 @@ const CalibrationPage: React.FC<CalibrationPageProps> = ({ pythonRunning, extens
               <button
                 key={p}
                 onClick={() => setCalib(prev => ({ ...prev, focus_period: p }))}
-                className={`px-4 py-2 rounded-xl text-sm font-medium capitalize border transition-all duration-200 ${
-                  calib.focus_period === p
+                className={`px-4 py-2 rounded-xl text-sm font-medium capitalize border transition-all duration-200 ${calib.focus_period === p
                     ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 {p}
               </button>
@@ -175,11 +173,10 @@ const CalibrationPage: React.FC<CalibrationPageProps> = ({ pythonRunning, extens
               <button
                 key={day}
                 onClick={() => toggleDay(day)}
-                className={`min-w-[3rem] h-10 px-2 rounded-xl text-sm font-medium border transition-all duration-200 ${
-                  calib.study_days?.includes(day)
+                className={`min-w-[3rem] h-10 px-2 rounded-xl text-sm font-medium border transition-all duration-200 ${calib.study_days?.includes(day)
                     ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 {day}
               </button>
