@@ -74,7 +74,7 @@ const CalibrationPage: React.FC<CalibrationPageProps> = ({ pythonRunning, extens
   }
 
   return (
-    <div className="p-2 space-y-6 max-w-2xl w-full">
+    <div className="p-2 space-y-4 sm:space-y-6 w-full">
       {/* Connection Status */}
       <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
         <h2 className="text-sm font-semibold text-slate-800 mb-3">Connection Status</h2>
@@ -140,7 +140,7 @@ const CalibrationPage: React.FC<CalibrationPageProps> = ({ pythonRunning, extens
       </div>
 
       {/* Study Calibration */}
-      <div className="glass-card p-4 sm:p-8 transition-all duration-200 hover:shadow-md space-y-8">
+      <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md space-y-6">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight mb-1">Study Calibration</h2>
           <p className="text-sm text-slate-500">Configure your baseline study patterns for accurate tracking.</p>
