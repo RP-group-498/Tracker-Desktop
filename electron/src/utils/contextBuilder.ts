@@ -131,9 +131,12 @@ function toRawSignals(backend: BackendContextSignals): RawBehavioralSignals {
         ? sw!.non_academic_switches_10min / sw!.total_events_10min
         : 0;
 
-    // I_idle: minutes since last academic activity (capped at 30 by consumer)
-    const minutes_since_last_academic = hasWindow && sw!.seconds_since_last_academic !== null
-        ? sw!.seconds_since_last_academic / 60
+    // I_idle: minutes since last academic activity.
+    // Decoupled from hasWindow so idle time is available even when the 10-min
+    // event window is empty — the backend always returns seconds_since_last_academic
+    // as long as any academic event has ever been recorded.
+    const minutes_since_last_academic = sw?.seconds_since_last_academic != null
+        ? sw.seconds_since_last_academic / 60
         : 0;
 
     return {
@@ -174,13 +177,17 @@ export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
         const E_fast = clamp(1 - signals.non_academic_ratio_10min, 0, 1);
         E = clamp(0.6 * E_slow + 0.4 * E_fast, 0, 1);
     } else {
-        E = E_slow;
+        // No recent window data — apply gentle idle decay.
+        // Self-efficacy erodes with prolonged inaction; floor at E_slow * 0.75
+        // to avoid over-penalising users who are simply thinking.
+        const I_idle = clamp(signals.minutes_since_last_academic / 60, 0, 1);
+        E = clamp(E_slow * (1 - 0.25 * I_idle), 0, 1);
     }
 
     // === Value: two-speed ===
     // V_slow: objective task importance (Wigfield & Eccles, 2000)
     const V_raw = Math.max(signals.task_priority, signals.grade_weight);
-    const V_slow = V_raw > 0 ? V_raw : 0.3;
+    const V_slow = V_raw > 0 ? V_raw : 0.5;
     let V: number;
     if (signals.has_sliding_window) {
         // V_fast: subjective value erosion from distraction behavior.
@@ -189,10 +196,13 @@ export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
         // (Blunt & Pychyl, 2000; Steel, 2007 — task aversiveness).
         const V_fast = clamp(1 - signals.non_academic_ratio_10min, 0, 1);
         // Multiplicative blend: objective value × subjective engagement.
-        // Floor at 50% — distraction can halve perceived value, not zero it.
-        V = V_slow * Math.max(V_fast, 0.5);
+        // Floor at 65% — distraction can reduce perceived value by 35%, not zero it.
+        V = V_slow * Math.max(V_fast, 0.65);
     } else {
-        V = V_slow;
+        // No recent window data — apply idle decay matching the active-session floor.
+        // Perceived value erodes when the user hasn't engaged with the task.
+        const I_idle = clamp(signals.minutes_since_last_academic / 60, 0, 1);
+        V = V_slow * Math.max(1 - 0.35 * I_idle, 0.65);
     }
 
     // === Impulsiveness: two-speed with max() ===
@@ -202,12 +212,14 @@ export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
     if (signals.has_sliding_window) {
         // I_fast: rapid app switching in last 5 minutes
         const I_fast = signals.app_switches_5min_normalized;
-        // I_idle: time since last academic activity (30+ min idle = 1.0)
-        const I_idle = clamp(signals.minutes_since_last_academic / 30, 0, 1);
+        // I_idle: time since last academic activity (60+ min idle = 1.0)
+        const I_idle = clamp(signals.minutes_since_last_academic / 60, 0, 1);
         // Worst-case wins — either sustained daily pattern, recent burst, or inactivity
         I = Math.max(I_slow, I_fast, I_idle);
     } else {
-        I = I_slow;
+        // No recent window data — idle time is still a valid impulsiveness signal.
+        const I_idle = clamp(signals.minutes_since_last_academic / 60, 0, 1);
+        I = Math.max(I_slow, I_idle);
     }
 
     // === Delay: two-speed ===
@@ -240,8 +252,11 @@ export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
 export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSignals): number[] {
     const { E, V, I, D } = proxies;
 
-    // TMT motivation score: M = (E * V) / (1 + I * D)
-    const M_clamped = clamp((E * V) / (1 + I * D), 0, 1);
+    // TMT motivation score: M = (E * V) / (1 + I * D), with compressive scaling
+    // Power scaling (M^0.7) expands the lower range where most real-world values
+    // land, spreading scores across the full [0,1] range instead of clustering at ~0.1
+    const M_raw = clamp((E * V) / (1 + I * D), 0, 1);
+    const M_clamped = Math.pow(M_raw, 0.7);
 
     // Deficit scores: distance from ideal state (no absolute thresholds)
     const deficit_E = 1.0 - E;  // low completion = high expectancy deficit
@@ -288,7 +303,7 @@ export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSi
         V_fast_input: Number(signals.non_academic_ratio_10min.toFixed(4)),
         I_slow: Number(signals.non_academic_ratio.toFixed(4)),
         I_fast: Number(signals.app_switches_5min_normalized.toFixed(4)),
-        I_idle: Number(clamp(signals.minutes_since_last_academic / 30, 0, 1).toFixed(4)),
+        I_idle: Number(clamp(signals.minutes_since_last_academic / 60, 0, 1).toFixed(4)),
         D_slow_input: Number(signals.hours_to_deadline.toFixed(2)),
         D_progress_input: Number(signals.task_time_ratio.toFixed(4)),
         has_sliding_window: signals.has_sliding_window,
@@ -312,6 +327,26 @@ export async function getContext(): Promise<number[]> {
         const signals = toRawSignals(backend);
         const proxies = computeTMTProxies(signals);
         return buildContextVector(proxies, signals);
+    } catch (err) {
+        console.error('[ContextBuilder] Failed to build context vector:', err);
+        throw err;
+    }
+}
+
+/**
+ * Same as getContext() but also returns whether the sliding window had fresh data.
+ * Used by the monitoring loop to tag motivation logs as stale when no live signals
+ * were available (slow-component-only fallback).
+ */
+export async function getContextWithMeta(): Promise<{ vector: number[]; hasWindow: boolean }> {
+    try {
+        const backend: BackendContextSignals | null = await window.electronAPI.intervention.getContext();
+        if (!backend) {
+            throw new Error('No context data available');
+        }
+        const signals = toRawSignals(backend);
+        const proxies = computeTMTProxies(signals);
+        return { vector: buildContextVector(proxies, signals), hasWindow: signals.has_sliding_window };
     } catch (err) {
         console.error('[ContextBuilder] Failed to build context vector:', err);
         throw err;

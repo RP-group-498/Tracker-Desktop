@@ -27,7 +27,7 @@ from app.config import settings
 from app.core.database import init_db, close_db
 from app.components import load_all_components
 from app.api import api_router
-from app.services.mongodb_sync import init_mongodb_sync
+
 from services.scheduler.active_time_sync import start_scheduler, stop_scheduler
 from app.services.gemini_batch_worker import start_gemini_worker, stop_gemini_worker
 
@@ -39,22 +39,6 @@ async def lifespan(app: FastAPI):
     print(f"[Backend] Starting {settings.app_name} v{settings.app_version}")
     await init_db()
     load_all_components(settings.component_config)
-
-    # Initialize MongoDB sync if configured
-    mongo_sync = None
-    if settings.mongodb_uri and settings.mongodb_sync_enabled:
-        mongo_sync = init_mongodb_sync()
-
-        async def init_mongo():
-            try:
-                await mongo_sync.initialize(settings.mongodb_uri, settings.mongodb_database)
-                print("[Backend] MongoDB sync enabled")
-            except Exception as e:
-                print("[MongoSync] Initialization failed:", e)
-
-        asyncio.create_task(init_mongo())
-    else:
-        print("[Backend] MongoDB sync disabled (no URI configured or sync not enabled)")
 
     # Start background scheduler (daily active time sync + task allocation)
     start_scheduler()
@@ -70,8 +54,6 @@ async def lifespan(app: FastAPI):
     print("[Backend] Shutting down...")
     stop_gemini_worker()
     stop_scheduler()
-    if mongo_sync:
-        await mongo_sync.close()
     await close_db()
     print("[Backend] Goodbye!")
 

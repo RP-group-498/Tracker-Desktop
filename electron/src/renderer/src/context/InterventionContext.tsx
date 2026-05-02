@@ -42,6 +42,7 @@ export interface InterventionContextValue {
     lastInterventionTs: number;
     abortBreathing: () => void;
     abortVisualization: () => void;
+    abortPomodoro: () => void;
 }
 
 const InterventionContext = createContext<InterventionContextValue | undefined>(undefined);
@@ -57,7 +58,11 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
     const userId = user?.id ?? '';
 
     // ── Persistent state ──────────────────────────────────────────────
-    const [monitorEnabled, setMonitorEnabled] = useState(false);
+    const [monitorEnabled, setMonitorEnabled] = useState(() => {
+        const stored = localStorage.getItem('sie_monitor_enabled');
+        // Default to true for first-time users (no stored preference)
+        return stored === null ? true : stored === 'true';
+    });
     const [monitorStatus, setMonitorStatus] = useState('Monitoring stopped');
     const [showBreathing, setShowBreathing] = useState(false);
     const [showVisualization, setShowVisualization] = useState(false);
@@ -74,13 +79,14 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     // ── Helpers ───────────────────────────────────────────────────────
 
-    const logMotivation = useCallback(async (vector: number[], scenario: string = 'live') => {
+    const logMotivation = useCallback(async (vector: number[], scenario: string = 'live', stale = false) => {
         try {
             await window.electronAPI.intervention.logMotivation({
                 user_id: userId,
                 motivation: vector[5],  // TMT motivation score, now at index 5 in 9-element vector
                 scenario,
                 context_vector: vector,
+                stale,
             });
         } catch (e) {
             console.warn('[Motivation] Log failed:', e);
@@ -221,6 +227,7 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
                 user_id: userId,
                 x: vector,
                 alpha: 1.0,
+                recent_actions: cooldownRef.current.getRecentShown(),
             });
             const { action } = result as { action: string; allowed_actions: string[] };
 
@@ -238,6 +245,7 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
             await logMotivation(vector, action);
             setLastInterventionTs(Date.now());
 
+            cooldownRef.current.recordShown(action);
             cooldownRef.current.setActiveIntervention(action);
             await triggerBanditNotification(action, vector);
         } catch (err) {
@@ -247,6 +255,24 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
     }, [userId, triggerBanditNotification, logMotivation, sendBanditUpdate]);
 
+    // ── Loop creation helper ────────────────────────────────────────────
+
+    const createAndStartLoop = useCallback(() => {
+        if (monitorRef.current?.isRunning()) return;
+        const loop = new MonitoringLoop(cooldownRef.current, {
+            onSuggestIntervention,
+            onLogMotivation: (vector, hasWindow) => {
+                logMotivation(vector, 'live', !hasWindow);
+                setLastInterventionTs(Date.now());
+            },
+            onStatusUpdate: (status) => setMonitorStatus(status),
+        }, userId);
+        monitorRef.current = loop;
+        loop.start();
+        setMonitorEnabled(true);
+        localStorage.setItem('sie_monitor_enabled', 'true');
+    }, [onSuggestIntervention, logMotivation, userId]);
+
     // ── Toggle monitoring loop on/off ─────────────────────────────────
 
     const toggleMonitor = useCallback(() => {
@@ -255,20 +281,11 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
             monitorRef.current = null;
             setMonitorEnabled(false);
             setMonitorStatus('Monitoring stopped');
+            localStorage.setItem('sie_monitor_enabled', 'false');
         } else {
-            const loop = new MonitoringLoop(cooldownRef.current, {
-                onSuggestIntervention,
-                onLogMotivation: (vector) => {
-                    logMotivation(vector);
-                    setLastInterventionTs(Date.now());
-                },
-                onStatusUpdate: (status) => setMonitorStatus(status),
-            }, userId);
-            monitorRef.current = loop;
-            loop.start();
-            setMonitorEnabled(true);
+            createAndStartLoop();
         }
-    }, [onSuggestIntervention, logMotivation, userId]);
+    }, [createAndStartLoop]);
 
     // ── Abort handlers for breathing/visualization ────────────────────
 
@@ -290,6 +307,27 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
             setLastInterventionTs(Date.now());
         }
         setShowVisualization(false);
+    }, [sendBanditUpdate]);
+
+    const handlePomodoroAbort = useCallback(() => {
+        if (pomodoroIntervalRef.current) {
+            clearInterval(pomodoroIntervalRef.current);
+            pomodoroIntervalRef.current = null;
+        }
+        if (breakIntervalRef.current) {
+            clearInterval(breakIntervalRef.current);
+            breakIntervalRef.current = null;
+        }
+        window.electronAPI.intervention.clearTray();
+        window.electronAPI.intervention.pomodoroStopped();
+        setPomodoroActive(false);
+
+        if (pendingBanditRef.current && pendingBanditRef.current.action === 'POMODORO') {
+            sendBanditUpdate(pendingBanditRef.current.action, pendingBanditRef.current.vector, 0.2, 'skip');
+            cooldownRef.current.applyCooldown('POMODORO', 'skip');
+            pendingBanditRef.current = null;
+        }
+        setLastInterventionTs(Date.now());
     }, [sendBanditUpdate]);
 
     // ── Notification response handler (lives here so it persists) ─────
@@ -374,6 +412,22 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
         };
     }, [clearAllTimers]);
 
+    // ── Auto-start monitoring when user is available and preference is ON ──
+
+    useEffect(() => {
+        if (!userId || monitorRef.current?.isRunning() || !monitorEnabled) return;
+
+        // Small delay to let the app fully initialize and auth settle
+        const startTimer = setTimeout(() => {
+            if (!monitorRef.current?.isRunning() && monitorEnabled && userId) {
+                createAndStartLoop();
+                setMonitorStatus('Monitoring active (auto-started)');
+            }
+        }, 2000);
+
+        return () => clearTimeout(startTimer);
+    }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // ── Context value ─────────────────────────────────────────────────
 
     const value: InterventionContextValue = {
@@ -388,6 +442,7 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
         lastInterventionTs,
         abortBreathing: handleBreathingAbort,
         abortVisualization: handleVisualizationAbort,
+        abortPomodoro: handlePomodoroAbort,
     };
 
     return (

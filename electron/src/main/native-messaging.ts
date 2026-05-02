@@ -8,6 +8,7 @@
 import http from 'http';
 import { EventEmitter } from 'events';
 import { PythonBridge } from './python-bridge';
+import { ActivitySyncService } from './activity-sync';
 
 const SERVER_PORT = 8765;
 
@@ -24,14 +25,16 @@ interface SessionInfo {
 export class NativeMessagingServer extends EventEmitter {
     private server: http.Server | null = null;
     private pythonBridge: PythonBridge;
+    private syncService: ActivitySyncService;
     private currentSession: SessionInfo | null = null;
     private _lastHeartbeat: number = 0;
     private extensionConnected = false;
     private connectionTimeout: NodeJS.Timeout | null = null;
 
-    constructor(pythonBridge: PythonBridge) {
+    constructor(pythonBridge: PythonBridge, syncService: ActivitySyncService) {
         super();
         this.pythonBridge = pythonBridge;
+        this.syncService = syncService;
     }
 
     /**
@@ -202,30 +205,45 @@ export class NativeMessagingServer extends EventEmitter {
             sessionId: this.currentSession?.sessionId || null,
         }));
 
-        // Forward to Python backend
-        const result = await this.pythonBridge.submitActivityBatch(eventsWithSession);
+        // Forward to Activity Sync Service (handles offline storage)
+        const result = await this.syncService.submitActivity(eventsWithSession);
 
-        if (result.success && result.data) {
-            const receivedIds = result.data.received_ids;
-            this.emit('eventsReceived', receivedIds.length);
+        if (result.success) {
+            // We return ACK even if stored locally, because the desktop app 
+            // has taken responsibility for the data.
+            const eventIds = eventsWithSession.map((e: any) => e.eventId || e.id);
+            this.emit('eventsReceived', eventIds.length);
 
             return {
                 type: 'ack',
-                receivedEventIds: receivedIds,
+                receivedEventIds: eventIds,
             };
         } else {
             return {
                 type: 'error',
-                error: result.error || 'Failed to process activity batch',
+                error: 'Failed to process activity batch',
             };
         }
     }
 
     /**
-     * Handle heartbeat - just acknowledge
+     * Handle heartbeat - acknowledge and mark extension as connected
      */
-    private async handleHeartbeat(_message: ExtensionMessage): Promise<unknown> {
+    private async handleHeartbeat(message: ExtensionMessage): Promise<unknown> {
         this._lastHeartbeat = Date.now();
+
+        // A heartbeat arriving means the extension is alive —
+        // mark it connected if it wasn't already (handles desktop app restarts)
+        if (!this.extensionConnected) {
+            this.extensionConnected = true;
+            this.emit('extensionConnected');
+            console.log('[NativeMessaging] Extension re-connected via heartbeat');
+        }
+
+        // Handle current activity if present
+        if (message.currentActivity) {
+            this.emit('activityUpdate', message.currentActivity);
+        }
 
         return {
             type: 'ack',

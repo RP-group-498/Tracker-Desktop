@@ -125,7 +125,7 @@ const TrendChart: React.FC<Props> = ({ chartHistory, daysSinceStart }) => {
         plugins: {
           legend: {
             position: 'bottom',
-            labels: { color: '#cbd5e1', font: { size: 11 }, boxWidth: 12 },
+            labels: { color: '#64748b', font: { size: 11 }, boxWidth: 12 },
           },
           tooltip: {
             backgroundColor: '#1e293b',
@@ -164,22 +164,28 @@ const TrendChart: React.FC<Props> = ({ chartHistory, daysSinceStart }) => {
   }
 
   return (
-    <div className="card trend-chart-card">
-      <p className="section-label">Activity Trends</p>
-      <div className="period-buttons">
-        {PERIODS.map(p => (
-          <button
-            key={p}
-            className={`period-btn ${selectedPeriod === p ? 'period-btn-active' : ''}`}
-            onClick={() => setSelectedPeriod(p)}
-          >
-            {PERIOD_LABELS[p]}
-          </button>
-        ))}
+    <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md flex flex-col gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h3 className="text-base font-semibold text-slate-800 tracking-tight">Activity Trends</h3>
+        <div className="flex gap-1.5 flex-wrap">
+          {PERIODS.map(p => (
+            <button
+              key={p}
+              className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all ${
+                selectedPeriod === p 
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
+                : 'bg-white/60 text-indigo-500 border-indigo-200 hover:bg-indigo-50'
+              }`}
+              onClick={() => setSelectedPeriod(p)}
+            >
+              {PERIOD_LABELS[p]}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="chart-container" style={{ position: 'relative', height: '260px' }}>
+      <div className="w-full relative h-[260px] mt-2">
         {chartHistory.length === 0 ? (
-          <p className="chart-empty">
+          <p className="text-sm text-slate-500 text-center py-16 font-medium">
             {daysSinceStart < 3
               ? `Chart available in ${3 - daysSinceStart} more day${3 - daysSinceStart !== 1 ? 's' : ''} — needs at least 3 days of data.`
               : 'No history data yet. Run the pipeline for a few days first.'}

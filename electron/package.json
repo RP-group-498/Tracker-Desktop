@@ -14,7 +14,7 @@
     "@types/react-router-dom": "^5.3.3",
     "active-win": "^8.2.1",
     "electron-store": "^8.1.0",
-    "lucide-react": "^1.7.0",
+    "lucide-react": "^1.14.0",
     "react-router-dom": "^7.13.1"
   },
   "devDependencies": {
@@ -39,9 +39,15 @@
   "build": {
     "appId": "com.research.focusapp",
     "productName": "Focus App",
+    "mac": {
+      "icon": "assets/icon.icns"
+    },
     "win": {
       "target": "nsis",
       "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "icon": "assets/icon.png"
     },
     "extraResources": [
       {

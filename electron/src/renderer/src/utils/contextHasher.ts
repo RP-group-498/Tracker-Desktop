@@ -13,6 +13,10 @@
  */
 
 let lastContextHash = '';
+let lastHashTime = 0;
+
+/** Re-evaluate even with unchanged context after 5 minutes */
+const MAX_HASH_AGE_MS = 5 * 60 * 1000;
 
 /**
  * Convert a context vector to a string hash.
@@ -24,10 +28,13 @@ export function hashContext(vector: number[]): string {
 
 /**
  * Check if the given hash matches the last stored hash.
- * Returns true if the context is a duplicate (unchanged).
+ * Returns true if the context is a duplicate (unchanged AND fresh).
+ * After MAX_HASH_AGE_MS, allows re-evaluation even with identical context
+ * so the bandit can reconsider in stable states.
  */
 export function isDuplicateContext(hash: string): boolean {
-    return hash === lastContextHash;
+    if (hash !== lastContextHash) return false;
+    return (Date.now() - lastHashTime) < MAX_HASH_AGE_MS;
 }
 
 /**
@@ -36,6 +43,7 @@ export function isDuplicateContext(hash: string): boolean {
  */
 export function updateHash(hash: string): void {
     lastContextHash = hash;
+    lastHashTime = Date.now();
 }
 
 /**
@@ -43,4 +51,5 @@ export function updateHash(hash: string): void {
  */
 export function resetHash(): void {
     lastContextHash = '';
+    lastHashTime = 0;
 }

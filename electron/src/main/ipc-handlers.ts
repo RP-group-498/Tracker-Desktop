@@ -71,7 +71,25 @@ export function setupIpcHandlers(
 
     // Get recent activity
     ipcMain.handle('get-recent-activity', async (_event, limit: number = 50) => {
-        const result = await pythonBridge.request('GET', `/activity/recent?limit=${limit}`);
+        const result = await pythonBridge.request('GET', `/activity?limit=${limit}`);
+        return result.data;
+    });
+
+    // Get current activity session (latest activity)
+    ipcMain.handle('get-current-activity-session', async () => {
+        const result = await pythonBridge.request('GET', '/activity/current-session');
+        return result.data;
+    });
+
+    // Get event stream
+    ipcMain.handle('get-event-stream', async (_event, minutes: number = 30) => {
+        const result = await pythonBridge.request('GET', `/activity/stream?minutes=${minutes}`);
+        return result.data;
+    });
+
+    // Get today's activity
+    ipcMain.handle('get-today-activity', async () => {
+        const result = await pythonBridge.request('GET', `/activity/today`);
         return result.data;
     });
 
@@ -225,6 +243,53 @@ export function setupIpcHandlers(
             console.error('Failed to read auth user id', e);
         }
         return null;
+    });
+
+    let activeTasksWindowRef: any = null;
+
+    ipcMain.handle('open-active-tasks-window', async (event) => {
+        if (activeTasksWindowRef) {
+            activeTasksWindowRef.focus();
+            return;
+        }
+
+        const { BrowserWindow: ActiveTasksWindow } = require('electron');
+        activeTasksWindowRef = new ActiveTasksWindow({
+            width: 360,
+            height: 480,
+            frame: false,
+            transparent: true,
+            alwaysOnTop: true,
+            webPreferences: {
+                preload: path.join(__dirname, '../preload/index.js'),
+                nodeIntegration: false,
+                contextIsolation: true,
+            },
+        });
+
+        // Notify renderer that it's popped out
+        event.sender.send('active-tasks-popped-out', true);
+
+        activeTasksWindowRef.on('closed', () => {
+            activeTasksWindowRef = null;
+            // Notify renderer that it's closed
+            try {
+                event.sender.send('active-tasks-popped-out', false);
+            } catch (e) {} // sender might be destroyed if app is closing
+        });
+
+        if (process.env.NODE_ENV === 'development') {
+            activeTasksWindowRef.loadURL('http://localhost:5173?widget=active-tasks');
+        } else {
+            activeTasksWindowRef.loadFile(path.join(__dirname, '../renderer/index.html'), { query: { widget: 'active-tasks' } });
+        }
+    });
+
+    ipcMain.on('resize-active-tasks-window', (_event, height) => {
+        if (activeTasksWindowRef) {
+            const [width] = activeTasksWindowRef.getSize();
+            activeTasksWindowRef.setSize(width, Math.min(height, 800));
+        }
     });
 
 }

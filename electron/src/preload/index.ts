@@ -31,6 +31,9 @@ interface ElectronAPI {
 
     // Activity
     getRecentActivity: (limit?: number) => Promise<Activity[]>;
+    getCurrentActivitySession: () => Promise<Activity | null>;
+    getEventStream: (minutes?: number) => Promise<Activity[]>;
+    getTodayActivity: () => Promise<Activity[]>;
     getActivityStats: () => Promise<ActivityStats>;
 
     // Components
@@ -41,6 +44,9 @@ interface ElectronAPI {
 
     // Task Prioritizer
     openTaskPrioritizer: () => Promise<void>;
+    openActiveTasksWindow: () => Promise<void>;
+    onActiveTasksPoppedOut: (callback: (isPoppedOut: boolean) => void) => void;
+    resizeActiveTasksWindow: (height: number) => void;
 
     // PDF / Task Analysis
     analyzePdf: (data: {
@@ -110,10 +116,10 @@ interface ContextSignals {
 }
 
 interface InterventionAPI {
-    banditSelect: (req: { user_id: string; x: number[]; alpha?: number }) => Promise<{ action: string; allowed_actions: string[] }>;
+    banditSelect: (req: { user_id: string; x: number[]; alpha?: number; recent_actions?: string[] }) => Promise<{ action: string; allowed_actions: string[] }>;
     banditUpdate: (req: { user_id: string; x: number[]; action: string; reward: number; button: string; alpha?: number }) => Promise<{ status: string; n_updates: number }>;
     getEvents: () => Promise<unknown[]>;
-    logMotivation: (entry: { user_id: string; motivation: number; scenario: string; context_vector?: number[] }) => Promise<void>;
+    logMotivation: (entry: { user_id: string; motivation: number; scenario: string; context_vector?: number[]; stale?: boolean }) => Promise<void>;
     getMotivationHistory: (since?: number) => Promise<unknown[]>;
     getUserGoal: () => Promise<{ life_goal: string }>;
     saveUserGoal: (goal: string) => Promise<{ status: string }>;
@@ -223,6 +229,9 @@ const electronAPI: ElectronAPI = {
 
     // Activity
     getRecentActivity: (limit = 50) => ipcRenderer.invoke('get-recent-activity', limit),
+    getCurrentActivitySession: () => ipcRenderer.invoke('get-current-activity-session'),
+    getEventStream: (minutes = 30) => ipcRenderer.invoke('get-event-stream', minutes),
+    getTodayActivity: () => ipcRenderer.invoke('get-today-activity'),
     getActivityStats: () => ipcRenderer.invoke('get-activity-stats'),
 
     // Components
@@ -233,6 +242,11 @@ const electronAPI: ElectronAPI = {
 
     // Task Prioritizer
     openTaskPrioritizer: () => ipcRenderer.invoke('open-task-prioritizer'),
+    openActiveTasksWindow: () => ipcRenderer.invoke('open-active-tasks-window'),
+    onActiveTasksPoppedOut: (callback) => {
+        ipcRenderer.on('active-tasks-popped-out', (_event, isPoppedOut) => callback(isPoppedOut));
+    },
+    resizeActiveTasksWindow: (height) => ipcRenderer.send('resize-active-tasks-window', height),
 
     // PDF / Task Analysis
     analyzePdf: (data) => ipcRenderer.invoke('analyze-pdf', data),

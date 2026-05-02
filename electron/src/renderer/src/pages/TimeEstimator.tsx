@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { Task, TimerState, ScheduledSummaryTask } from '../types/tasks'
 import { formatElapsed } from '../hooks/useTaskTimer'
 import { useAuth } from '../context/AuthContext'
@@ -77,6 +78,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
   const [availableTime, setAvailableTime] = useState<string>('-')
   const [notification, setNotification] = useState<{ message: string; type: string } | null>(null)
   const [mainTaskFilter, setMainTaskFilter] = useState<string>('All')
+  const [isWidgetMinimized, setIsWidgetMinimized] = useState(false)
+  const [isPoppedOut, setIsPoppedOut] = useState(false)
   const taskTimersRef = useRef<Record<string, TimerState>>({})
 
   // Compute unique main tasks for filtering
@@ -218,6 +221,13 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     const interval = setInterval(() => loadTasksFromAPI(true), 5000)
     return () => clearInterval(interval)
   }, [loadTasksFromAPI])
+
+  // Listen for active tasks popped out status
+  useEffect(() => {
+    if (window.electronAPI.onActiveTasksPoppedOut) {
+      window.electronAPI.onActiveTasksPoppedOut(setIsPoppedOut)
+    }
+  }, [])
 
   // Available time
   useEffect(() => {
@@ -491,108 +501,93 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
     const isFailed = task.status === 'failed'
     const isCompleted = task.status === 'completed'
     const estimatedTime = task.user_estimate || task.predicted_time
-
     const validation = getTaskValidationStatus(task)
-
     const isRescheduled = !!(task.rescheduled || (task.rescheduledActiveStart && task.rescheduledActiveEnd))
 
+    const priorityBorder = task.priority === 'High' ? 'border-l-red-400' : task.priority === 'Low' ? 'border-l-emerald-400' : 'border-l-orange-400'
+
     return (
-      <div key={task.id} className={`modal-task-item ${task.priority}${isFailed ? ' failed' : ''}`} data-task-id={task.id}>
-        <div className="modal-task-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div className={`modal-task-title${isFailed ? ' failed-title' : ''}`}>{task.name}</div>
+      <div key={task.id} className={`glass-card p-4 border-l-4 ${priorityBorder} ${isFailed ? 'opacity-60' : ''}`} data-task-id={task.id}>
+        {/* Header row */}
+        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`text-sm font-bold text-slate-800 truncate ${isFailed ? 'line-through' : ''}`}>{task.name}</span>
             {isRescheduled && (
-              <span style={{
-                fontSize: '0.65rem', fontWeight: 900, backgroundColor: '#ffedd5', color: '#9a3412',
-                padding: '2px 8px', borderRadius: '4px', border: '1px solid #fed7aa', textTransform: 'uppercase'
-              }}>
+              <span className="text-[10px] font-extrabold bg-orange-100 text-orange-800 px-2 py-0.5 rounded border border-orange-200 uppercase shrink-0">
                 Re-Scheduled
               </span>
             )}
           </div>
 
-          {/* Timer Display */}
-          {timer && timer.isPaused && <span style={{ fontSize: '0.85em', color: '#f59e0b', fontWeight: 600 }}>{formatElapsed(elapsed)}</span>}
-          {timer && !timer.isPaused && <span style={{ fontSize: '0.85em', color: '#10b981', fontWeight: 600 }}>{formatElapsed(elapsed)}</span>}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Timer */}
+            {timer && timer.isPaused && <span className="text-xs font-semibold text-amber-500" style={{ fontVariantNumeric: 'tabular-nums' }}>{formatElapsed(elapsed)}</span>}
+            {timer && !timer.isPaused && <span className="text-xs font-semibold text-emerald-500" style={{ fontVariantNumeric: 'tabular-nums' }}>{formatElapsed(elapsed)}</span>}
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+            {/* Buttons */}
             {isCompleted ? (
-              <button className="btn-sm" disabled style={{ backgroundColor: '#10b981', border: 'none', color: 'white', cursor: 'default', padding: '4px 10px', borderRadius: '4px' }}>✓ Completed</button>
+              <span className="px-2.5 py-1 text-[10px] font-bold text-white bg-emerald-500 rounded-lg">✓ Completed</span>
             ) : isFailed ? (
-              <button className="btn-sm" disabled style={{ backgroundColor: '#ef4444', border: 'none', color: 'white', cursor: 'default', padding: '4px 10px', borderRadius: '4px' }}>✗ Failed</button>
+              <span className="px-2.5 py-1 text-[10px] font-bold text-white bg-red-500 rounded-lg">✗ Failed</span>
             ) : !timer ? (
-              <button className="btn-sm" onClick={(e) => { e.stopPropagation(); startTask(task.id) }} disabled={!validation.isValid} style={{ backgroundColor: '#4f46e5', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', cursor: validation.isValid ? 'pointer' : 'not-allowed', opacity: validation.isValid ? 1 : 0.6 }}>▶ Start</button>
+              <button onClick={(e) => { e.stopPropagation(); startTask(task.id) }} disabled={!validation.isValid} className="px-2.5 py-1 text-[10px] font-bold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">▶ Start</button>
             ) : timer.isPaused ? (
               <>
-                <button className="btn-sm" onClick={(e) => { e.stopPropagation(); resumeTask(task.id) }} style={{ backgroundColor: '#f59e0b', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>▶ Resume</button>
-                <button className="btn-sm" onClick={(e) => { e.stopPropagation(); markTaskComplete(task.id) }} style={{ backgroundColor: '#10b981', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>✓ Complete</button>
+                <button onClick={(e) => { e.stopPropagation(); resumeTask(task.id) }} className="px-2.5 py-1 text-[10px] font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors">▶ Resume</button>
+                <button onClick={(e) => { e.stopPropagation(); markTaskComplete(task.id) }} className="px-2.5 py-1 text-[10px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors">✓ Done</button>
               </>
             ) : (
               <>
-                <button className="btn-sm" onClick={(e) => { e.stopPropagation(); pauseTask(task.id) }} style={{ backgroundColor: '#f59e0b', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>Pause</button>
-                <button className="btn-sm" onClick={(e) => { e.stopPropagation(); markTaskComplete(task.id) }} style={{ backgroundColor: '#10b981', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>✓ Complete</button>
+                <button onClick={(e) => { e.stopPropagation(); pauseTask(task.id) }} className="px-2.5 py-1 text-[10px] font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors">Pause</button>
+                <button onClick={(e) => { e.stopPropagation(); markTaskComplete(task.id) }} className="px-2.5 py-1 text-[10px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors">✓ Done</button>
               </>
             )}
           </div>
-
-          <span dangerouslySetInnerHTML={{ __html: getStatusBadge(task.status) }} />
         </div>
 
-        {task.description && <div className="modal-task-description"><strong>Main Task:</strong> {task.description}</div>}
+        {task.description && <p className="text-xs text-slate-500 mb-3"><span className="font-semibold text-slate-700">Main Task:</span> {task.description}</p>}
 
-        <div className="modal-task-meta-premium" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', background: '#f8fafc', padding: '16px 20px', borderRadius: '12px', marginTop: '14px', border: '1px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</span>
-            <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1e293b', textTransform: 'capitalize' }}>{task.category || 'General'}</span>
+        {/* Meta grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50/60 border border-slate-100/60 rounded-xl p-3.5 mt-1">
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Category</span>
+            <span className="text-xs font-semibold text-slate-700 capitalize">{task.category || 'General'}</span>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>System Estimated Time</span>
-            <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#6366f1' }}>{formatTime(estimatedTime)}</span>
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estimated Time</span>
+            <span className="text-sm font-extrabold text-indigo-500">{formatTime(estimatedTime)}</span>
           </div>
-
-          {/* Original Window (The Past) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               {isRescheduled ? 'Original Window' : 'Active Window'}
             </span>
-            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: isRescheduled ? '#ef4444' : '#334155', textDecoration: isRescheduled ? 'line-through' : 'none' }}>
-              {isRescheduled && task.original_allocation_date ? (
-                `${new Date(task.original_allocation_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · `
-              ) : ''}
+            <span className={`text-xs font-bold ${isRescheduled ? 'text-red-400 line-through' : 'text-slate-600'}`}>
+              {isRescheduled && task.original_allocation_date ? `${new Date(task.original_allocation_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · ` : ''}
               {task.predictedActiveStart} - {task.predictedActiveEnd}
             </span>
           </div>
-
-          {/* Rescheduled Window (The Future) */}
           {isRescheduled && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rescheduled Window</span>
-              <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#4f46e5' }}>
-                {task.rescheduledActiveStart} - {task.rescheduledActiveEnd}
-              </span>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Rescheduled Window</span>
+              <span className="text-xs font-bold text-indigo-600">{task.rescheduledActiveStart} - {task.rescheduledActiveEnd}</span>
             </div>
           )}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</span>
-            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: validation.isValid ? '#10b981' : '#ef4444' }}>
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</span>
+            <span className={`text-xs font-bold ${validation.isValid ? 'text-emerald-500' : 'text-red-500'}`}>
               {isRescheduled && !isCompleted && !isFailed ? 'Rescheduled' : validation.message}
             </span>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8b5cf6', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estimation Mode</span>
-            <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#475569', textTransform: 'capitalize' }}>
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Estimation Mode</span>
+            <span className="text-xs font-semibold text-slate-600 capitalize">
               {task.method === 'cold_start' ? 'Cold Start' : task.method === 'warm_start' ? 'Warm Start' : task.method.replace('_', ' ')}
             </span>
           </div>
-
           {task.actual_time && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', marginTop: '4px' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Completed Time</span>
-              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#10b981' }}>{formatTime(task.actual_time)}</span>
+            <div className="flex flex-col gap-1 col-span-full border-t border-dashed border-slate-200/60 pt-3 mt-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Completed Time</span>
+              <span className="text-lg font-extrabold text-emerald-500">{formatTime(task.actual_time)}</span>
             </div>
           )}
         </div>
@@ -629,99 +624,112 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
           {notification.message}
         </div>
       )}
-
-      {/* Global Active Task Widget — all running tasks in one scrollable panel */}
-      {activeTasks.length > 0 && (
-        <div style={{
-          position: 'fixed', top: '4.5rem', right: '1rem', zIndex: 9998,
-          backgroundColor: '#ffffff', border: '2px solid #6366f1', borderRadius: '14px',
-          boxShadow: '0 10px 30px -5px rgba(99, 102, 241, 0.18), 0 4px 12px rgba(0,0,0,0.08)',
-          width: '360px', display: 'flex', flexDirection: 'column',
-          animation: 'modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-          overflow: 'hidden'
-        }}>
-          {/* Widget Header */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '12px 18px', borderBottom: '1px solid #e0e7ff',
-            backgroundColor: '#f5f3ff'
-          }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              ⚡ Active Tasks ({activeTasks.length})
-            </span>
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8' }}>
-              {activeTasks.filter(t => !taskTimersRef.current[t.id]?.isPaused).length} running · {activeTasks.filter(t => taskTimersRef.current[t.id]?.isPaused).length} paused
-            </span>
-          </div>
-
-          {/* Task Rows */}
-          <div style={{ maxHeight: '420px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-            {activeTasks.map((task, idx) => {
-              const timer = taskTimersRef.current[task.id]
-              if (!timer) return null
-              const isRunning = !timer.isPaused
-              return (
-                <div key={task.id} style={{
-                  padding: '12px 18px',
-                  borderBottom: idx < activeTasks.length - 1 ? '1px solid #f1f5f9' : 'none',
-                  display: 'flex', flexDirection: 'column', gap: '8px',
-                  backgroundColor: isRunning ? '#fafffe' : '#fffbf0'
-                }}>
-                  {/* Task name + status dot */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{
-                      width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
-                      backgroundColor: isRunning ? '#10b981' : '#f59e0b',
-                      boxShadow: isRunning ? '0 0 0 3px rgba(16,185,129,0.15)' : '0 0 0 3px rgba(245,158,11,0.15)'
-                    }} />
-                    <span style={{
-                      fontWeight: 700, color: '#1e293b', fontSize: '0.88rem',
-                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1
-                    }} title={task.name}>
-                      {task.name}
-                    </span>
-                    <span style={{
-                      fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em',
-                      color: isRunning ? '#10b981' : '#f59e0b', flexShrink: 0
-                    }}>
-                      {isRunning ? 'Running' : 'Paused'}
-                    </span>
-                  </div>
-
-                  {/* Timer + Buttons */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#334155', fontFamily: 'monospace' }}>
-                      {formatElapsed(getElapsed(task.id))}
-                    </span>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      {timer.isPaused ? (
-                        <button onClick={() => resumeTask(task.id)} style={{ backgroundColor: '#fef3c7', color: '#d97706', border: '1px solid #fcd34d', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}>
-                          ▶ Resume
-                        </button>
-                      ) : (
-                        <button onClick={() => pauseTask(task.id)} style={{ backgroundColor: '#fef3c7', color: '#d97706', border: '1px solid #fcd34d', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}>
-                          ⏸ Pause
-                        </button>
-                      )}
-                      <button onClick={() => markTaskComplete(task.id)} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem', boxShadow: '0 2px 4px rgba(16,185,129,0.2)' }}>
-                        ✓ Done
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
       <div className="main-content">
+        {/* Global Active Task Widget — Moved to top section */}
+        {activeTasks.length > 0 && !isPoppedOut && (
+          <div className="w-full flex flex-col glass-card overflow-hidden animate-fade-in-up mb-6 shadow-sm">
+            {/* Widget Header */}
+            <div className="flex justify-between items-center px-6 py-3.5 border-b border-slate-200/60 bg-white/40">
+              <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                Currently Active Tasks ({activeTasks.length})
+              </span>
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-semibold text-slate-500 bg-slate-100/80 px-2.5 py-1 rounded-lg">
+                  {activeTasks.filter(t => !taskTimersRef.current[t.id]?.isPaused).length} running &middot; {activeTasks.filter(t => taskTimersRef.current[t.id]?.isPaused).length} paused
+                </span>
+                <div className="flex items-center gap-2 border-l border-slate-200/60 pl-4 ml-1">
+                  <button 
+                    onClick={() => window.electronAPI.openActiveTasksWindow()}
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                    title="Pop out to new window"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                  </button>
+                  <button 
+                    onClick={() => setIsWidgetMinimized(!isWidgetMinimized)}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all"
+                    title={isWidgetMinimized ? "Expand" : "Minimize"}
+                  >
+                    {isWidgetMinimized ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Task Rows */}
+            {!isWidgetMinimized && (
+              <div className="max-h-[300px] overflow-y-auto flex flex-col">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0">
+                  {activeTasks.map((task, idx) => {
+                    const timer = taskTimersRef.current[task.id]
+                    if (!timer) return null
+                    const isRunning = !timer.isPaused
+                    return (
+                      <div 
+                        key={task.id} 
+                        className={`px-6 py-4 flex flex-col gap-3 transition-colors border-b border-r border-slate-100/60 ${isRunning ? 'bg-white/80' : 'bg-slate-50/60'}`}
+                      >
+                        {/* Task name + status dot */}
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                            isRunning ? 'bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)] animate-pulse' : 'bg-amber-500'
+                          }`} />
+                          <span className="font-bold text-slate-800 text-sm truncate flex-1" title={task.name}>
+                            {task.name}
+                          </span>
+                        </div>
+
+                        {/* Timer + Buttons */}
+                        <div className="flex justify-between items-center bg-slate-100/40 p-2 rounded-xl border border-slate-200/20">
+                          <span className="text-xl font-black text-slate-700 tracking-tighter" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            {formatElapsed(getElapsed(task.id))}
+                          </span>
+                          <div className="flex gap-1.5">
+                            {timer.isPaused ? (
+                              <button 
+                                onClick={() => resumeTask(task.id)} 
+                                className="p-2 text-amber-600 bg-white hover:bg-amber-50 border border-amber-200 rounded-lg transition-all shadow-sm"
+                                title="Resume"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={() => pauseTask(task.id)} 
+                                className="p-2 text-amber-600 bg-white hover:bg-amber-50 border border-amber-200 rounded-lg transition-all shadow-sm"
+                                title="Pause"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => markTaskComplete(task.id)} 
+                              className="p-2 text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-all shadow-md shadow-emerald-100"
+                              title="Complete Task"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="dashboard-grid">
           {/* Left Column */}
           <div className="left-column">
             {/* Calendar */}
-            <div className="card">
+            <div className="glass-card p-4 sm:p-6">
               <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                   <h3 style={{ margin: 0 }}>Calendar</h3>
@@ -786,11 +794,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                         >
                           <div className="day-number">{cell.day}</div>
                           {failedCount > 0 && (
-                            <div style={{
-                              fontSize: '0.62rem', color: '#ef4444', fontWeight: 800,
-                              marginTop: '2px', textAlign: 'center', lineHeight: '1.2',
-                              maxWidth: '100%', wordBreak: 'break-word'
-                            }}>
+                            <div className="calendar-missed-label">
                               {failedCount === 1 ? '1 task missed' : `${failedCount} missed`}
                             </div>
                           )}
@@ -822,7 +826,7 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
             </div>
 
             {/* Statistics */}
-            <div className="card">
+            <div className="glass-card p-4 sm:p-6">
               <div className="card-header"><h3>Task Statistics</h3></div>
               <div className="card-body">
                 <div className="stats-grid">
@@ -848,17 +852,22 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
           </div>
 
           {/* Right Column */}
+          {/* Right Column */}
           <div className="right-column">
             {/* Todo List */}
-            <div className="card">
-              <div className="card-header" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
-                  <h3 style={{ margin: 0 }}>Todo List</h3>
-                  <div className="filter-buttons" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div className="glass-card p-4 sm:p-6 flex flex-col gap-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-center w-100 flex-wrap gap-3">
+                  <h3 className="text-lg font-bold text-slate-800 m-0">Todo List</h3>
+                  <div className="flex gap-1.5 p-1 bg-slate-100/50 rounded-xl border border-slate-200/40">
                     {['all', 'High', 'Medium', 'Low'].map(f => (
                       <button
                         key={f}
-                        className={`filter-btn${currentFilter === f ? ' active' : ''}`}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                          currentFilter === f 
+                          ? 'bg-white text-indigo-600 shadow-sm' 
+                          : 'text-slate-500 hover:text-slate-700'
+                        }`}
                         onClick={() => setCurrentFilter(f)}
                       >
                         {f === 'all' ? 'All' : f}
@@ -867,130 +876,154 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                   </div>
                 </div>
                 {/* Search Bar */}
-                <div style={{ width: '100%', display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 12px' }}>
-                  <span style={{ marginRight: '8px', opacity: 0.5 }}>🔍</span>
+                <div className="relative group">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  </span>
                   <input
                     type="text"
                     placeholder="Search tasks..."
                     value={taskSearchQuery}
                     onChange={(e) => setTaskSearchQuery(e.target.value)}
-                    style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: '#1e293b' }}
+                    className="glass-input w-full pl-10 pr-10 py-2.5 text-sm"
                   />
                   {taskSearchQuery && (
-                    <button onClick={() => setTaskSearchQuery('')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', opacity: 0.5, fontSize: '1rem' }}>&times;</button>
+                    <button 
+                      onClick={() => setTaskSearchQuery('')} 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
+                    >
+                      &times;
+                    </button>
                   )}
                 </div>
               </div>
-              <div className="card-body">
-                <div className="todo-list">
-                  {filteredTasks.length === 0 ? (
-                    <div className="empty-state">
-                      <div className="empty-icon">📋</div>
-                      <p>No tasks found. Tasks will appear here from the API!</p>
-                    </div>
-                  ) : (
-                    filteredTasks.map(task => {
-                      const isFailed = task.status === 'failed'
-                      const estimatedTime = task.user_estimate || task.predicted_time
-                      const allocationDate = task.time_allocation_date
-                        ? formatDate(task.time_allocation_date.split('T')[0])
-                        : 'Not scheduled'
-                      return (
-                        <div key={task.id} className={`todo-item ${task.priority}${isFailed ? ' failed' : ''}`}>
-                          <div className="todo-header">
-                            <div className={`todo-title${isFailed ? ' failed-title' : ''}`}>{task.name}</div>
-                            {task.rescheduled && (
-                              <span style={{
-                                fontSize: '0.6rem', fontWeight: 900, backgroundColor: '#ffedd5', color: '#9a3412',
-                                padding: '1px 6px', borderRadius: '4px', border: '1px solid #fed7aa', textTransform: 'uppercase'
-                              }}>
-                                Re-Scheduled
-                              </span>
-                            )}
+
+              <div className="todo-list mt-2">
+                {filteredTasks.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center opacity-60">
+                    <div className="text-3xl mb-2">📋</div>
+                    <p className="text-sm font-medium text-slate-500">No tasks found.</p>
+                  </div>
+                ) : (
+                  filteredTasks.map(task => {
+                    const isFailed = task.status === 'failed'
+                    const estimatedTime = task.user_estimate || task.predicted_time
+                    const allocationDate = task.time_allocation_date
+                      ? formatDate(task.time_allocation_date.split('T')[0])
+                      : 'Not scheduled'
+                    
+                    const priorityBorder = task.priority === 'High' ? 'border-l-red-400' : task.priority === 'Low' ? 'border-l-emerald-400' : 'border-l-orange-400'
+
+                    return (
+                      <div key={task.id} className={`glass-card p-4 border-l-4 ${priorityBorder} ${isFailed ? 'opacity-60' : ''}`}>
+                        <div className="flex justify-between items-start gap-2 mb-3">
+                          <div className={`text-sm font-bold text-slate-800 min-w-0 break-words ${isFailed ? 'line-through' : ''}`}>
+                            {task.name}
                           </div>
-                          <div className="todo-meta">
-                            <div className="todo-meta-item">
-                              <span style={{ color: '#6366f1' }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                              </span>
-                              <span>{allocationDate}</span>
-                            </div>
-                            {task.predictedActiveStart && task.predictedActiveEnd && (
-                              <div className="todo-meta-item">
-                                <span style={{ color: '#6366f1' }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                </span>
-                                <span>{task.predictedActiveStart} - {task.predictedActiveEnd}</span>
-                              </div>
-                            )}
-                            <div className="todo-meta-item">
-                              <span style={{ color: '#6366f1' }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
-                              </span>
-                              <span>{formatTime(estimatedTime)}</span>
-                            </div>
-                            <div className="todo-meta-item">
-                              <span style={{ color: '#6366f1' }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-                              </span>
-                              <span className={`priority-badge ${task.priority}`}>{task.priority}</span>
-                            </div>
-                            {task.method && task.method !== 'unknown' && (
-                              <div className="todo-meta-item">
-                                <span style={{ color: '#8b5cf6' }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                                </span>
-                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#8b5cf6', backgroundColor: '#EDE9FE', padding: '2px 6px', borderRadius: '4px' }}>
-                                  {task.method === 'cold_start' ? 'Cold Start' : task.method === 'warm_start' ? 'Warm Start' : task.method.replace('_', ' ')}
-                                </span>
-                              </div>
-                            )}
-                            {isFailed && (
-                              <div className="todo-meta-item" style={{ gridColumn: 'span 2' }}>
-                                <span style={{ color: '#ef4444' }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                                </span>
-                                <span className="status-badge failed">Time Window Expired</span>
-                              </div>
-                            )}
-                          </div>
-                          {task.description && (
-                            <div className="todo-description"><strong>Main Task:</strong> {task.description}</div>
+                          {task.rescheduled && (
+                            <span className="text-[9px] font-extrabold bg-orange-100 text-orange-800 px-2 py-0.5 rounded border border-orange-200 uppercase shrink-0">
+                              Re-Scheduled
+                            </span>
                           )}
-                          <div style={{ marginTop: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '10px', display: 'flex', justifyContent: 'flex-end' }}>
-                            <button
-                              style={{ padding: '6px 12px', fontSize: '0.8rem', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
-                              onClick={() => {
-                                setManualLogTaskId(task.id);
-                                setManualLogActualTime(estimatedTime || 1);
-                                setManualLogCompletedDate(new Date().toISOString().split('T')[0]);
-                                setShowManualLogModal(true);
-                              }}
-                            >
-                              ✓ Complete Offline
-                            </button>
-                          </div>
                         </div>
-                      )
-                    })
-                  )}
-                </div>
+                        
+                        <div className="grid grid-cols-2 gap-y-3 gap-x-4 bg-slate-50/60 border border-slate-100/60 rounded-xl p-3.5">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                              Date
+                            </span>
+                            <span className="text-xs font-semibold text-slate-600">{allocationDate}</span>
+                          </div>
+                          
+                          {task.predictedActiveStart && task.predictedActiveEnd && (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                Window
+                              </span>
+                              <span className="text-xs font-semibold text-slate-600">{task.predictedActiveStart} - {task.predictedActiveEnd}</span>
+                            </div>
+                          )}
+
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+                              Estimated
+                            </span>
+                            <span className="text-xs font-extrabold text-indigo-500">{formatTime(estimatedTime)}</span>
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                              Priority
+                            </span>
+                            <span className={`text-[10px] font-extrabold uppercase ${
+                              task.priority === 'High' ? 'text-red-500' : task.priority === 'Low' ? 'text-emerald-500' : 'text-orange-500'
+                            }`}>{task.priority}</span>
+                          </div>
+
+                          {task.method && task.method !== 'unknown' && (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                                Mode
+                              </span>
+                              <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 uppercase inline-block w-fit">
+                                {task.method === 'cold_start' ? 'Cold' : task.method === 'warm_start' ? 'Warm' : String(task.method).split('_')[0]}
+                              </span>
+                            </div>
+                          )}
+
+                          {isFailed && (
+                            <div className="col-span-full flex items-center gap-2 mt-1">
+                              <span className="text-red-500">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                              </span>
+                              <span className="text-[10px] font-bold text-red-500 uppercase tracking-wide">Time Window Expired</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {task.description && (
+                          <div className="text-xs text-slate-500 mt-3 line-clamp-2">
+                            <span className="font-semibold text-slate-700">Main Task:</span> {task.description}
+                          </div>
+                        )}
+
+                        <div className="flex justify-end mt-4 pt-3 border-t border-dashed border-slate-200/60">
+                          <button
+                            className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+                            onClick={() => {
+                              setManualLogTaskId(task.id);
+                              setManualLogActualTime(estimatedTime || 1);
+                              setManualLogCompletedDate(new Date().toISOString().split('T')[0]);
+                              setShowManualLogModal(true);
+                            }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Complete Offline
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </div>
 
-            {/* Time Estimation */}
-            <div className="card">
-              <div className="card-header"><h3>Time Estimation</h3></div>
-              <div className="card-body">
-                <div className="time-summary">
-                  <div className="time-item">
-                    <span className="time-label">Today's Completed Time:</span>
-                    <span className="time-value">{formatTime(todaysLoggedTime)}</span>
-                  </div>
-                  <div className="time-item">
-                    <span className="time-label">Today's Available Time:</span>
-                    <span className="time-value">{availableTime}</span>
-                  </div>
+            {/* Time Estimation Summary */}
+            <div className="glass-card p-4 sm:p-6">
+              <h3 className="text-lg font-bold text-slate-800 mb-4">Daily Summary</h3>
+              <div className="space-y-1 bg-white/40 border border-slate-200/40 rounded-2xl overflow-hidden">
+                <div className="flex justify-between items-center p-4 border-b border-slate-200/40">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Completed</span>
+                  <span className="text-xl font-extrabold text-emerald-500">{formatTime(todaysLoggedTime)}</span>
+                </div>
+                <div className="flex justify-between items-center p-4">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Available</span>
+                  <span className="text-xl font-extrabold text-indigo-500">{availableTime}</span>
                 </div>
               </div>
             </div>
@@ -999,21 +1032,23 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
       </div>
 
       {/* Modal */}
-      {modalDate && (
-        <div className="modal" style={{ display: 'block' }} onClick={e => { if (e.target === e.currentTarget) setModalDate(null) }}>
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Tasks for <span>{new Date(modalDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></h3>
-              <button className="modal-close" onClick={() => setModalDate(null)}>&times;</button>
+      {modalDate && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-900/20 backdrop-blur-[2px] flex items-center justify-center p-4 transition-all duration-500 animate-fade-in" onClick={e => { if (e.target === e.currentTarget) setModalDate(null) }}>
+          <div className="glass-card w-full max-w-[680px] max-h-[85vh] flex flex-col overflow-hidden animate-fade-in-up shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/60 bg-white/40 shrink-0">
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                Tasks for <span className="text-indigo-500">{new Date(modalDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              </h3>
+              <button onClick={() => setModalDate(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100/80 hover:bg-red-500 text-slate-400 hover:text-white transition-all duration-200 text-lg font-medium">&times;</button>
             </div>
-            <div
-              className="modal-body"
-            >
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {/* Allocated Tasks */}
               {modalTasks.length > 0 && (
                 <>
-                  <h4 style={{ margin: '12px 0 8px 0', fontSize: '0.85em', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800 }}>Scheduled Focus Tasks</h4>
-                  <div>{modalTasks.map(renderModalTask)}</div>
+                  <p className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider">Scheduled Focus Tasks</p>
+                  <div className="space-y-3">{modalTasks.map(renderModalTask)}</div>
                 </>
               )}
               {/* Deadline Tasks */}
@@ -1023,17 +1058,11 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                 )
                 return (
                   <>
-                    <h4 style={{ margin: '15px 0 5px 0', fontSize: '0.9em', color: '#f97316', display: 'flex', alignItems: 'center', gap: '6px' }}>Deadlines</h4>
+                    <p className="text-[11px] font-bold text-orange-500 uppercase tracking-wider mt-2">Deadlines</p>
                     {uniqueDeadlines.map((d, idx) => (
-                      <div key={idx} style={{
-                        background: 'linear-gradient(135deg, #fff7ed, #ffedd5)',
-                        border: '2px solid #f97316',
-                        borderRadius: '8px',
-                        padding: '10px 14px',
-                        marginBottom: '8px'
-                      }}>
-                        <div style={{ fontWeight: 700, color: '#c2410c', fontSize: '0.95em' }}>{d.main_task || 'Assignment'}</div>
-                        <div style={{ color: '#9a3412', fontSize: '0.82em', marginTop: '4px' }}>Deadline: {d.deadline}</div>
+                      <div key={idx} className="glass-card p-3 border-l-4 border-l-orange-400">
+                        <div className="text-sm font-bold text-orange-800">{d.main_task || 'Assignment'}</div>
+                        <div className="text-xs text-orange-600 mt-1">Deadline: {d.deadline}</div>
                       </div>
                     ))}
                   </>
@@ -1049,19 +1078,14 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                 if (uniqueSummary.length === 0) return null
                 return (
                   <>
-                    <h4 style={{ margin: '15px 0 5px 0', fontSize: '0.9em', color: '#ef4444' }}>System Suggested</h4>
+                    <p className="text-[11px] font-bold text-red-500 uppercase tracking-wider mt-2">System Suggested</p>
                     {uniqueSummary.map((s, idx) => (
-                      <div key={idx} className="modal-task-item Medium" style={{ borderLeftColor: '#ef4444' }}>
-                        <div className="modal-task-header">
-                          <div className="modal-task-title">{s.subtask_name}</div>
-                          <span className="status-badge" style={{ backgroundColor: '#fee2e2', color: '#ef4444' }}>System Suggested</span>
+                      <div key={idx} className="glass-card p-3 border-l-4 border-l-red-400">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-bold text-slate-800">{s.subtask_name}</span>
+                          <span className="px-2 py-0.5 text-[10px] font-bold text-red-600 bg-red-50 rounded border border-red-200 uppercase">System Suggested</span>
                         </div>
-                        <div className="modal-task-meta">
-                          <div className="modal-meta-item">
-                            <span className="meta-label">Final Deadline:</span>
-                            <span className="meta-value">{s.deadline}</span>
-                          </div>
-                        </div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Final Deadline: <span className="text-slate-600 font-semibold normal-case">{s.deadline}</span></div>
                       </div>
                     ))}
                   </>
@@ -1069,45 +1093,48 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
               })()}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Manual Log Modal */}
-      {showManualLogModal && (
-        <div className="modal" style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, alignItems: 'center', justifyContent: 'center' }} onClick={e => { if (e.target === e.currentTarget) setShowManualLogModal(false) }}>
-          <div className="modal-content" style={{ maxWidth: '450px', borderRadius: '12px', overflow: 'hidden', margin: 0 }}>
-            <div className="modal-header" style={{ backgroundColor: '#f8fafc', padding: '15px 20px', borderBottom: '1px solid #e2e8f0' }}>
-              <h3 style={{ margin: 0, color: '#1e293b' }}>Log Offline Task</h3>
-              <button className="modal-close" onClick={() => setShowManualLogModal(false)} style={{ border: 'none', background: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#64748b' }}>&times;</button>
+      {showManualLogModal && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-900/20 backdrop-blur-[2px] flex items-center justify-center p-4 transition-all duration-500 animate-fade-in" onClick={e => { if (e.target === e.currentTarget) setShowManualLogModal(false) }}>
+          <div className="glass-card w-full max-w-[450px] overflow-hidden animate-fade-in-up shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200/60 bg-white/40">
+              <h3 className="text-base font-bold text-slate-900 m-0">Log Offline Task</h3>
+              <button onClick={() => setShowManualLogModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100/80 hover:bg-red-500 text-slate-400 hover:text-white transition-all duration-200 text-lg">&times;</button>
             </div>
-            <div className="modal-body" style={{ padding: '20px' }}>
+            {/* Body */}
+            <div className="p-5">
               {(() => {
                 const targetTask = tasks.find(t => t.id === manualLogTaskId);
                 return targetTask ? (
-                  <div style={{ marginBottom: '16px', padding: '12px', background: '#f1f5f9', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800, marginBottom: '4px' }}>Task Name</div>
-                    <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '1.05rem' }}>{targetTask.name}</div>
-                    {targetTask.description && <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '4px' }}>{targetTask.description}</div>}
+                  <div className="mb-4 p-3 bg-slate-50/60 rounded-xl border border-slate-100/60">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Task Name</div>
+                    <div className="text-sm font-semibold text-slate-800">{targetTask.name}</div>
+                    {targetTask.description && <div className="text-xs text-slate-500 mt-1">{targetTask.description}</div>}
                   </div>
                 ) : null;
               })()}
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '16px', marginBottom: '20px' }}>
+              <div className="grid grid-cols-2 gap-4 mb-5">
                 <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#334155', fontSize: '0.85rem' }}>Actual Time (mins)</label>
+                  <label className="block mb-1.5 text-xs font-semibold text-slate-600">Actual Time (mins)</label>
                   <input
                     type="number"
-                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', color: '#1e293b' }}
+                    className="glass-input w-full px-3 py-2.5 text-sm text-slate-800"
                     value={manualLogActualTime}
                     onChange={(e) => setManualLogActualTime(parseInt(e.target.value) || 0)}
                     min="1"
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#334155', fontSize: '0.85rem' }}>Completion Date</label>
+                  <label className="block mb-1.5 text-xs font-semibold text-slate-600">Completion Date</label>
                   <input
                     type="date"
-                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', color: '#1e293b' }}
+                    className="glass-input w-full px-3 py-2.5 text-sm text-slate-800"
                     value={manualLogCompletedDate}
                     max={new Date().toISOString().split('T')[0]}
                     onChange={(e) => setManualLogCompletedDate(e.target.value)}
@@ -1115,24 +1142,25 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+              <div className="flex gap-2.5 justify-end mt-3">
                 <button
-                  style={{ padding: '8px 16px', backgroundColor: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
                   onClick={() => setShowManualLogModal(false)}
                 >
                   Cancel
                 </button>
                 <button
-                  style={{ padding: '8px 16px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-xl transition-colors shadow-sm flex items-center gap-1.5 disabled:opacity-50"
                   onClick={markTaskCompleteManual}
                   disabled={!manualLogTaskId}
                 >
-                  <span style={{ opacity: manualLogTaskId ? 1 : 0.6 }}>✓ Save Log</span>
+                  ✓ Save Log
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

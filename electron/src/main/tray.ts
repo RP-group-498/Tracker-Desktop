@@ -60,7 +60,13 @@ export class TrayManager extends EventEmitter {
 
         // For now, use same icon with different tooltip
         // TODO: Create actual tray icons
-        return path.join(assetsDir, 'icon.ico');
+        if (process.platform === 'darwin') {
+            return path.join(assetsDir, 'icon.png');
+        }
+        if (process.platform === 'win32') {
+            return path.join(assetsDir, 'icon.ico');
+        }
+        return path.join(assetsDir, 'icon.png');
     }
 
     /**

@@ -1,57 +1,74 @@
 {
   "tasks": [
     {
-      "task_name": "Create a Professional Associate Software Engineer Resume",
-      "task_description": "How to compile a comprehensive resume for an Associate Software Engineer role, showcasing full-stack development skills and project experience?",
+      "task_name": "Lab Sheet 08 – Neural Networks: Behavior & Design",
+      "task_description": "How to understand and design basic neural network components and their behavior?",
       "sub_tasks": [
         {
-          "name": "Gather Contact Information (Email, Mobile, LinkedIn, GitHub)",
-          "estimated_minutes": 5
+          "name": "Task 01 - Quick Concept Check: What is the role of weights in a neural network?",
+          "estimated_minutes": 10,
+          "suggested_date": "2026-05-02"
         },
         {
-          "name": "Write a Professional Summary",
-          "estimated_minutes": 45
+          "name": "Task 01 - Quick Concept Check: What does the bias do?",
+          "estimated_minutes": 10,
+          "suggested_date": "2026-05-02"
         },
         {
-          "name": "List Technical Skills (Programming Languages, Frontend, Backend, Databases, Tools & Platforms, Testing, Concepts & Practices)",
-          "estimated_minutes": 30
+          "name": "Task 01 - Quick Concept Check: What is the purpose of an activation function?",
+          "estimated_minutes": 10,
+          "suggested_date": "2026-05-02"
         },
         {
-          "name": "Detail Work Experience (Internships and Contract Roles)",
-          "estimated_minutes": 180
+          "name": "Task 02 - Activation Functions: Compute ReLU(z) given z = -2",
+          "estimated_minutes": 5,
+          "suggested_date": "2026-05-02"
         },
         {
-          "name": "Showcase Projects (Jupiter Gem, Alankara Interior, Smart Job, Planet First, Official Portfolio, GreenGleam, Orchid Species Identifier, Restaurant Management Service)",
-          "estimated_minutes": 240
+          "name": "Task 02 - Activation Functions: Compute Leaky ReLU(z) (α = 0.01) given z = -2",
+          "estimated_minutes": 5,
+          "suggested_date": "2026-05-02"
         },
         {
-          "name": "Highlight Achievements (Mini Hackathon)",
-          "estimated_minutes": 30
+          "name": "Task 02 - Activation Functions: Why does ReLU output 0 for negative values?",
+          "estimated_minutes": 10,
+          "suggested_date": "2026-05-02"
         },
         {
-          "name": "Provide Educational Background",
-          "estimated_minutes": 15
+          "name": "Task 02 - Activation Functions: What is the “Dying ReLU\" problem?",
+          "estimated_minutes": 15,
+          "suggested_date": "2026-05-02"
+        },
+        {
+          "name": "Task 03 – Network Design: Determine the number of input neurons for predicting student pass/fail",
+          "estimated_minutes": 5,
+          "suggested_date": "2026-05-03"
+        },
+        {
+          "name": "Task 03 – Network Design: Design a simple network (Input, Hidden, Output layers with details) for predicting student pass/fail",
+          "estimated_minutes": 45,
+          "suggested_date": "2026-05-03"
         }
       ],
-      "context": "The resume should highlight strong experience in full-stack development using React.js, Next.js, Angular, Node.js, and .NET. It should emphasize skills in building scalable, responsive, and high-performance web applications, clean code, system optimization, performance tuning, REST APIs, cloud deployment, testing, Agile development, and the software development lifecycle (SDLC), with strong problem-solving abilities.",
+      "context": "Course: SE4010 – Current Trends in Software Engineering. For Task 02, 'z = -2' and 'α = 0.01' are given. For Task 03, the prediction is 'Pass (1)' or 'Fail (0)' based on 'Study hours', 'Attendance', and 'Assignment marks'.",
       "ai_suggestions": {
         "ai_suggested_difficulty": 3,
-        "ai_suggested_time": 9.0
+        "ai_suggested_time": 2.0
       },
       "metrics": {
-        "deadline": "2026-03-26",
-        "days_left": 21,
-        "credits": 4,
-        "percentage": 10,
+        "deadline": "2026-05-03",
+        "days_left": 1,
+        "credits": 3,
+        "percentage": 2,
         "difficulty_rating": 3
       },
       "mcdm_calculation": {
-        "urgency_score": 20.0,
-        "impact_score": 20.0,
+        "urgency_score": 100.0,
+        "impact_score": 10.0,
         "difficulty_score": 60.0,
-        "final_weighted_score": 28.0
+        "final_weighted_score": 65.0
       },
-      "priority": "Low"
+      "priority": "Medium"
     }
   ]
 }

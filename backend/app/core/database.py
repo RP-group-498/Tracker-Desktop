@@ -1,55 +1,43 @@
 """
 /core/database.py
-SQLite database connection and session management."""
+MongoDB database connection and management.
+"""
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from typing import AsyncGenerator
-
 from app.config import settings
 
+class DatabaseConfig:
+    client: AsyncIOMotorClient = None
+    db: AsyncIOMotorDatabase = None
 
-class Base(DeclarativeBase):
-    """Base class for all SQLAlchemy models."""
-    pass
-
-
-# Create async engine
-engine = create_async_engine(
-    settings.database_url,
-    echo=settings.debug,
-    future=True,
-)
-
-# Session factory
-async_session_maker = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
-
+db_config = DatabaseConfig()
 
 async def init_db() -> None:
-    """Initialize database - create all tables."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    print(f"[Database] Initialized at {settings.database_url}")
-
+    """Initialize MongoDB connection."""
+    if not settings.mongodb_uri:
+        print("[Database] WARNING: MONGODB_URI not configured in .env")
+        return
+        
+    db_config.client = AsyncIOMotorClient(settings.mongodb_uri)
+    db_config.db = db_config.client[settings.mongodb_database]
+    
+    # Create indexes for frequently queried fields
+    await db_config.db.activity_events.create_index("event_id", unique=True)
+    await db_config.db.activity_events.create_index("user_id")
+    await db_config.db.activity_events.create_index("timestamp")
+    await db_config.db.browser_sessions.create_index("session_id", unique=True)
+    
+    print(f"[Database] Connected to MongoDB database: {settings.mongodb_database}")
 
 async def close_db() -> None:
-    """Close database connection."""
-    await engine.dispose()
-    print("[Database] Connection closed")
+    """Close MongoDB connection."""
+    if db_config.client:
+        db_config.client.close()
+        print("[Database] MongoDB connection closed")
 
-
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency that provides a database session."""
-    async with async_session_maker() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+async def get_db() -> AsyncGenerator[AsyncIOMotorDatabase, None]:
+    """Dependency that provides the MongoDB database instance."""
+    if db_config.db is None:
+        raise Exception("Database is not initialized. Call init_db() first.")
+    yield db_config.db

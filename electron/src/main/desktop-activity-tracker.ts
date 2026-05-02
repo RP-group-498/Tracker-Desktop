@@ -9,6 +9,7 @@
 import { EventEmitter } from 'events';
 import { powerMonitor } from 'electron';
 import { PythonBridge } from './python-bridge';
+import { ActivitySyncService } from './activity-sync';
 import { randomUUID } from 'crypto';
 
 // Dynamic import for active-win (CommonJS module)
@@ -94,6 +95,7 @@ interface DesktopActivityEvent {
 
 export class DesktopActivityTracker extends EventEmitter {
     private pythonBridge: PythonBridge;
+    private syncService: ActivitySyncService;
     private pollTimer: NodeJS.Timeout | null = null;
     private isRunning = false;
 
@@ -110,9 +112,10 @@ export class DesktopActivityTracker extends EventEmitter {
     // Statistics
     private totalEventsTracked = 0;
 
-    constructor(pythonBridge: PythonBridge) {
+    constructor(pythonBridge: PythonBridge, syncService: ActivitySyncService) {
         super();
         this.pythonBridge = pythonBridge;
+        this.syncService = syncService;
     }
 
     /**
@@ -179,6 +182,9 @@ export class DesktopActivityTracker extends EventEmitter {
     async stop(): Promise<void> {
         console.log('[DesktopTracker] Stopping desktop activity tracking...');
 
+        // Mark as not running FIRST so in-flight polls can bail out
+        this.isRunning = false;
+
         if (this.pollTimer) {
             clearInterval(this.pollTimer);
             this.pollTimer = null;
@@ -189,7 +195,6 @@ export class DesktopActivityTracker extends EventEmitter {
             await this.flushCurrentWindow();
         }
 
-        this.isRunning = false;
         this.emit('stopped');
         console.log('[DesktopTracker] Desktop activity tracking stopped');
     }
@@ -202,9 +207,22 @@ export class DesktopActivityTracker extends EventEmitter {
     }
 
     /**
-     * Poll for active window changes and idle state
+     * Check if an error is a benign SIGINT from the active-win child process
+     * (happens when the app is shutting down and the signal propagates).
      */
+    private isShutdownSignalError(error: unknown): boolean {
+        if (error && typeof error === 'object') {
+            const err = error as { signal?: string; killed?: boolean };
+            return err.signal === 'SIGINT' || err.signal === 'SIGTERM';
+        }
+        return false;
+    }
+
     private async poll(): Promise<void> {
+        // Bail out early if we've been stopped (avoids spawning a child process
+        // during shutdown that would just get killed by signal propagation).
+        if (!this.isRunning) return;
+
         try {
             // Check idle state first
             const wasIdle = this.isUserIdle;
@@ -287,6 +305,14 @@ export class DesktopActivityTracker extends EventEmitter {
                 }
             }
         } catch (error) {
+            // Suppress SIGINT/SIGTERM errors — these are caused by the OS signal
+            // propagating to the active-win child process during app shutdown.
+            if (this.isShutdownSignalError(error)) {
+                if (this.isRunning) {
+                    console.log('[DesktopTracker] active-win process interrupted (signal), will retry next poll');
+                }
+                return;
+            }
             console.error('[DesktopTracker] Poll error:', error);
             this.emit('error', error);
         }
@@ -384,15 +410,14 @@ export class DesktopActivityTracker extends EventEmitter {
      */
     private async sendActivity(event: DesktopActivityEvent): Promise<void> {
         try {
-            const response = await this.pythonBridge.submitActivityBatch([event]);
+            const result = await this.syncService.submitActivity([event]);
 
-            if (response.success) {
+            if (result.success) {
                 this.totalEventsTracked++;
                 this.emit('activityRecorded', event);
-                console.log(`[DesktopTracker] Recorded: ${event.appName} (${event.activeTime}ms)`);
+                console.log(`[DesktopTracker] Recorded: ${event.appName} (${event.activeTime}ms)${result.storedLocally ? ' [STORED LOCALLY]' : ''}`);
             } else {
-                console.error('[DesktopTracker] Failed to send activity:', response.error);
-                this.emit('error', new Error(response.error));
+                console.error('[DesktopTracker] Failed to process activity');
             }
         } catch (error) {
             console.error('[DesktopTracker] Error sending activity:', error);

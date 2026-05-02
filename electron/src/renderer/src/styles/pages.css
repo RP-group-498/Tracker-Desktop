@@ -20,8 +20,15 @@
     --medium-priority: #ffc107;
     --low-priority: #28a745;
 }
+
+/* Use global adaptive glass tokens when available */
+:root {
+    --card-bg: var(--surface-glass, #ffffff);
+    --dark-bg: var(--surface-page, #f8f9fa);
+    --text-secondary: var(--text-muted, #6c757d);
+    --border-color: var(--border-glass, #dee2e6);
+}
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: var(--dark-bg);
     color: var(--text-primary);
     min-height: 100vh;
@@ -29,8 +36,8 @@ body {
 }
 
 .container {
-    max-width: 1400px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
     padding: 0;
 }
 
@@ -77,7 +84,7 @@ body {
 
 /* Main Content */
 .main-content {
-    padding: 2rem;
+    padding: 1rem;
 }
 
 .page-header {
@@ -97,12 +104,13 @@ body {
 
 /* Card Styles */
 .card {
-    background: var(--card-bg);
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    background: var(--surface-glass);
+    border-radius: var(--glass-radius-lg);
+    box-shadow: var(--shadow-glass);
     margin-bottom: 1.5rem;
     overflow: hidden;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-glass);
+    backdrop-filter: blur(12px);
 }
 
 .card-header {
@@ -138,8 +146,8 @@ body {
 .form-control {
     width: 100%;
     padding: 0.75rem;
-    background: var(--dark-bg);
-    border: 1px solid var(--border-color);
+    background: var(--surface-glass-soft);
+    border: 1px solid var(--border-glass-strong);
     border-radius: 5px;
     color: var(--text-primary);
     font-size: 1rem;
@@ -180,7 +188,7 @@ body {
 .btn {
     padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 5px;
+    border-radius: var(--glass-radius-sm);
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;

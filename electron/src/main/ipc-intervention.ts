@@ -85,43 +85,9 @@ export function registerInterventionHandlers(
     // ── OS Notification with action buttons ───────────────────────────────
 
     ipcMain.on('intervention:notify-actions', (_event, data: { title: string; body: string; strategy: string }) => {
-        if (!isMac && interventionPopup) {
-            // Windows: use custom popup window (native Notification has no action buttons)
-            interventionPopup.show(data);
-            return;
-        }
-
-        // macOS: use native Notification with action buttons
-        const mainWindow = getMainWindow();
-
-        const notification = new Notification({
-            title: data.title,
-            body: data.body,
-            actions: [
-                { type: 'button', text: 'Start' },
-                { type: 'button', text: 'Skip' },
-            ],
-            closeButtonText: 'Not Now',
-        });
-
-        notification.on('action', (_e, index) => {
-            const actionMap: Record<number, string> = { 0: 'start', 1: 'skip' };
-            const action = actionMap[index] ?? 'not_now';
-            mainWindow?.webContents.send('notification-action-response', {
-                strategy: data.strategy,
-                action,
-            });
-        });
-
-        notification.on('close', () => {
-            // Dismissed without clicking a button — treat as "not_now"
-            mainWindow?.webContents.send('notification-action-response', {
-                strategy: data.strategy,
-                action: 'not_now',
-            });
-        });
-
-        notification.show();
+        // Use custom popup window on all platforms — macOS native Notification
+        // actions require a signed/entitled app and don't work in dev builds.
+        interventionPopup.show(data);
     });
 
     // ── Plain OS notification (no action buttons) ──────────────────────────

@@ -8,53 +8,33 @@ const TaskPrioritizationTab: React.FC = () => {
     const [activeSubTab, setActiveSubTab] = useState<SubTab>('time-estimator')
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            {/* Sub-tab navigation */}
-            <div style={{
-                display: 'flex',
-                gap: '0',
-                padding: '8px 16px 0',
-                backgroundColor: 'white',
-                borderBottom: '1px solid #e5e7eb',
-            }}>
-                <button
-                    onClick={() => setActiveSubTab('time-estimator')}
-                    style={{
-                        padding: '8px 16px',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        border: 'none',
-                        borderBottom: activeSubTab === 'time-estimator' ? '2px solid #6c63ff' : '2px solid transparent',
-                        color: activeSubTab === 'time-estimator' ? '#6c63ff' : '#6b7280',
-                        backgroundColor: 'transparent',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        marginBottom: '-1px',
-                    }}
-                >
-                    Time Estimator
-                </button>
-                <button
-                    onClick={() => setActiveSubTab('pdf-analysis')}
-                    style={{
-                        padding: '8px 16px',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        border: 'none',
-                        borderBottom: activeSubTab === 'pdf-analysis' ? '2px solid #6c63ff' : '2px solid transparent',
-                        color: activeSubTab === 'pdf-analysis' ? '#6c63ff' : '#6b7280',
-                        backgroundColor: 'transparent',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        marginBottom: '-1px',
-                    }}
-                >
-                    PDF Analysis
-                </button>
+        <div className="flex flex-col h-full bg-slate-50/50 p-2 w-full">
+            <div className="mb-4 sm:mb-6 flex justify-center">
+                <div className="glass-card p-1 rounded-xl inline-flex gap-1 flex-wrap justify-center">
+                    <button
+                        onClick={() => setActiveSubTab('time-estimator')}
+                        className={`px-4 sm:px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            activeSubTab === 'time-estimator' 
+                                ? 'bg-white text-purple-700 shadow-sm' 
+                                : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                        Time Estimator
+                    </button>
+                    <button
+                        onClick={() => setActiveSubTab('pdf-analysis')}
+                        className={`px-4 sm:px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            activeSubTab === 'pdf-analysis' 
+                                ? 'bg-white text-purple-700 shadow-sm' 
+                                : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                        PDF Analysis
+                    </button>
+                </div>
             </div>
 
-            {/* Content */}
-            <div style={{ flex: 1, overflow: 'auto' }}>
+            <div className="animate-fade-in-up">
                 {activeSubTab === 'time-estimator' && <TimeEstimator embedded />}
                 {activeSubTab === 'pdf-analysis' && <PDFAnalysis embedded />}
             </div>

@@ -87,8 +87,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 12px;
             height: 100vh;
             background: #1a1a2e;
+            padding: 0 12px;
         }
 
         .timer-label {
@@ -97,6 +99,23 @@
             color: #7c83ff;
             font-variant-numeric: tabular-nums;
             letter-spacing: 0.5px;
+        }
+
+        .btn-timer-cancel {
+            padding: 4px 10px;
+            border: 1px solid rgba(255, 100, 100, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 80, 80, 0.12);
+            color: #ff6b6b;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .btn-timer-cancel:hover {
+            background: rgba(255, 80, 80, 0.25);
+            border-color: rgba(255, 100, 100, 0.5);
         }
 
         /* ── Idle prompt mode ─────────────────────────────────── */
@@ -147,6 +166,7 @@
     <!-- Timer mode -->
     <div id="timer-view" class="timer-view hidden">
         <div class="timer-label" id="timer-label">--:--</div>
+        <button class="btn-timer-cancel" id="btn-timer-cancel">Cancel</button>
     </div>
 
     <!-- Idle prompt mode -->
@@ -210,6 +230,13 @@
             // Set initial label from query param
             const initLabel = params.get('label');
             if (initLabel) labelEl.textContent = initLabel;
+
+            // Cancel button — stop the Pomodoro
+            document.getElementById('btn-timer-cancel').addEventListener('click', () => {
+                if (window.electronAPI && window.electronAPI.interventionPopupAction) {
+                    window.electronAPI.interventionPopupAction({ strategy: 'pomodoro_timer', action: 'stop' });
+                }
+            });
 
             // Listen for updates from main process
             if (window.electronAPI && window.electronAPI.onInterventionTimerUpdate) {

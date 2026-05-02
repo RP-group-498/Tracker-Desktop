@@ -121,9 +121,9 @@ export class InterventionPopup {
         const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
         const win = new BrowserWindow({
-            width: 160,
+            width: 220,
             height: 50,
-            x: width - 160 - 16,
+            x: width - 220 - 16,
             y: height - 50 - 16,
             resizable: false,
             movable: true,
@@ -239,6 +239,14 @@ export class InterventionPopup {
                     // Tell main process to reset idle check
                     ipcMain.emit('intervention:idle-continue');
                 }
+                return;
+            }
+
+            if (data.strategy === 'pomodoro_timer' && data.action === 'stop') {
+                // Cancel button on the timer popup — stop the Pomodoro
+                const mainWindow = this.getMainWindow();
+                mainWindow?.webContents.send('intervention:pomodoro-idle', { action: 'stop' });
+                this.clearTimer();
                 return;
             }
 

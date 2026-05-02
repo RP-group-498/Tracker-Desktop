@@ -127,7 +127,7 @@ class MLClassifier:
         self.model_name = config.get("model_name", "facebook/bart-large-mnli")
         self.device = config.get("device", "cpu")
         self.batch_size = config.get("batch_size", 1)
-        self.confidence_threshold = config.get("confidence_threshold", 0.55)
+        self.confidence_threshold = config.get("confidence_threshold", 0.50)
 
         self._classifier = None
         self._initialized = False
@@ -136,10 +136,10 @@ class MLClassifier:
         # Category descriptions for zero-shot classification
         # These natural language descriptions define what each category means
         self.category_labels = {
-            "academic": "academic research, studying, education, learning, university courses, scientific papers",
-            "productivity": "work, coding, software development, documentation, professional tools, project management",
-            "neutral": "email, communication, general web browsing, utilities, system tools",
-            "non_academic": "entertainment, social media, gaming, shopping, leisure, streaming videos",
+            "academic": "scientific research, academic papers, university coursework, scholarly articles, learning educational material, student portal, bibliography, library resources, JSTOR, arXiv, Google Scholar, citation management, thesis, dissertation, LaTeX, software development, coding IDE, terminal command line, AI, Coding, GitHub, StackOverflow, programming, debugging, software engineering, computer science, technical tutorials, web development, react, javascript, css, html, database, system architecture",
+            "productivity": "professional business administration, project management tools, office suites, business presentations, corporate communication, spreadsheets, finance, management, Jira, Trello, Asana, workspace organization, business email, task tracking",
+            "neutral": "general utility tools, system settings, file management, basic information search, weather, maps, login pages, authentication, browser homepage, email inbox, calendar, simple calculators",
+            "non_academic": "entertainment, social media, gaming, online shopping, leisure browsing, news, sports, netflix, youtube entertainment, movies, trailers, facebook, instagram, twitter, reddit, twitch, music, celebrity gossip, viral videos",
         }
 
         logging.info(f"[MLClassifier] Initialized with model: {self.model_name}")

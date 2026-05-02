@@ -1,4 +1,5 @@
 import React from 'react';
+import { BookOpen, Globe, BriefcaseBusiness, Repeat2 } from 'lucide-react';
 import { Report } from './types';
 
 interface Props {
@@ -6,22 +7,22 @@ interface Props {
 }
 
 interface StatProps {
-  icon: string;
+  icon: React.ReactNode;
   value: number;
   unit?: string;
   label: string;
-  color: string;
+  colorClass: string;
 }
 
-function Stat({ icon, value, unit, label, color }: StatProps) {
+function Stat({ icon, value, unit, label, colorClass }: StatProps) {
   return (
-    <div className="today-stat">
-      <div className="today-stat-icon">{icon}</div>
-      <div>
-        <span className="today-stat-value" style={{ color }}>{value}</span>
-        {unit && <span className="today-stat-unit">{unit}</span>}
+    <div className="bg-white/60 border border-slate-200/60 rounded-xl p-4 flex flex-col items-center text-center gap-1 transition-all hover:bg-white/80">
+      <div className={`mb-1 opacity-80 ${colorClass}`}>{icon}</div>
+      <div className="flex items-baseline gap-0.5">
+        <span className={`text-3xl font-black tracking-tight leading-none ${colorClass}`}>{value}</span>
+        {unit && <span className="text-xs font-semibold text-slate-500">{unit}</span>}
       </div>
-      <p className="today-stat-label">{label}</p>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{label}</p>
     </div>
   );
 }
@@ -30,38 +31,30 @@ const TodaySummaryCard: React.FC<Props> = ({ report }) => {
   const at = report.activeTime;
 
   return (
-    <div className="card today-summary-card">
-      <p className="section-label">
-        Yesterday's Full-Day Summary
-        <span className="today-date-badge">{report.date} · {at.day}</span>
-      </p>
-      <div className="today-summary-grid">
+    <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md flex flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <h3 className="text-base font-semibold text-slate-800 tracking-tight">Yesterday's Full-Day Summary</h3>
+        <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+          {report.date} · {at.day}
+        </span>
+      </div>
+      
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Stat
-          icon="📚"
-          value={at.fullDayAcademicMinutes}
-          unit="m"
-          label="Academic"
-          color="#22c55e"
+          icon={<BookOpen size={24} />} value={at.fullDayAcademicMinutes} unit="m"
+          label="Academic" colorClass="text-green-500"
         />
         <Stat
-          icon="🌐"
-          value={at.fullDayNonAcademicMinutes}
-          unit="m"
-          label="Non-Academic"
-          color="#ef4444"
+          icon={<Globe size={24} />} value={at.fullDayNonAcademicMinutes} unit="m"
+          label="Non-Academic" colorClass="text-red-500"
         />
         <Stat
-          icon="💼"
-          value={at.fullDayProductivityMinutes}
-          unit="m"
-          label="Productivity"
-          color="#f97316"
+          icon={<BriefcaseBusiness size={24} />} value={at.fullDayProductivityMinutes} unit="m"
+          label="Productivity" colorClass="text-orange-500"
         />
         <Stat
-          icon="🔄"
-          value={at.fullDayTotalAppSwitches}
-          label="Total Switches"
-          color="#6366f1"
+          icon={<Repeat2 size={24} />} value={at.fullDayTotalAppSwitches}
+          label="Total Switches" colorClass="text-indigo-500"
         />
       </div>
     </div>
