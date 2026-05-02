@@ -9,6 +9,7 @@
 import { EventEmitter } from 'events';
 import { powerMonitor } from 'electron';
 import { PythonBridge } from './python-bridge';
+import { ActivitySyncService } from './activity-sync';
 import { randomUUID } from 'crypto';
 
 // Dynamic import for active-win (CommonJS module)
@@ -94,6 +95,7 @@ interface DesktopActivityEvent {
 
 export class DesktopActivityTracker extends EventEmitter {
     private pythonBridge: PythonBridge;
+    private syncService: ActivitySyncService;
     private pollTimer: NodeJS.Timeout | null = null;
     private isRunning = false;
 
@@ -110,9 +112,10 @@ export class DesktopActivityTracker extends EventEmitter {
     // Statistics
     private totalEventsTracked = 0;
 
-    constructor(pythonBridge: PythonBridge) {
+    constructor(pythonBridge: PythonBridge, syncService: ActivitySyncService) {
         super();
         this.pythonBridge = pythonBridge;
+        this.syncService = syncService;
     }
 
     /**
@@ -407,15 +410,14 @@ export class DesktopActivityTracker extends EventEmitter {
      */
     private async sendActivity(event: DesktopActivityEvent): Promise<void> {
         try {
-            const response = await this.pythonBridge.submitActivityBatch([event]);
+            const result = await this.syncService.submitActivity([event]);
 
-            if (response.success) {
+            if (result.success) {
                 this.totalEventsTracked++;
                 this.emit('activityRecorded', event);
-                console.log(`[DesktopTracker] Recorded: ${event.appName} (${event.activeTime}ms)`);
+                console.log(`[DesktopTracker] Recorded: ${event.appName} (${event.activeTime}ms)${result.storedLocally ? ' [STORED LOCALLY]' : ''}`);
             } else {
-                console.error('[DesktopTracker] Failed to send activity:', response.error);
-                this.emit('error', new Error(response.error));
+                console.error('[DesktopTracker] Failed to process activity');
             }
         } catch (error) {
             console.error('[DesktopTracker] Error sending activity:', error);
