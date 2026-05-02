@@ -5,7 +5,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>What were you doing?</title>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        :root {
+            --surface-page: #f8fafc;
+            --surface-glass: rgba(255, 255, 255, 0.88);
+            --surface-glass-strong: rgba(255, 255, 255, 0.95);
+            --surface-glass-soft: rgba(255, 255, 255, 0.65);
+            --border-glass: rgba(148, 163, 184, 0.2);
+            --border-glass-strong: rgba(99, 102, 241, 0.3);
+            --text-primary: #0f172a;
+            --text-muted: #64748b;
+            --accent-primary: #6366f1;
+            --accent-soft: #eef2ff;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --shadow-glass: 0 10px 25px rgba(99, 102, 241, 0.08);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,182 +31,42 @@
         }
 
         body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #1a1a2e;
-            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--surface-page);
+            background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.05) 0px, transparent 50%);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
             user-select: none;
+            padding: 16px;
         }
 
         .header {
             text-align: center;
-            padding: 20px 20px 10px;
+            margin-bottom: 12px;
+            padding-top: 4px;
         }
 
         .header h1 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #fff;
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.025em;
             margin-bottom: 4px;
         }
 
         .header .idle-duration {
-            font-size: 0.85rem;
-            color: #8b8fad;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
         }
 
         .header .idle-duration span {
-            color: #7c83ff;
-            font-weight: 600;
-        }
-
-        .section-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: #6b6f8d;
-            padding: 6px 20px 4px;
-            font-weight: 600;
-        }
-
-        .activities-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            padding: 6px 16px;
-        }
-
-        .activity-card {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 12px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .activity-card:hover {
-            background: rgba(124, 131, 255, 0.1);
-            border-color: rgba(124, 131, 255, 0.3);
-            transform: translateY(-1px);
-        }
-
-        .activity-card.selected {
-            background: rgba(124, 131, 255, 0.15);
-            border-color: #7c83ff;
-            box-shadow: 0 0 12px rgba(124, 131, 255, 0.15);
-        }
-
-        .activity-card .icon {
-            font-size: 1.2rem;
-            flex-shrink: 0;
-            width: 28px;
-            text-align: center;
-        }
-
-        .activity-card .label {
-            font-size: 0.78rem;
-            font-weight: 500;
-            line-height: 1.2;
-        }
-
-        .activity-card .category-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            margin-left: auto;
-        }
-
-        .category-dot.academic {
-            background: #4ade80;
-        }
-
-        .category-dot.non_academic {
-            background: #f87171;
-        }
-
-        .category-dot.neutral {
-            background: #facc15;
-        }
-
-        .other-section {
-            padding: 8px 16px;
-        }
-
-        .other-input-wrapper {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .other-input-wrapper input {
-            flex: 1;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            color: #e0e0e0;
-            font-size: 0.82rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .other-input-wrapper input:focus {
-            border-color: #7c83ff;
-        }
-
-        .other-input-wrapper input::placeholder {
-            color: #555;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-            padding: 12px 16px 16px;
-            margin-top: auto;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 10px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-submit {
-            background: linear-gradient(135deg, #7c83ff, #6366f1);
-            color: #fff;
-        }
-
-        .btn-submit:hover:not(:disabled) {
-            background: linear-gradient(135deg, #8b91ff, #7c7ff7);
-            box-shadow: 0 4px 14px rgba(124, 131, 255, 0.3);
-        }
-
-        .btn-submit:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .btn-skip {
-            background: rgba(255, 255, 255, 0.06);
-            color: #8b8fad;
-        }
-
-        .btn-skip:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #c0c0c0;
+            color: var(--accent-primary);
+            font-weight: 800;
         }
 
         /* Legend */
@@ -196,15 +74,182 @@
             display: flex;
             justify-content: center;
             gap: 16px;
-            padding: 2px 16px 6px;
-            font-size: 0.65rem;
-            color: #6b6f8d;
+            margin-bottom: 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
+        }
+
+        .category-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .category-dot.academic { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }
+        .category-dot.non_academic { background: #f43f5e; box-shadow: 0 0 8px rgba(244, 63, 94, 0.3); }
+        .category-dot.neutral { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.3); }
+
+        .section-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 800;
+            padding-left: 4px;
+        }
+
+        .activities-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .activity-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background: var(--surface-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
+            box-shadow: var(--shadow-glass);
+        }
+
+        .activity-card:hover {
+            border-color: var(--border-glass-strong);
+            background: var(--surface-glass-strong);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+        }
+
+        .activity-card.selected {
+            background: var(--accent-soft);
+            border-color: var(--accent-primary);
+            border-width: 1.5px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+        }
+
+        .activity-card .icon-wrapper {
+            color: var(--text-muted);
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .activity-card.selected .icon-wrapper {
+            color: var(--accent-primary);
+        }
+
+        .activity-card .label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.25;
+            flex: 1;
+        }
+
+        .activity-card .category-dot {
+            margin-left: 2px;
+        }
+
+        .other-section {
+            margin-bottom: 20px;
+        }
+
+        .other-input-wrapper input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--surface-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.2s;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .other-input-wrapper input:focus {
+            border-color: var(--accent-primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: auto;
+            padding-bottom: 4px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--accent-primary), #4f46e5);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-skip {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-skip:hover {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -239,29 +284,27 @@
     </div>
 
     <script>
-        // Predefined activities
+        // Predefined activities with Lucide icon names
         const ACTIVITIES = [
-            { id: 'reading_book', icon: '📖', label: 'Reading a Book', category: 'academic' },
-            { id: 'studying_notes', icon: '📝', label: 'Studying / Reviewing Notes', category: 'academic' },
-            { id: 'attending_lecture', icon: '🎓', label: 'Attending Lecture / Class', category: 'academic' },
-            { id: 'research_library', icon: '🔬', label: 'Research / Library Work', category: 'academic' },
-            { id: 'writing_notes', icon: '✍️', label: 'Writing Notes by Hand', category: 'academic' },
-            { id: 'break_relaxing', icon: '☕', label: 'Taking a Break', category: 'non_academic' },
-            { id: 'exercise_walk', icon: '🏃', label: 'Exercise / Walk', category: 'non_academic' },
-            { id: 'eating_meal', icon: '🍽️', label: 'Eating / Meal', category: 'non_academic' },
-            { id: 'personal_errands', icon: '🏠', label: 'Personal Errands', category: 'non_academic' },
-            { id: 'social_conversation', icon: '💬', label: 'Social / Conversation', category: 'non_academic' },
+            { id: 'reading_book', icon: 'book-open', label: 'Reading a Book', category: 'academic' },
+            { id: 'studying_notes', icon: 'file-text', label: 'Reviewing Notes', category: 'academic' },
+            { id: 'attending_lecture', icon: 'graduation-cap', label: 'Lecture / Class', category: 'academic' },
+            { id: 'research_library', icon: 'microscope', label: 'Research Work', category: 'academic' },
+            { id: 'writing_notes', icon: 'pen-tool', label: 'Writing Notes', category: 'academic' },
+            { id: 'break_relaxing', icon: 'coffee', label: 'Taking a Break', category: 'non_academic' },
+            { id: 'exercise_walk', icon: 'activity', label: 'Exercise / Walk', category: 'non_academic' },
+            { id: 'eating_meal', icon: 'utensils', label: 'Eating / Meal', category: 'non_academic' },
+            { id: 'personal_errands', icon: 'home', label: 'Personal Errands', category: 'non_academic' },
+            { id: 'social_conversation', icon: 'message-square', label: 'Socializing', category: 'non_academic' },
         ];
 
         let selectedActivityId = null;
 
-        // Parse query params (idleDurationMs, idleStart, idleEnd passed by main process)
         const params = new URLSearchParams(window.location.search);
         const idleDurationMs = parseInt(params.get('idleDurationMs') || '0', 10);
         const idleStart = params.get('idleStart') || '';
         const idleEnd = params.get('idleEnd') || '';
 
-        // Display idle duration
         function formatDuration(ms) {
             const totalSec = Math.floor(ms / 1000);
             const mins = Math.floor(totalSec / 60);
@@ -277,14 +320,15 @@
 
         document.getElementById('idle-time').textContent = formatDuration(idleDurationMs);
 
-        // Render activity cards
         const grid = document.getElementById('activities-grid');
         ACTIVITIES.forEach(act => {
             const card = document.createElement('div');
             card.className = 'activity-card';
             card.dataset.id = act.id;
             card.innerHTML = `
-                <span class="icon">${act.icon}</span>
+                <div class="icon-wrapper">
+                    <i data-lucide="${act.icon}" size="18"></i>
+                </div>
                 <span class="label">${act.label}</span>
                 <span class="category-dot ${act.category}"></span>
             `;
@@ -292,15 +336,15 @@
             grid.appendChild(card);
         });
 
-        // Selection logic
+        // Initialize icons
+        lucide.createIcons();
+
         const otherInput = document.getElementById('other-input');
         const submitBtn = document.getElementById('btn-submit');
         const skipBtn = document.getElementById('btn-skip');
 
         function selectActivity(id, cardEl) {
-            // Deselect all
             document.querySelectorAll('.activity-card').forEach(c => c.classList.remove('selected'));
-            // Select this one
             cardEl.classList.add('selected');
             selectedActivityId = id;
             otherInput.value = '';
@@ -309,7 +353,6 @@
 
         otherInput.addEventListener('input', () => {
             if (otherInput.value.trim()) {
-                // Deselect all cards
                 document.querySelectorAll('.activity-card').forEach(c => c.classList.remove('selected'));
                 selectedActivityId = null;
                 submitBtn.disabled = false;
@@ -318,10 +361,10 @@
             }
         });
 
-        // Submit
         submitBtn.addEventListener('click', async () => {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Saving...';
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" size="16"></i> Saving...';
+            lucide.createIcons();
 
             const payload = {
                 activityId: selectedActivityId,
@@ -338,11 +381,9 @@
             } catch (err) {
                 console.error('Failed to submit idle activity:', err);
             }
-
             window.close();
         });
 
-        // Skip
         skipBtn.addEventListener('click', async () => {
             skipBtn.disabled = true;
             skipBtn.textContent = 'Skipping...';
@@ -362,11 +403,9 @@
             } catch (err) {
                 console.error('Failed to submit skipped idle activity:', err);
             }
-
             window.close();
         });
 
-        // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 skipBtn.click();
@@ -374,6 +413,19 @@
                 submitBtn.click();
             }
         });
+
+        // Add CSS for spinner animation
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .animate-spin {
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 

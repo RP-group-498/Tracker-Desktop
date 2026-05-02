@@ -72,7 +72,7 @@ const StatusPanel: React.FC<Props> = ({
     const cat = activity.classification?.category || 'unclassified';
     const conf = activity.classification?.confidence || 0;
     let reason = `Active window title matches relevant keywords in recognized applications. Classified ${cat.replace('_', '-')} with confidence ${conf.toFixed(2)}.`;
-    
+
     if (activity.domain.includes('github.com') || activity.domain.includes('stackoverflow.com')) {
       reason = `Domain is a recognized development or productivity platform. Classified ${cat.replace('_', '-')} with confidence ${conf.toFixed(2)}.`;
     } else if (activity.domain.includes('youtube.com') || activity.domain.includes('netflix.com') || activity.domain.includes('facebook.com')) {
@@ -82,19 +82,7 @@ const StatusPanel: React.FC<Props> = ({
   };
 
   return (
-    <div className="space-y-8 pb-10">
-      {/* Header section */}
-      <div>
-        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Data Gathering</div>
-        <h2 className="text-3xl font-bold text-slate-900 mb-2">Live activity stream</h2>
-        <div className="text-sm text-slate-600 flex flex-wrap items-center gap-1.5">
-          Browser extension + desktop sensor push events here in real time. Each event is classified as
-          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">academic</span>,
-          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">productivity</span> or
-          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">non-academic</span>.
-        </div>
-      </div>
-
+    <div className="space-y-4">
       {/* Connection Status Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Browser Extension Status */}
@@ -109,7 +97,7 @@ const StatusPanel: React.FC<Props> = ({
             </div>
           </div>
           <div className="text-xs text-slate-500 flex items-center gap-1">
-             {extensionConnected ? 'Chrome · Active' : 'Waiting for connection...'}
+            {extensionConnected ? 'Chrome · Active' : 'Waiting for connection...'}
           </div>
         </div>
 
@@ -151,13 +139,13 @@ const StatusPanel: React.FC<Props> = ({
         <div className="lg:col-span-5 space-y-4">
           <div className="glass-card p-6 rounded-xl border border-slate-200/60 bg-white/80 shadow-sm h-full flex flex-col">
             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Current Session</div>
-            
+
             {currentActivity ? (
               <div className="flex-1 flex flex-col">
                 <h3 className="text-xl font-bold text-slate-900 mb-6 line-clamp-2" title={currentActivity.title}>
                   {currentActivity.domain} {currentActivity.title ? `— ${currentActivity.title}` : ''}
                 </h3>
-                
+
                 <div className="space-y-4 flex-1">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                     <span className="text-sm text-slate-500">Started</span>
@@ -205,7 +193,7 @@ const StatusPanel: React.FC<Props> = ({
             <div className="p-4 border-b border-slate-100 bg-white/50">
               <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Event Stream - Last 30 Min</div>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-2">
               {recentActivities.length > 0 ? (
                 <div className="space-y-1">
@@ -214,7 +202,7 @@ const StatusPanel: React.FC<Props> = ({
                       <div className="w-16 text-xs text-slate-400 font-mono flex-shrink-0">
                         {formatTime(activity.timestamp)}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0 pr-4">
                         <div className="text-sm font-medium text-slate-800 truncate" title={activity.title || activity.domain}>
                           {activity.title || activity.domain}
@@ -223,7 +211,7 @@ const StatusPanel: React.FC<Props> = ({
                           {activity.domain === 'desktop' ? 'Desktop App' : activity.domain}
                         </div>
                       </div>
-                      
+
                       <div className="flex-shrink-0">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border ${getCategoryColor(activity.classification?.category)}`}>
                           {formatCategory(activity.classification?.category)}

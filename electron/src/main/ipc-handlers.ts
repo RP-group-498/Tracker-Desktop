@@ -239,4 +239,51 @@ export function setupIpcHandlers(
         return null;
     });
 
+    let activeTasksWindowRef: any = null;
+
+    ipcMain.handle('open-active-tasks-window', async (event) => {
+        if (activeTasksWindowRef) {
+            activeTasksWindowRef.focus();
+            return;
+        }
+
+        const { BrowserWindow: ActiveTasksWindow } = require('electron');
+        activeTasksWindowRef = new ActiveTasksWindow({
+            width: 360,
+            height: 480,
+            frame: false,
+            transparent: true,
+            alwaysOnTop: true,
+            webPreferences: {
+                preload: path.join(__dirname, '../preload/index.js'),
+                nodeIntegration: false,
+                contextIsolation: true,
+            },
+        });
+
+        // Notify renderer that it's popped out
+        event.sender.send('active-tasks-popped-out', true);
+
+        activeTasksWindowRef.on('closed', () => {
+            activeTasksWindowRef = null;
+            // Notify renderer that it's closed
+            try {
+                event.sender.send('active-tasks-popped-out', false);
+            } catch (e) {} // sender might be destroyed if app is closing
+        });
+
+        if (process.env.NODE_ENV === 'development') {
+            activeTasksWindowRef.loadURL('http://localhost:5173?widget=active-tasks');
+        } else {
+            activeTasksWindowRef.loadFile(path.join(__dirname, '../renderer/index.html'), { query: { widget: 'active-tasks' } });
+        }
+    });
+
+    ipcMain.on('resize-active-tasks-window', (_event, height) => {
+        if (activeTasksWindowRef) {
+            const [width] = activeTasksWindowRef.getSize();
+            activeTasksWindowRef.setSize(width, Math.min(height, 800));
+        }
+    });
+
 }

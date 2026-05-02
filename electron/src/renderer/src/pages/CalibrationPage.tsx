@@ -66,7 +66,7 @@ const CalibrationPage: React.FC = () => {
   }
 
   return (
-    <div className="p-2 space-y-6 max-w-2xl mx-auto w-full">
+    <div className="p-2 space-y-6 max-w-2xl w-full">
       <div className="glass-card p-4 sm:p-8 transition-all duration-200 hover:shadow-md space-y-8">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight mb-1">Study Calibration</h2>

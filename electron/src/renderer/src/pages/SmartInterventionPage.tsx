@@ -359,7 +359,7 @@ const SmartInterventionPage: React.FC = () => {
     };
 
     return (
-        <div className="sie-page p-2 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+        <div className="sie-page p-2 space-y-4 sm:space-y-6 max-w-4xl">
             {/* Demo buttons */}
             <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
                 <h3 className="text-sm font-semibold text-gray-800 mb-1">Try the Interventions</h3>

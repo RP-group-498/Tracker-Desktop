@@ -179,6 +179,9 @@ export class DesktopActivityTracker extends EventEmitter {
     async stop(): Promise<void> {
         console.log('[DesktopTracker] Stopping desktop activity tracking...');
 
+        // Mark as not running FIRST so in-flight polls can bail out
+        this.isRunning = false;
+
         if (this.pollTimer) {
             clearInterval(this.pollTimer);
             this.pollTimer = null;
@@ -189,7 +192,6 @@ export class DesktopActivityTracker extends EventEmitter {
             await this.flushCurrentWindow();
         }
 
-        this.isRunning = false;
         this.emit('stopped');
         console.log('[DesktopTracker] Desktop activity tracking stopped');
     }
@@ -202,9 +204,22 @@ export class DesktopActivityTracker extends EventEmitter {
     }
 
     /**
-     * Poll for active window changes and idle state
+     * Check if an error is a benign SIGINT from the active-win child process
+     * (happens when the app is shutting down and the signal propagates).
      */
+    private isShutdownSignalError(error: unknown): boolean {
+        if (error && typeof error === 'object') {
+            const err = error as { signal?: string; killed?: boolean };
+            return err.signal === 'SIGINT' || err.signal === 'SIGTERM';
+        }
+        return false;
+    }
+
     private async poll(): Promise<void> {
+        // Bail out early if we've been stopped (avoids spawning a child process
+        // during shutdown that would just get killed by signal propagation).
+        if (!this.isRunning) return;
+
         try {
             // Check idle state first
             const wasIdle = this.isUserIdle;
@@ -287,6 +302,14 @@ export class DesktopActivityTracker extends EventEmitter {
                 }
             }
         } catch (error) {
+            // Suppress SIGINT/SIGTERM errors — these are caused by the OS signal
+            // propagating to the active-win child process during app shutdown.
+            if (this.isShutdownSignalError(error)) {
+                if (this.isRunning) {
+                    console.log('[DesktopTracker] active-win process interrupted (signal), will retry next poll');
+                }
+                return;
+            }
             console.error('[DesktopTracker] Poll error:', error);
             this.emit('error', error);
         }

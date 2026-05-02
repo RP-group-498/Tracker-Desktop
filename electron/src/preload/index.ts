@@ -43,6 +43,9 @@ interface ElectronAPI {
 
     // Task Prioritizer
     openTaskPrioritizer: () => Promise<void>;
+    openActiveTasksWindow: () => Promise<void>;
+    onActiveTasksPoppedOut: (callback: (isPoppedOut: boolean) => void) => void;
+    resizeActiveTasksWindow: (height: number) => void;
 
     // PDF / Task Analysis
     analyzePdf: (data: {
@@ -237,6 +240,11 @@ const electronAPI: ElectronAPI = {
 
     // Task Prioritizer
     openTaskPrioritizer: () => ipcRenderer.invoke('open-task-prioritizer'),
+    openActiveTasksWindow: () => ipcRenderer.invoke('open-active-tasks-window'),
+    onActiveTasksPoppedOut: (callback) => {
+        ipcRenderer.on('active-tasks-popped-out', (_event, isPoppedOut) => callback(isPoppedOut));
+    },
+    resizeActiveTasksWindow: (height) => ipcRenderer.send('resize-active-tasks-window', height),
 
     // PDF / Task Analysis
     analyzePdf: (data) => ipcRenderer.invoke('analyze-pdf', data),

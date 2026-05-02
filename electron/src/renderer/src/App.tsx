@@ -11,6 +11,7 @@ import BreathingModal from './components/BreathingModal';
 import VisualizationModal from './components/VisualizationModal';
 import { useAuth } from './context/AuthContext';
 import { InterventionProvider, useInterventionContext } from './context/InterventionContext';
+import ActiveTasksStandalone from './components/ActiveTasksStandalone';
 
 interface AppState {
   pythonRunning: boolean;
@@ -98,6 +99,13 @@ const App: React.FC = () => {
       setIsSavingGoal(false);
     }
   };
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const isWidget = urlParams.get('widget') === 'active-tasks';
+
+  if (isWidget) {
+    return <ActiveTasksStandalone />;
+  }
 
   if (loading || authLoading) {
     return (
@@ -288,8 +296,8 @@ const AppContent: React.FC<{
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto relative bg-slate-50/50">
-        <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 min-h-full">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-slate-50/50">
+        <div className="p-4 sm:p-6 lg:p-8 min-h-full">
           {/* Header area replaced by context inside tabs, keeping clean */}
           <div className="animate-fade-in-up">
             {activeTab === 'procrastination' && <ProcrastinationPage />}

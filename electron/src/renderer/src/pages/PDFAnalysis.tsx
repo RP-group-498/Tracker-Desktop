@@ -322,7 +322,7 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
         </div>
 
         {/* Step 1: Content */}
-        <div className="card">
+        <div className="glass-card p-4 sm:p-6">
           <div className="card-header">
             <h3>Step 1: Provide Task Content</h3>
           </div>
@@ -382,7 +382,7 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
         </div>
 
         {/* Step 2: Task Details */}
-        <div className="card">
+        <div className="glass-card p-4 sm:p-6">
           <div className="card-header">
             <h3>Step 2: Enter Task Details</h3>
           </div>
@@ -441,7 +441,7 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
 
         {/* Results */}
         {taskData && (
-          <div className="card" ref={resultsRef}>
+          <div className="glass-card p-4 sm:p-6" ref={resultsRef}>
             <div className="card-header">
               <h3>Analysis Results</h3>
             </div>

@@ -24,10 +24,7 @@ from typing import Any
 # Constants
 # ---------------------------------------------------------------------------
 
-_MIN_HISTORY: int = 3       # minimum days needed to attempt LSTM
-_LSTM_UNITS:  int = 32
-_EPOCHS:      int = 50
-_BATCH_SIZE:  int = 1
+_MIN_HISTORY: int = 3       # minimum days needed to attempt EMA prediction
 
 _DEFAULT_START = "09:00 AM"
 _DEFAULT_END   = "05:00 PM"
@@ -89,55 +86,28 @@ class LSTMPredictor:
     # ------------------------------------------------------------------
 
     def _lstm(self, history: list[dict]) -> dict:
-        """Build, fit, and predict with a minimal single-layer LSTM."""
-        import numpy as np
+        """Exponential moving average predictor (replaces TensorFlow LSTM).
 
-        try:
-            import tensorflow as tf
-            from tensorflow.keras.models import Sequential
-            from tensorflow.keras.layers import LSTM, Dense
-        except ImportError:
-            return self._heuristic(history)
+        Uses EMA with alpha=0.3 — gives more weight to recent days.
+        Same output format as before, no external dependencies.
+        """
+        alpha = 0.3
 
-        # Build feature matrix — shape (n_days, 3)
-        academic    = [float(d.get("fullDayAcademicMinutes", 0))    for d in history]
-        non_acad    = [float(d.get("fullDayNonAcademicMinutes", 0)) for d in history]
-        switches    = [float(d.get("fullDayTotalAppSwitches", 0))   for d in history]
+        academic_vals = [float(d.get("fullDayAcademicMinutes", 0))    for d in history]
+        non_acad_vals = [float(d.get("fullDayNonAcademicMinutes", 0)) for d in history]
+        starts        = [d.get("activeStart") for d in history if d.get("activeStart")]
+        ends          = [d.get("activeEnd")   for d in history if d.get("activeEnd")]
 
-        raw = np.array([academic, non_acad, switches], dtype=float).T  # (n, 3)
+        def ema(values: list[float]) -> float:
+            s = values[0]
+            for v in values[1:]:
+                s = alpha * v + (1 - alpha) * s
+            return s
 
-        # Normalize each feature to [0, 1]
-        mins  = raw.min(axis=0)
-        maxes = raw.max(axis=0)
-        denom = maxes - mins
-        denom[denom < 1e-9] = 1.0  # avoid zero division on flat features
-        normed = (raw - mins) / denom  # (n, 3)
-
-        # Prepare sequences: X = days[:-1], y = days[1:]
-        X = normed[:-1].reshape(-1, 1, 3)  # (n-1, timesteps=1, features=3)
-        y = normed[1:]                      # (n-1, 3)
-
-        model = Sequential([
-            LSTM(_LSTM_UNITS, input_shape=(1, 3)),
-            Dense(3),
-        ])
-        model.compile(optimizer="adam", loss="mse")
-        model.fit(X, y, epochs=_EPOCHS, batch_size=_BATCH_SIZE, verbose=0)
-
-        # Predict next day using the last known day as input
-        last  = normed[-1].reshape(1, 1, 3)
-        pred  = model.predict(last, verbose=0)[0]  # (3,)
-
-        # Denormalize
-        pred_raw = pred * denom + mins
-        pred_academic   = max(int(round(pred_raw[0])), 0)
-        pred_non_acad   = max(float(pred_raw[1]), 0.0)
-
-        focus_prob = _focus_probability(pred_academic, pred_non_acad)
-        level      = _level_from_focus(focus_prob)
-
-        starts = [d.get("activeStart") for d in history if d.get("activeStart")]
-        ends   = [d.get("activeEnd")   for d in history if d.get("activeEnd")]
+        pred_academic = max(int(round(ema(academic_vals))), 0)
+        pred_non_acad = max(ema(non_acad_vals), 0.0)
+        focus_prob    = _focus_probability(pred_academic, pred_non_acad)
+        level         = _level_from_focus(focus_prob)
 
         return {
             "nextDayAcademicMinutes":        pred_academic,

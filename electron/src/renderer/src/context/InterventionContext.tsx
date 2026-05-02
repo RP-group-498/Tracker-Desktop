@@ -57,7 +57,11 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
     const userId = user?.id ?? '';
 
     // ── Persistent state ──────────────────────────────────────────────
-    const [monitorEnabled, setMonitorEnabled] = useState(false);
+    const [monitorEnabled, setMonitorEnabled] = useState(() => {
+        const stored = localStorage.getItem('sie_monitor_enabled');
+        // Default to true for first-time users (no stored preference)
+        return stored === null ? true : stored === 'true';
+    });
     const [monitorStatus, setMonitorStatus] = useState('Monitoring stopped');
     const [showBreathing, setShowBreathing] = useState(false);
     const [showVisualization, setShowVisualization] = useState(false);
@@ -247,6 +251,24 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
     }, [userId, triggerBanditNotification, logMotivation, sendBanditUpdate]);
 
+    // ── Loop creation helper ────────────────────────────────────────────
+
+    const createAndStartLoop = useCallback(() => {
+        if (monitorRef.current?.isRunning()) return;
+        const loop = new MonitoringLoop(cooldownRef.current, {
+            onSuggestIntervention,
+            onLogMotivation: (vector) => {
+                logMotivation(vector);
+                setLastInterventionTs(Date.now());
+            },
+            onStatusUpdate: (status) => setMonitorStatus(status),
+        }, userId);
+        monitorRef.current = loop;
+        loop.start();
+        setMonitorEnabled(true);
+        localStorage.setItem('sie_monitor_enabled', 'true');
+    }, [onSuggestIntervention, logMotivation, userId]);
+
     // ── Toggle monitoring loop on/off ─────────────────────────────────
 
     const toggleMonitor = useCallback(() => {
@@ -255,20 +277,11 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
             monitorRef.current = null;
             setMonitorEnabled(false);
             setMonitorStatus('Monitoring stopped');
+            localStorage.setItem('sie_monitor_enabled', 'false');
         } else {
-            const loop = new MonitoringLoop(cooldownRef.current, {
-                onSuggestIntervention,
-                onLogMotivation: (vector) => {
-                    logMotivation(vector);
-                    setLastInterventionTs(Date.now());
-                },
-                onStatusUpdate: (status) => setMonitorStatus(status),
-            }, userId);
-            monitorRef.current = loop;
-            loop.start();
-            setMonitorEnabled(true);
+            createAndStartLoop();
         }
-    }, [onSuggestIntervention, logMotivation, userId]);
+    }, [createAndStartLoop]);
 
     // ── Abort handlers for breathing/visualization ────────────────────
 
@@ -373,6 +386,22 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
             if (monitorRef.current?.isRunning()) monitorRef.current.stop();
         };
     }, [clearAllTimers]);
+
+    // ── Auto-start monitoring when user is available and preference is ON ──
+
+    useEffect(() => {
+        if (!userId || monitorRef.current?.isRunning() || !monitorEnabled) return;
+
+        // Small delay to let the app fully initialize and auth settle
+        const startTimer = setTimeout(() => {
+            if (!monitorRef.current?.isRunning() && monitorEnabled && userId) {
+                createAndStartLoop();
+                setMonitorStatus('Monitoring active (auto-started)');
+            }
+        }, 2000);
+
+        return () => clearTimeout(startTimer);
+    }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Context value ─────────────────────────────────────────────────
 

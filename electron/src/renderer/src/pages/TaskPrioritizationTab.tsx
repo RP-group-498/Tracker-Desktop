@@ -8,7 +8,7 @@ const TaskPrioritizationTab: React.FC = () => {
     const [activeSubTab, setActiveSubTab] = useState<SubTab>('time-estimator')
 
     return (
-        <div className="flex flex-col h-full bg-slate-50/50 p-2 max-w-5xl mx-auto w-full">
+        <div className="flex flex-col h-full bg-slate-50/50 p-2 max-w-5xl w-full">
             <div className="mb-4 sm:mb-6 flex justify-center">
                 <div className="glass-card p-1 rounded-xl inline-flex gap-1 flex-wrap justify-center">
                     <button

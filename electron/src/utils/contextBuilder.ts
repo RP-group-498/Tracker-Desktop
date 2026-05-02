@@ -180,7 +180,7 @@ export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
     // === Value: two-speed ===
     // V_slow: objective task importance (Wigfield & Eccles, 2000)
     const V_raw = Math.max(signals.task_priority, signals.grade_weight);
-    const V_slow = V_raw > 0 ? V_raw : 0.3;
+    const V_slow = V_raw > 0 ? V_raw : 0.5;
     let V: number;
     if (signals.has_sliding_window) {
         // V_fast: subjective value erosion from distraction behavior.
@@ -189,8 +189,8 @@ export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
         // (Blunt & Pychyl, 2000; Steel, 2007 — task aversiveness).
         const V_fast = clamp(1 - signals.non_academic_ratio_10min, 0, 1);
         // Multiplicative blend: objective value × subjective engagement.
-        // Floor at 50% — distraction can halve perceived value, not zero it.
-        V = V_slow * Math.max(V_fast, 0.5);
+        // Floor at 65% — distraction can reduce perceived value by 35%, not zero it.
+        V = V_slow * Math.max(V_fast, 0.65);
     } else {
         V = V_slow;
     }
@@ -202,8 +202,8 @@ export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
     if (signals.has_sliding_window) {
         // I_fast: rapid app switching in last 5 minutes
         const I_fast = signals.app_switches_5min_normalized;
-        // I_idle: time since last academic activity (30+ min idle = 1.0)
-        const I_idle = clamp(signals.minutes_since_last_academic / 30, 0, 1);
+        // I_idle: time since last academic activity (60+ min idle = 1.0)
+        const I_idle = clamp(signals.minutes_since_last_academic / 60, 0, 1);
         // Worst-case wins — either sustained daily pattern, recent burst, or inactivity
         I = Math.max(I_slow, I_fast, I_idle);
     } else {
@@ -240,8 +240,11 @@ export function computeTMTProxies(signals: RawBehavioralSignals): TMTProxies {
 export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSignals): number[] {
     const { E, V, I, D } = proxies;
 
-    // TMT motivation score: M = (E * V) / (1 + I * D)
-    const M_clamped = clamp((E * V) / (1 + I * D), 0, 1);
+    // TMT motivation score: M = (E * V) / (1 + I * D), with compressive scaling
+    // Power scaling (M^0.7) expands the lower range where most real-world values
+    // land, spreading scores across the full [0,1] range instead of clustering at ~0.1
+    const M_raw = clamp((E * V) / (1 + I * D), 0, 1);
+    const M_clamped = Math.pow(M_raw, 0.7);
 
     // Deficit scores: distance from ideal state (no absolute thresholds)
     const deficit_E = 1.0 - E;  // low completion = high expectancy deficit
@@ -288,7 +291,7 @@ export function buildContextVector(proxies: TMTProxies, signals: RawBehavioralSi
         V_fast_input: Number(signals.non_academic_ratio_10min.toFixed(4)),
         I_slow: Number(signals.non_academic_ratio.toFixed(4)),
         I_fast: Number(signals.app_switches_5min_normalized.toFixed(4)),
-        I_idle: Number(clamp(signals.minutes_since_last_academic / 30, 0, 1).toFixed(4)),
+        I_idle: Number(clamp(signals.minutes_since_last_academic / 60, 0, 1).toFixed(4)),
         D_slow_input: Number(signals.hours_to_deadline.toFixed(2)),
         D_progress_input: Number(signals.task_time_ratio.toFixed(4)),
         has_sliding_window: signals.has_sliding_window,
