@@ -17,6 +17,7 @@ import { TrayManager } from './tray';
 import { setupIpcHandlers } from './ipc-handlers';
 import { registerProcrastinationHandlers } from './ipc-procrastination';
 import { registerInterventionHandlers } from './ipc-intervention';
+import { registerNativeHost } from './native-host-registrar';
 
 // Prevent multiple instances
 const gotTheLock = app.requestSingleInstanceLock();
@@ -158,6 +159,9 @@ async function initializeServices(): Promise<void> {
 
     // 1b. Auto-create a session immediately after backend is ready
     await createAndShareSession();
+
+    // 2. Register native messaging host with Chrome, then start the server
+    await registerNativeHost();
 
     // 2. Start Native Messaging server (nativeMessagingServer already created in app.on('ready'))
     nativeMessagingServer!.on('extensionConnected', () => {

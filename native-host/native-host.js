@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * Native Messaging Host for Focus App
  *
