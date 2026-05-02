@@ -74,7 +74,7 @@ const CalibrationPage: React.FC<CalibrationPageProps> = ({ pythonRunning, extens
   }
 
   return (
-    <div className="p-2 space-y-6 max-w-2xl w-full">
+    <div className="p-2 space-y-4 sm:space-y-6 w-full">
       {/* Connection Status */}
       <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
         <h2 className="text-sm font-semibold text-slate-800 mb-3">Connection Status</h2>
@@ -124,11 +124,10 @@ const CalibrationPage: React.FC<CalibrationPageProps> = ({ pythonRunning, extens
             </p>
           </div>
           <button
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
-              monitorEnabled
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${monitorEnabled
                 ? 'bg-green-500 text-white shadow-sm'
                 : 'bg-slate-200 text-slate-500 hover:bg-slate-300'
-            }`}
+              }`}
             onClick={toggleMonitor}
           >
             {monitorEnabled ? 'ON' : 'OFF'}
@@ -141,7 +140,7 @@ const CalibrationPage: React.FC<CalibrationPageProps> = ({ pythonRunning, extens
       </div>
 
       {/* Study Calibration */}
-      <div className="glass-card p-4 sm:p-8 transition-all duration-200 hover:shadow-md space-y-8">
+      <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md space-y-6">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight mb-1">Study Calibration</h2>
           <p className="text-sm text-slate-500">Configure your baseline study patterns for accurate tracking.</p>
@@ -155,11 +154,10 @@ const CalibrationPage: React.FC<CalibrationPageProps> = ({ pythonRunning, extens
               <button
                 key={p}
                 onClick={() => setCalib(prev => ({ ...prev, focus_period: p }))}
-                className={`px-4 py-2 rounded-xl text-sm font-medium capitalize border transition-all duration-200 ${
-                  calib.focus_period === p
+                className={`px-4 py-2 rounded-xl text-sm font-medium capitalize border transition-all duration-200 ${calib.focus_period === p
                     ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 {p}
               </button>
@@ -175,11 +173,10 @@ const CalibrationPage: React.FC<CalibrationPageProps> = ({ pythonRunning, extens
               <button
                 key={day}
                 onClick={() => toggleDay(day)}
-                className={`min-w-[3rem] h-10 px-2 rounded-xl text-sm font-medium border transition-all duration-200 ${
-                  calib.study_days?.includes(day)
+                className={`min-w-[3rem] h-10 px-2 rounded-xl text-sm font-medium border transition-all duration-200 ${calib.study_days?.includes(day)
                     ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 {day}
               </button>

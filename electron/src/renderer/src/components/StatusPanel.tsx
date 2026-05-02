@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Activity as ActivityIcon, Monitor, Server, Clock, AlertCircle } from 'lucide-react';
+import { Activity as ActivityIcon, Monitor, Server, Clock, AlertCircle, BookOpen, Briefcase, MinusCircle, Coffee } from 'lucide-react';
 
 interface Props {
   sessionId: string | null;
@@ -27,16 +27,19 @@ const StatusPanel: React.FC<Props> = ({
 }) => {
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [currentActivity, setCurrentActivity] = useState<Activity | null>(null);
+  const [todayActivities, setTodayActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [current, stream] = await Promise.all([
+        const [current, stream, today] = await Promise.all([
           window.electronAPI.getCurrentActivitySession(),
-          window.electronAPI.getEventStream(30)
+          window.electronAPI.getEventStream(30),
+          window.electronAPI.getTodayActivity()
         ]);
         setCurrentActivity(current || null);
         setRecentActivities(stream || []);
+        setTodayActivities(today || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
@@ -48,6 +51,23 @@ const StatusPanel: React.FC<Props> = ({
     return () => clearInterval(interval);
   }, []);
 
+  const formatTimeOffset = (isoString: string): string => {
+    // Add 5.30 hours for SLST display
+    const date = new Date(isoString);
+    date.setHours(date.getHours() + 5);
+    date.setMinutes(date.getMinutes() + 30);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDuration = (ms: number | undefined): string => {
+    if (!ms) return '0h 0m 0s';
+    const seconds = Math.floor(ms / 1000);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}h ${m}m ${s}s`;
+  };
+
   const formatTime = (isoString: string): string => {
     const date = new Date(isoString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -57,6 +77,7 @@ const StatusPanel: React.FC<Props> = ({
     switch (category?.toLowerCase()) {
       case 'academic': return 'bg-green-100 text-green-700 border-green-200';
       case 'productivity': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'neutral': return 'bg-slate-100 text-slate-700 border-slate-200';
       case 'non_academic': return 'bg-orange-100 text-orange-700 border-orange-200';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
@@ -67,72 +88,118 @@ const StatusPanel: React.FC<Props> = ({
     return category.replace('_', '-').toUpperCase();
   };
 
-  // Mocking reasoning based on rules (since backend doesn't send reasoning text yet)
-  const generateReasoning = (activity: Activity) => {
-    const cat = activity.classification?.category || 'unclassified';
-    const conf = activity.classification?.confidence || 0;
-    let reason = `Active window title matches relevant keywords in recognized applications. Classified ${cat.replace('_', '-')} with confidence ${conf.toFixed(2)}.`;
-
-    if (activity.domain.includes('github.com') || activity.domain.includes('stackoverflow.com')) {
-      reason = `Domain is a recognized development or productivity platform. Classified ${cat.replace('_', '-')} with confidence ${conf.toFixed(2)}.`;
-    } else if (activity.domain.includes('youtube.com') || activity.domain.includes('netflix.com') || activity.domain.includes('facebook.com')) {
-      reason = `Domain matches known entertainment/social media platforms. Classified ${cat.replace('_', '-')} with confidence ${conf.toFixed(2)}.`;
-    }
-    return reason;
+  const getCategoryTotal = (category?: string) => {
+    if (!category) return 0;
+    return todayActivities
+      .filter(a => a.classification?.category === category)
+      .reduce((sum, a) => sum + (a.active_time || 0), 0);
   };
+
+  const PlatformIcon = ({ domain }: { domain: string }) => {
+    if (domain === 'desktop') return <Monitor className="w-5 h-5 text-slate-400" />;
+    return (
+      <img
+        src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
+        alt=""
+        className="w-5 h-5 rounded-sm"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = 'https://www.google.com/s2/favicons?domain=google.com&sz=64';
+        }}
+      />
+    );
+  };
+
+  const CategorySummaryCard = ({ title, amount, colorClass, icon: Icon }: any) => (
+    <div className="glass-card p-4 rounded-xl border border-slate-200/60 bg-white/80 shadow-sm flex flex-col justify-between">
+      <div className="flex items-center gap-2 mb-3">
+        <div className={`p-1.5 rounded-lg ${colorClass.split(' ')[0]} ${colorClass.split(' ')[1]}`}>
+          <Icon size={14} />
+        </div>
+        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{title}</div>
+      </div>
+      <div className="text-base font-bold text-slate-800 font-mono">
+        {amount}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column - Current Session */}
+        {/* Left Column - Session & Totals */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="glass-card p-6 rounded-xl border border-slate-200/60 bg-white/80 shadow-sm h-full flex flex-col">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Current Session</div>
+          <div className="glass-card p-6 rounded-xl border border-slate-200/60 bg-white/80 shadow-sm flex flex-col relative overflow-hidden">
+            <div className="flex justify-between items-start mb-6">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Current Session</div>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-50 border border-red-100">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-red-600 uppercase tracking-tight">Live</span>
+              </div>
+            </div>
 
             {currentActivity ? (
-              <div className="flex-1 flex flex-col">
-                <h3 className="text-xl font-bold text-slate-900 mb-6 line-clamp-2" title={currentActivity.title}>
-                  {currentActivity.domain} {currentActivity.title ? `— ${currentActivity.title}` : ''}
-                </h3>
+              <div className="space-y-6">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate">{currentActivity.domain}</div>
+                  <h3 className="text-xl font-bold text-slate-900 truncate leading-tight" title={currentActivity.title}>
+                    {currentActivity.title || 'Untitled Activity'}
+                  </h3>
+                </div>
 
-                <div className="space-y-4 flex-1">
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                    <span className="text-sm text-slate-500">Started</span>
-                    <span className="text-sm font-medium text-slate-800 font-mono">{formatTime(currentActivity.timestamp)}</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Started</div>
+                    <div className="text-sm font-bold text-slate-800 font-mono tracking-tight">{formatTime(currentActivity.timestamp)}</div>
                   </div>
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                    <span className="text-sm text-slate-500">Duration</span>
-                    <span className="text-sm font-medium text-slate-800 font-mono">
-                      {currentActivity.active_time ? `${Math.round(currentActivity.active_time / 1000)}s` : 'Active'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                    <span className="text-sm text-slate-500">Category</span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getCategoryColor(currentActivity.classification?.category)}`}>
-                      {formatCategory(currentActivity.classification?.category).toLowerCase()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                    <span className="text-sm text-slate-500">Focus score</span>
-                    <span className="text-sm font-medium text-slate-800 font-mono">
-                      {currentActivity.classification?.confidence ? currentActivity.classification.confidence.toFixed(2) : 'N/A'}
-                    </span>
+                  <div>
+                    <div className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Duration</div>
+                    <div className="text-sm font-bold text-slate-800 font-mono tracking-tight">
+                      {currentActivity.active_time ? formatDuration(currentActivity.active_time) : 'Active'}
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-6 bg-slate-50/80 rounded-lg p-4 border border-slate-100">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Classifier Reasoning</div>
-                  <p className="text-sm text-slate-700 leading-relaxed">
-                    {generateReasoning(currentActivity)}
-                  </p>
+                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Current Category</span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getCategoryColor(currentActivity.classification?.category)}`}>
+                    {formatCategory(currentActivity.classification?.category)}
+                  </span>
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 min-h-[200px]">
+              <div className="py-12 flex flex-col items-center justify-center text-slate-400">
                 <Clock className="w-8 h-8 mb-2 opacity-50" />
-                <p>No active session data</p>
+                <p className="text-sm font-medium">Monitoring active...</p>
               </div>
             )}
+          </div>
+
+          {/* 2x2 Category Totals Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <CategorySummaryCard 
+              title="Academic" 
+              amount={formatDuration(getCategoryTotal('academic'))} 
+              colorClass="bg-green-100 text-green-700 border-green-200"
+              icon={BookOpen}
+            />
+            <CategorySummaryCard 
+              title="Productivity" 
+              amount={formatDuration(getCategoryTotal('productivity'))} 
+              colorClass="bg-blue-100 text-blue-700 border-blue-200"
+              icon={Briefcase}
+            />
+            <CategorySummaryCard 
+              title="Neutral" 
+              amount={formatDuration(getCategoryTotal('neutral'))} 
+              colorClass="bg-slate-100 text-slate-700 border-slate-200"
+              icon={MinusCircle}
+            />
+            <CategorySummaryCard 
+              title="Non-Academic" 
+              amount={formatDuration(getCategoryTotal('non_academic'))} 
+              colorClass="bg-orange-100 text-orange-700 border-orange-200"
+              icon={Coffee}
+            />
           </div>
         </div>
 
@@ -149,7 +216,7 @@ const StatusPanel: React.FC<Props> = ({
                   {recentActivities.map((activity, idx) => (
                     <div key={activity.event_id || idx} className="flex items-center p-3 hover:bg-slate-50 rounded-lg transition-colors border-b border-slate-50 last:border-0 group">
                       <div className="w-16 text-xs text-slate-400 font-mono flex-shrink-0">
-                        {formatTime(activity.timestamp)}
+                        {formatTimeOffset(activity.timestamp)}
                       </div>
 
                       <div className="flex-1 min-w-0 pr-4">
@@ -177,6 +244,63 @@ const StatusPanel: React.FC<Props> = ({
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Today's Full Activity List */}
+      <div className="glass-card p-6 rounded-xl border border-slate-200/60 bg-white/80 shadow-sm overflow-hidden flex flex-col mt-8 h-[500px]">
+        <div className="pb-4 border-b border-slate-100 bg-transparent flex justify-between items-center shrink-0">
+          <div className="text-sm font-bold text-slate-800 uppercase tracking-wider">Today's Activity Log</div>
+          <div className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">{todayActivities.length} total events</div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto mt-2">
+          {todayActivities.length > 0 ? (
+            <div className="w-full text-left">
+              <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-slate-500 uppercase tracking-wider py-3 border-b border-slate-100 sticky top-0 bg-white/95 backdrop-blur z-10 px-2">
+                <div className="col-span-2">Time</div>
+                <div className="col-span-4">Activity</div>
+                <div className="col-span-2">Duration</div>
+                <div className="col-span-2">Category</div>
+                <div className="col-span-2 text-right">Method</div>
+              </div>
+              <div className="divide-y divide-slate-50">
+                {todayActivities.map((activity, idx) => (
+                  <div key={activity.event_id || idx} className="grid grid-cols-12 gap-4 items-center py-3 px-2 hover:bg-slate-50/80 transition-colors">
+                    <div className="col-span-2 text-xs font-mono text-slate-500">
+                      {formatTimeOffset(activity.timestamp)}
+                    </div>
+                    <div className="col-span-4 min-w-0 pr-4">
+                      <div className="text-sm font-medium text-slate-800 truncate" title={activity.title || activity.domain}>
+                        {activity.title || activity.domain}
+                      </div>
+                      <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                        {activity.domain === 'desktop' ? 'Desktop App' : activity.domain}
+                      </div>
+                    </div>
+                    <div className="col-span-2 text-xs font-mono text-slate-600">
+                      {formatDuration(activity.active_time)}
+                    </div>
+                    <div className="col-span-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${getCategoryColor(activity.classification?.category)}`}>
+                        {formatCategory(activity.classification?.category)}
+                      </span>
+                    </div>
+                    <div className="col-span-2 text-right">
+                      <span className="px-2 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded text-[10px] font-semibold uppercase tracking-wider">
+                        {activity.classification?.source || 'UNKNOWN'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-slate-400">
+              <ActivityIcon className="w-8 h-8 mb-2 opacity-50" />
+              <p>No activity recorded today</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

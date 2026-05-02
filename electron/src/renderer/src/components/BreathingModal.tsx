@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 const BREATHING_STATES = [
     { text: 'Breathe In', instruction: 'Slowly inhale through your nose', duration: 4000 },
@@ -74,8 +75,8 @@ const BreathingModal: React.FC<BreathingModalProps> = ({ onClose, onAbort }) => 
         onAbort();
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-300 p-4">
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/10 backdrop-blur-[2px] animate-fade-in p-4">
             <div className="glass-modal p-6 sm:p-8 max-w-md w-full text-center animate-in zoom-in-95 duration-300 max-h-[92vh] overflow-y-auto">
                 {showAbortPrompt ? (
                     <>
@@ -105,7 +106,8 @@ const BreathingModal: React.FC<BreathingModalProps> = ({ onClose, onAbort }) => 
                     </>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

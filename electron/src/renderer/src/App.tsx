@@ -297,12 +297,12 @@ const AppContent: React.FC<{
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-slate-50/50">
-        <div className="p-4 sm:p-6 lg:p-8 min-h-full">
+        <div className="p-4 sm:p-4 min-h-full">
           {/* Header area replaced by context inside tabs, keeping clean */}
           <div className="animate-fade-in-up">
             {activeTab === 'procrastination' && <ProcrastinationPage />}
             {activeTab === 'dashboard' && (
-              <div className="space-y-6 max-w-5xl mx-auto w-full">
+              <div className="space-y-6 w-full">
                 <StatusPanel
                   sessionId={state.currentSessionId}
                   eventCount={state.eventCount}

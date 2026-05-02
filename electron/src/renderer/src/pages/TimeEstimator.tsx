@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { Task, TimerState, ScheduledSummaryTask } from '../types/tasks'
 import { formatElapsed } from '../hooks/useTaskTimer'
 import { useAuth } from '../context/AuthContext'
@@ -623,111 +624,106 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
           {notification.message}
         </div>
       )}
-
-      {/* Global Active Task Widget — all running tasks in one scrollable panel */}
-      {activeTasks.length > 0 && !isPoppedOut && (
-        <div 
-          className="fixed z-[9998] w-[360px] flex flex-col glass-card overflow-hidden animate-fade-in-up"
-          style={{ top: '4.5rem', right: '1rem' }}
-        >
-          {/* Widget Header */}
-          <div className="flex justify-between items-center px-4 py-3 border-b border-slate-200/60 bg-white/40">
-            <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1.5">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-              Active Tasks ({activeTasks.length})
-            </span>
-            <div className="flex items-center gap-3">
-              <span className="text-[11px] font-semibold text-slate-500">
-                {activeTasks.filter(t => !taskTimersRef.current[t.id]?.isPaused).length} running &middot; {activeTasks.filter(t => taskTimersRef.current[t.id]?.isPaused).length} paused
-              </span>
-              <button 
-                onClick={() => window.electronAPI.openActiveTasksWindow()}
-                className="text-slate-400 hover:text-indigo-600 transition-colors"
-                title="Pop out to new window"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-              </button>
-              <button 
-                onClick={() => setIsWidgetMinimized(!isWidgetMinimized)}
-                className="text-slate-400 hover:text-slate-700 transition-colors"
-                title={isWidgetMinimized ? "Expand" : "Minimize"}
-              >
-                {isWidgetMinimized ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Task Rows */}
-          {!isWidgetMinimized && (
-            <div className="max-h-[420px] overflow-y-auto flex flex-col">
-            {activeTasks.map((task, idx) => {
-              const timer = taskTimersRef.current[task.id]
-              if (!timer) return null
-              const isRunning = !timer.isPaused
-              return (
-                <div 
-                  key={task.id} 
-                  className={`px-4 py-3 flex flex-col gap-2 transition-colors ${
-                    idx < activeTasks.length - 1 ? 'border-b border-slate-100/60' : ''
-                  } ${isRunning ? 'bg-white/60' : 'bg-slate-50/40'}`}
-                >
-                  {/* Task name + status dot */}
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${
-                      isRunning ? 'bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]' : 'bg-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.15)]'
-                    }`} />
-                    <span className="font-semibold text-slate-800 text-sm truncate flex-1" title={task.name}>
-                      {task.name}
-                    </span>
-                    <span className={`text-[10px] font-bold uppercase tracking-wider shrink-0 ${
-                      isRunning ? 'text-emerald-600' : 'text-amber-600'
-                    }`}>
-                      {isRunning ? 'Running' : 'Paused'}
-                    </span>
-                  </div>
-
-                  {/* Timer + Buttons */}
-                  <div className="flex justify-between items-center mt-1">
-                    <span className="text-lg font-bold text-slate-700 tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {formatElapsed(getElapsed(task.id))}
-                    </span>
-                    <div className="flex gap-2">
-                      {timer.isPaused ? (
-                        <button 
-                          onClick={() => resumeTask(task.id)} 
-                          className="px-2.5 py-1 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors flex items-center gap-1"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Resume
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => pauseTask(task.id)} 
-                          className="px-2.5 py-1 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors flex items-center gap-1"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Pause
-                        </button>
-                      )}
-                      <button 
-                        onClick={() => markTaskComplete(task.id)} 
-                        className="px-2.5 py-1 text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors shadow-sm flex items-center gap-1"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Done
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          )}
-        </div>
-      )}
-
       <div className="main-content">
+        {/* Global Active Task Widget — Moved to top section */}
+        {activeTasks.length > 0 && !isPoppedOut && (
+          <div className="w-full flex flex-col glass-card overflow-hidden animate-fade-in-up mb-6 shadow-sm">
+            {/* Widget Header */}
+            <div className="flex justify-between items-center px-6 py-3.5 border-b border-slate-200/60 bg-white/40">
+              <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                Currently Active Tasks ({activeTasks.length})
+              </span>
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-semibold text-slate-500 bg-slate-100/80 px-2.5 py-1 rounded-lg">
+                  {activeTasks.filter(t => !taskTimersRef.current[t.id]?.isPaused).length} running &middot; {activeTasks.filter(t => taskTimersRef.current[t.id]?.isPaused).length} paused
+                </span>
+                <div className="flex items-center gap-2 border-l border-slate-200/60 pl-4 ml-1">
+                  <button 
+                    onClick={() => window.electronAPI.openActiveTasksWindow()}
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                    title="Pop out to new window"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                  </button>
+                  <button 
+                    onClick={() => setIsWidgetMinimized(!isWidgetMinimized)}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all"
+                    title={isWidgetMinimized ? "Expand" : "Minimize"}
+                  >
+                    {isWidgetMinimized ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Task Rows */}
+            {!isWidgetMinimized && (
+              <div className="max-h-[300px] overflow-y-auto flex flex-col">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0">
+                  {activeTasks.map((task, idx) => {
+                    const timer = taskTimersRef.current[task.id]
+                    if (!timer) return null
+                    const isRunning = !timer.isPaused
+                    return (
+                      <div 
+                        key={task.id} 
+                        className={`px-6 py-4 flex flex-col gap-3 transition-colors border-b border-r border-slate-100/60 ${isRunning ? 'bg-white/80' : 'bg-slate-50/60'}`}
+                      >
+                        {/* Task name + status dot */}
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                            isRunning ? 'bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)] animate-pulse' : 'bg-amber-500'
+                          }`} />
+                          <span className="font-bold text-slate-800 text-sm truncate flex-1" title={task.name}>
+                            {task.name}
+                          </span>
+                        </div>
+
+                        {/* Timer + Buttons */}
+                        <div className="flex justify-between items-center bg-slate-100/40 p-2 rounded-xl border border-slate-200/20">
+                          <span className="text-xl font-black text-slate-700 tracking-tighter" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            {formatElapsed(getElapsed(task.id))}
+                          </span>
+                          <div className="flex gap-1.5">
+                            {timer.isPaused ? (
+                              <button 
+                                onClick={() => resumeTask(task.id)} 
+                                className="p-2 text-amber-600 bg-white hover:bg-amber-50 border border-amber-200 rounded-lg transition-all shadow-sm"
+                                title="Resume"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={() => pauseTask(task.id)} 
+                                className="p-2 text-amber-600 bg-white hover:bg-amber-50 border border-amber-200 rounded-lg transition-all shadow-sm"
+                                title="Pause"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => markTaskComplete(task.id)} 
+                              className="p-2 text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-all shadow-md shadow-emerald-100"
+                              title="Complete Task"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="dashboard-grid">
           {/* Left Column */}
@@ -1036,8 +1032,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
       </div>
 
       {/* Modal */}
-      {modalDate && (
-        <div className="fixed inset-0 z-[1000] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setModalDate(null) }}>
+      {modalDate && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-900/20 backdrop-blur-[2px] flex items-center justify-center p-4 transition-all duration-500 animate-fade-in" onClick={e => { if (e.target === e.currentTarget) setModalDate(null) }}>
           <div className="glass-card w-full max-w-[680px] max-h-[85vh] flex flex-col overflow-hidden animate-fade-in-up shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/60 bg-white/40 shrink-0">
@@ -1097,12 +1093,13 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
               })()}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Manual Log Modal */}
-      {showManualLogModal && (
-        <div className="fixed inset-0 z-[1000] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setShowManualLogModal(false) }}>
+      {showManualLogModal && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-900/20 backdrop-blur-[2px] flex items-center justify-center p-4 transition-all duration-500 animate-fade-in" onClick={e => { if (e.target === e.currentTarget) setShowManualLogModal(false) }}>
           <div className="glass-card w-full max-w-[450px] overflow-hidden animate-fade-in-up shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200/60 bg-white/40">
@@ -1162,7 +1159,8 @@ const TimeEstimator: React.FC<TimeEstimatorProps> = ({ embedded = false }) => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

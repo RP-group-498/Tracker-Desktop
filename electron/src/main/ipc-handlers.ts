@@ -87,6 +87,12 @@ export function setupIpcHandlers(
         return result.data;
     });
 
+    // Get today's activity
+    ipcMain.handle('get-today-activity', async () => {
+        const result = await pythonBridge.request('GET', `/activity/today`);
+        return result.data;
+    });
+
     // Get activity stats
     ipcMain.handle('get-activity-stats', async () => {
         const result = await pythonBridge.request('GET', '/activity/stats');

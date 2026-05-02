@@ -24,7 +24,7 @@
 .main-content {
     background: transparent;
     min-height: 100vh;
-    padding: 2rem;
+    padding: 1rem;
     color: var(--text-main);
 }
 

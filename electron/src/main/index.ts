@@ -10,6 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import { PythonBridge } from './python-bridge';
 import { NativeMessagingServer } from './native-messaging';
+import { ActivitySyncService } from './activity-sync';
 import { DesktopActivityTracker } from './desktop-activity-tracker';
 import { IdleActivityPrompt } from './idle-prompt';
 import { TrayManager } from './tray';
@@ -27,6 +28,7 @@ if (!gotTheLock) {
 let mainWindow: BrowserWindow | null = null;
 let pythonBridge: PythonBridge | null = null;
 let nativeMessagingServer: NativeMessagingServer | null = null;
+let syncService: ActivitySyncService | null = null;
 let desktopActivityTracker: DesktopActivityTracker | null = null;
 let idleActivityPrompt: IdleActivityPrompt | null = null;
 let trayManager: TrayManager | null = null;
@@ -181,11 +183,12 @@ async function initializeServices(): Promise<void> {
     });
 
     await nativeMessagingServer!.start();
+    syncService!.start();
 
     // 3. Start Desktop Activity Tracker
     console.log('[Main] Initializing Desktop Activity Tracker...');
     try {
-        desktopActivityTracker = new DesktopActivityTracker(pythonBridge!);
+        desktopActivityTracker = new DesktopActivityTracker(pythonBridge!, syncService!);
         desktopActivityTracker.on('started', () => {
             appState.desktopTrackingActive = true;
             updateTrayAndWindow();
@@ -270,6 +273,10 @@ async function cleanup(): Promise<void> {
         await desktopActivityTracker.stop();
     }
 
+    if (syncService) {
+        syncService.stop();
+    }
+
     // End the current session before shutting down
     if (appState.currentSessionId && pythonBridge) {
         try {
@@ -311,7 +318,9 @@ app.on('ready', async () => {
             console.error('[Main] Failed to restore auth token:', e);
         }
     }
-    nativeMessagingServer = new NativeMessagingServer(pythonBridge);
+    
+    syncService = new ActivitySyncService(pythonBridge);
+    nativeMessagingServer = new NativeMessagingServer(pythonBridge, syncService);
 
     if (process.platform === 'darwin' && app.dock) {
         try {
