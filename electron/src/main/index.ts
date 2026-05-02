@@ -79,6 +79,7 @@ function createWindow(): void {
             preload: path.join(__dirname, '../preload/index.js'),
             nodeIntegration: false,
             contextIsolation: true,
+            backgroundThrottling: false, // Prevent Chromium from throttling setInterval when window is hidden (tray mode)
         },
         icon: getAppIconPath(),
     });

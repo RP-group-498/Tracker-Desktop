@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useInterventionContext } from '../context/InterventionContext';
 
 const FOCUS_PERIODS = ['morning', 'afternoon', 'evening', 'night'] as const;
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
@@ -9,7 +10,14 @@ interface CalibrationData {
   study_duration_hours: number;
 }
 
-const CalibrationPage: React.FC = () => {
+interface CalibrationPageProps {
+  pythonRunning: boolean;
+  extensionConnected: boolean;
+}
+
+const CalibrationPage: React.FC<CalibrationPageProps> = ({ pythonRunning, extensionConnected }) => {
+  const { monitorEnabled, monitorStatus, toggleMonitor } = useInterventionContext();
+
   const [calib, setCalib] = useState<CalibrationData>({
     focus_period: 'morning',
     study_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
@@ -67,6 +75,72 @@ const CalibrationPage: React.FC = () => {
 
   return (
     <div className="p-2 space-y-6 max-w-2xl w-full">
+      {/* Connection Status */}
+      <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
+        <h2 className="text-sm font-semibold text-slate-800 mb-3">Connection Status</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="p-3 rounded-xl border border-slate-200/60 bg-white/50 flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-2">
+              <div className="font-semibold text-slate-800 text-sm">Browser Extension</div>
+              <div className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${extensionConnected ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${extensionConnected ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                {extensionConnected ? 'Connected' : 'Waiting'}
+              </div>
+            </div>
+            <div className="text-xs text-slate-500">{extensionConnected ? 'Chrome · Active' : 'Waiting for connection...'}</div>
+          </div>
+
+          <div className="p-3 rounded-xl border border-slate-200/60 bg-white/50 flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-2">
+              <div className="font-semibold text-slate-800 text-sm">Desktop Application</div>
+              <div className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${pythonRunning ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${pythonRunning ? 'bg-green-500' : 'bg-red-500'}`} />
+                {pythonRunning ? 'Connected' : 'Offline'}
+              </div>
+            </div>
+            <div className="text-xs text-slate-500">{pythonRunning ? 'System · Active' : 'Tracker offline'}</div>
+          </div>
+
+          <div className="p-3 rounded-xl border border-slate-200/60 bg-white/50 flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-2">
+              <div className="font-semibold text-slate-800 text-sm">Detection Backend</div>
+              <div className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${pythonRunning ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${pythonRunning ? 'bg-green-500' : 'bg-red-500'}`} />
+                {pythonRunning ? 'Connected' : 'Offline'}
+              </div>
+            </div>
+            <div className="text-xs text-slate-500">{pythonRunning ? 'Processing · latency ~40ms' : 'Service down'}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Auto-Monitor */}
+      <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
+        <div className="flex items-start sm:items-center justify-between gap-3 mb-2">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-800 m-0">Auto-Monitor</h2>
+            <p className="text-xs text-gray-500 m-0">
+              Checks every 60s and triggers interventions automatically
+            </p>
+          </div>
+          <button
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
+              monitorEnabled
+                ? 'bg-green-500 text-white shadow-sm'
+                : 'bg-slate-200 text-slate-500 hover:bg-slate-300'
+            }`}
+            onClick={toggleMonitor}
+          >
+            {monitorEnabled ? 'ON' : 'OFF'}
+          </button>
+        </div>
+        <div className="flex items-center gap-2 mt-2">
+          <span className={`w-2 h-2 rounded-full ${monitorEnabled ? 'bg-green-500' : 'bg-slate-300'}`} />
+          <span className="text-xs text-gray-500">{monitorStatus}</span>
+        </div>
+      </div>
+
+      {/* Study Calibration */}
       <div className="glass-card p-4 sm:p-8 transition-all duration-200 hover:shadow-md space-y-8">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight mb-1">Study Calibration</h2>

@@ -58,7 +58,6 @@ const SmartInterventionPage: React.FC = () => {
     const { user } = useAuth();
     const userId = user?.id ?? '';
     const {
-        monitorEnabled, monitorStatus, toggleMonitor,
         lastInterventionTs,
     } = useInterventionContext();
 
@@ -398,28 +397,6 @@ const SmartInterventionPage: React.FC = () => {
                 {suggestStatus && (
                     <p className="text-sm text-slate-400 mt-3">{suggestStatus}</p>
                 )}
-            </div>
-
-            {/* Auto-Monitor — Trigger & Cooldown */}
-            <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
-                <div className="flex items-start sm:items-center justify-between gap-3 mb-2">
-                    <div>
-                        <h3 className="text-sm font-semibold text-gray-800 m-0">Auto-Monitor</h3>
-                        <p className="text-xs text-gray-500 m-0">
-                            Checks every 60s and triggers interventions automatically
-                        </p>
-                    </div>
-                    <button
-                        className={`sie-monitor-toggle ${monitorEnabled ? 'active' : ''}`}
-                        onClick={toggleMonitor}
-                    >
-                        {monitorEnabled ? 'ON' : 'OFF'}
-                    </button>
-                </div>
-                <div className="sie-monitor-status">
-                    <span className={`sie-monitor-dot ${monitorEnabled ? 'active' : ''}`} />
-                    <span className="text-xs text-gray-500">{monitorStatus}</span>
-                </div>
             </div>
 
             {/* Motivation Over Time */}

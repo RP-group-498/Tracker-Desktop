@@ -83,57 +83,6 @@ const StatusPanel: React.FC<Props> = ({
 
   return (
     <div className="space-y-4">
-      {/* Connection Status Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Browser Extension Status */}
-        <div className="glass-card p-4 rounded-xl border border-slate-200/60 bg-white/50 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-2">
-            <div className="font-semibold text-slate-800 text-sm flex items-center gap-2">
-              Browser Extension
-            </div>
-            <div className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${extensionConnected ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${extensionConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-              {extensionConnected ? 'Connected' : 'Waiting'}
-            </div>
-          </div>
-          <div className="text-xs text-slate-500 flex items-center gap-1">
-            {extensionConnected ? 'Chrome · Active' : 'Waiting for connection...'}
-          </div>
-        </div>
-
-        {/* Desktop Application Status */}
-        <div className="glass-card p-4 rounded-xl border border-slate-200/60 bg-white/50 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-2">
-            <div className="font-semibold text-slate-800 text-sm flex items-center gap-2">
-              Desktop Application
-            </div>
-            <div className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${pythonRunning ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${pythonRunning ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              {pythonRunning ? 'Connected' : 'Offline'}
-            </div>
-          </div>
-          <div className="text-xs text-slate-500 flex items-center gap-1">
-            {pythonRunning ? 'System · Active' : 'Tracker offline'}
-          </div>
-        </div>
-
-        {/* Detection Backend Status */}
-        <div className="glass-card p-4 rounded-xl border border-slate-200/60 bg-white/50 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-2">
-            <div className="font-semibold text-slate-800 text-sm flex items-center gap-2">
-              Detection Backend
-            </div>
-            <div className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${pythonRunning ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${pythonRunning ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              {pythonRunning ? 'Connected' : 'Offline'}
-            </div>
-          </div>
-          <div className="text-xs text-slate-500 flex items-center gap-1">
-            {pythonRunning ? 'Processing · latency ~40ms' : 'Service down'}
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column - Current Session */}
         <div className="lg:col-span-5 space-y-4">

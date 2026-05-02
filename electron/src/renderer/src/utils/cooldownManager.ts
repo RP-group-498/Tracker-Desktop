@@ -8,29 +8,29 @@
  *   Minimum gap between interventions: 10 minutes
  *
  *   After No Intervention (bandit chose silence):
- *     - Global cooldown → 1 minute
+ *     - Global cooldown → 10 minutes
  *
  *   After Start:
  *     - Pomodoro → block until Pomodoro ends (25 min work + 5 min break = 30 min)
  *     - Other actions → 10 minute cooldown
  *
  *   After Not Now:
- *     - Global cooldown → 5 minutes
+ *     - Global cooldown → 10 minutes
  *     - Same action cooldown → 15 minutes
  *
  *   After Skip:
- *     - Global cooldown → 5 minutes
+ *     - Global cooldown → 10 minutes
  *     - Same action cooldown → 10 minutes
  */
 
 const MIN_GAP_MS = 10 * 60 * 1000;           // 10 minutes
 const POMODORO_FULL_MS = 30 * 60 * 1000;      // 25 min work + 5 min break
 const START_COOLDOWN_MS = 10 * 60 * 1000;     // 10 minutes
-const NOT_NOW_GLOBAL_MS = 5 * 60 * 1000;      // 5 minutes
+const NOT_NOW_GLOBAL_MS = 10 * 60 * 1000;     // 10 minutes
 const NOT_NOW_ACTION_MS = 15 * 60 * 1000;     // 15 minutes
-const SKIP_GLOBAL_MS = 5 * 60 * 1000;         // 5 minutes
+const SKIP_GLOBAL_MS = 10 * 60 * 1000;        // 10 minutes
 const SKIP_ACTION_MS = 10 * 60 * 1000;        // 10 minutes
-const NO_INTERVENTION_GLOBAL_MS = 1 * 60 * 1000; // 1 minute (short gap when bandit chooses silence)
+const NO_INTERVENTION_GLOBAL_MS = 10 * 60 * 1000; // 10 minutes (trust bandit silence longer)
 
 export class CooldownManager {
     private globalCooldownUntil = 0;

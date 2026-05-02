@@ -314,7 +314,7 @@ const AppContent: React.FC<{
             {activeTab === 'tasks' && <TaskPrioritizationTab />}
             {activeTab === 'intervention' && <SmartInterventionPage />}
             {activeTab === 'calibration-details' && <CalibrationDetailsPage />}
-            {activeTab === 'calibration' && <CalibrationPage />}
+            {activeTab === 'calibration' && <CalibrationPage pythonRunning={state.pythonRunning} extensionConnected={state.extensionConnected} />}
           </div>
         </div>
       </main>
