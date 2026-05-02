@@ -42,6 +42,7 @@ export interface InterventionContextValue {
     lastInterventionTs: number;
     abortBreathing: () => void;
     abortVisualization: () => void;
+    abortPomodoro: () => void;
 }
 
 const InterventionContext = createContext<InterventionContextValue | undefined>(undefined);
@@ -305,6 +306,27 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
         setShowVisualization(false);
     }, [sendBanditUpdate]);
 
+    const handlePomodoroAbort = useCallback(() => {
+        if (pomodoroIntervalRef.current) {
+            clearInterval(pomodoroIntervalRef.current);
+            pomodoroIntervalRef.current = null;
+        }
+        if (breakIntervalRef.current) {
+            clearInterval(breakIntervalRef.current);
+            breakIntervalRef.current = null;
+        }
+        window.electronAPI.intervention.clearTray();
+        window.electronAPI.intervention.pomodoroStopped();
+        setPomodoroActive(false);
+
+        if (pendingBanditRef.current && pendingBanditRef.current.action === 'POMODORO') {
+            sendBanditUpdate(pendingBanditRef.current.action, pendingBanditRef.current.vector, 0.2, 'skip');
+            cooldownRef.current.applyCooldown('POMODORO', 'skip');
+            pendingBanditRef.current = null;
+        }
+        setLastInterventionTs(Date.now());
+    }, [sendBanditUpdate]);
+
     // ── Notification response handler (lives here so it persists) ─────
 
     useEffect(() => {
@@ -417,6 +439,7 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
         lastInterventionTs,
         abortBreathing: handleBreathingAbort,
         abortVisualization: handleVisualizationAbort,
+        abortPomodoro: handlePomodoroAbort,
     };
 
     return (
