@@ -79,13 +79,14 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     // ── Helpers ───────────────────────────────────────────────────────
 
-    const logMotivation = useCallback(async (vector: number[], scenario: string = 'live') => {
+    const logMotivation = useCallback(async (vector: number[], scenario: string = 'live', stale = false) => {
         try {
             await window.electronAPI.intervention.logMotivation({
                 user_id: userId,
                 motivation: vector[5],  // TMT motivation score, now at index 5 in 9-element vector
                 scenario,
                 context_vector: vector,
+                stale,
             });
         } catch (e) {
             console.warn('[Motivation] Log failed:', e);
@@ -226,6 +227,7 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
                 user_id: userId,
                 x: vector,
                 alpha: 1.0,
+                recent_actions: cooldownRef.current.getRecentShown(),
             });
             const { action } = result as { action: string; allowed_actions: string[] };
 
@@ -243,6 +245,7 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
             await logMotivation(vector, action);
             setLastInterventionTs(Date.now());
 
+            cooldownRef.current.recordShown(action);
             cooldownRef.current.setActiveIntervention(action);
             await triggerBanditNotification(action, vector);
         } catch (err) {
@@ -258,8 +261,8 @@ export const InterventionProvider: React.FC<{ children: ReactNode }> = ({ childr
         if (monitorRef.current?.isRunning()) return;
         const loop = new MonitoringLoop(cooldownRef.current, {
             onSuggestIntervention,
-            onLogMotivation: (vector) => {
-                logMotivation(vector);
+            onLogMotivation: (vector, hasWindow) => {
+                logMotivation(vector, 'live', !hasWindow);
                 setLastInterventionTs(Date.now());
             },
             onStatusUpdate: (status) => setMonitorStatus(status),

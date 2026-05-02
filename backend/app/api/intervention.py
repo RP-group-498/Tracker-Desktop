@@ -47,6 +47,11 @@ from app.config import settings
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+# Multiply weighted score by (1 - RECENCY_DISCOUNT) for actions shown recently.
+# This discourages the bandit from repeating the same intervention back-to-back
+# without corrupting the learned LinUCB parameters (A/b matrices are untouched).
+RECENCY_DISCOUNT = 0.30
+
 # Deficit component labels for logging
 _DEFICIT_LABELS = ["expectancy", "value", "impulsiveness", "delay"]
 
@@ -300,7 +305,8 @@ async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] =
     arms_list = await asyncio.gather(*[_load_arm(user_id, a) for a in TMT_ACTIONS])
     arms_map = dict(zip(TMT_ACTIONS, arms_list))
 
-    # Deficit-weighted selection: UCB score * (1 + relevance)
+    # Deficit-weighted selection: UCB score * (1 + relevance) * recency_factor
+    recent = set(req.recent_actions or [])
     best_action = ""
     best_score = float("-inf")
     ucb_scores_dict: Dict[str, float] = {}
@@ -310,6 +316,10 @@ async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] =
         arm = arms_map[action]
         ucb_score = arm.score(x, req.alpha)
         weighted_score = ucb_score * (1.0 + relevance[action])
+        # Soft-penalise recently shown actions to encourage diversity.
+        # NO_INTERVENTION is exempt — silence should never be artificially suppressed.
+        if action in recent and action != "NO_INTERVENTION":
+            weighted_score *= (1.0 - RECENCY_DISCOUNT)
         ucb_scores_dict[action] = ucb_score
         weighted_scores_dict[action] = weighted_score
         if weighted_score > best_score:
@@ -352,6 +362,7 @@ async def bandit_select(req: BanditSelectRequest, current_user: Dict[str, Any] =
         "relevance_scores": relevance,
         "ucb_scores": ucb_scores_dict,
         "weighted_scores": weighted_scores_dict,
+        "recent_actions": list(recent),
         "timestamp": time.time(),
     })
 
@@ -469,6 +480,8 @@ async def log_motivation(entry: MotivationLogEntry, current_user: Dict[str, Any]
     }
     if entry.context_vector is not None:
         doc["context_vector"] = entry.context_vector
+    if entry.stale is not None:
+        doc["stale"] = entry.stale
     await db.motivation_logs.insert_one(doc)
     return {"status": "ok"}
 

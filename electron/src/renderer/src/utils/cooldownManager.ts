@@ -32,11 +32,17 @@ const SKIP_GLOBAL_MS = 10 * 60 * 1000;        // 10 minutes
 const SKIP_ACTION_MS = 10 * 60 * 1000;        // 10 minutes
 const NO_INTERVENTION_GLOBAL_MS = 10 * 60 * 1000; // 10 minutes (trust bandit silence longer)
 
+// Last-N shown buffer: prevents the bandit from repeating the same intervention
+// back-to-back even after the per-action cooldown expires.
+const RECENT_BUFFER_SIZE = 2;
+const RECENT_BUFFER_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
 export class CooldownManager {
     private globalCooldownUntil = 0;
     private actionCooldownUntil: Record<string, number> = {};
     private _activeIntervention: string | null = null;
     private lastInterventionTime = 0;
+    private recentShown: Array<{ action: string; shownAt: number }> = [];
 
     /** Check if there is an active (in-progress) intervention. */
     hasActiveIntervention(): boolean {
@@ -64,13 +70,44 @@ export class CooldownManager {
         return false;
     }
 
-    /** Filter out actions that are currently in their per-action cooldown. */
+    /**
+     * Record that an intervention was shown to the user.
+     * Stored in a rolling buffer (last N actions, TTL 30 min) to discourage
+     * the bandit from repeating the same action back-to-back.
+     */
+    recordShown(action: string): void {
+        if (action === 'NO_INTERVENTION') return;
+        this.recentShown.push({ action, shownAt: Date.now() });
+        if (this.recentShown.length > RECENT_BUFFER_SIZE) {
+            this.recentShown.shift();
+        }
+    }
+
+    /** Return the list of recently shown actions (non-expired entries only). */
+    getRecentShown(): string[] {
+        const now = Date.now();
+        return this.recentShown
+            .filter(e => now - e.shownAt < RECENT_BUFFER_TTL_MS)
+            .map(e => e.action);
+    }
+
+    /**
+     * Filter out actions in per-action cooldown or in the recent-shown buffer.
+     * Falls back to cooldown-only filter if recency filtering would leave no options,
+     * so the loop never stalls due to the diversity check alone.
+     */
     getAvailableActions(allowed: string[]): string[] {
         const now = Date.now();
-        return allowed.filter(action => {
+        const cooldownFiltered = allowed.filter(action => {
             const until = this.actionCooldownUntil[action] ?? 0;
             return now >= until;
         });
+
+        const recent = new Set(this.getRecentShown());
+        const recencyFiltered = cooldownFiltered.filter(action => !recent.has(action));
+
+        // If recency filtering would empty the list, fall back to cooldown-only
+        return recencyFiltered.length > 0 ? recencyFiltered : cooldownFiltered;
     }
 
     /**
@@ -122,6 +159,7 @@ export class CooldownManager {
         this.actionCooldownUntil = {};
         this._activeIntervention = null;
         this.lastInterventionTime = 0;
+        this.recentShown = [];
     }
 
     /** Get a summary of current state for debug/UI display. */

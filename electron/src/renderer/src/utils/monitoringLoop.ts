@@ -17,7 +17,7 @@
  * WHAT to show via the NO_INTERVENTION arm. Deficit-weighted selection handles this.
  */
 
-import { getContext } from '../../../utils/contextBuilder';
+import { getContextWithMeta } from '../../../utils/contextBuilder';
 import { CooldownManager } from './cooldownManager';
 import { hashContext, isDuplicateContext, updateHash, resetHash } from './contextHasher';
 
@@ -29,8 +29,8 @@ const MONITORING_INTERVAL_MS = 60_000; // 60 seconds
 export interface MonitoringCallbacks {
     /** Called to request a bandit selection + show notification. */
     onSuggestIntervention: (vector: number[], allowedActions: string[]) => Promise<void>;
-    /** Called to log motivation for each monitoring tick. */
-    onLogMotivation: (vector: number[]) => void;
+    /** Called to log motivation for each monitoring tick. hasWindow indicates whether live sliding-window data was available. */
+    onLogMotivation: (vector: number[], hasWindow: boolean) => void;
     /** Called with status messages for UI display. */
     onStatusUpdate: (status: string) => void;
 }
@@ -106,10 +106,10 @@ export class MonitoringLoop {
 
             // 3. Fetch context vector
             this.callbacks.onStatusUpdate('Fetching context...');
-            const vector = await getContext();
+            const { vector, hasWindow } = await getContextWithMeta();
 
             // Log motivation at every tick (motivation is now at vector[5])
-            this.callbacks.onLogMotivation(vector);
+            this.callbacks.onLogMotivation(vector, hasWindow);
 
             // 4. Check for duplicate context
             const ctxHash = hashContext(vector);

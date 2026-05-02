@@ -14,8 +14,9 @@ class BanditSelectRequest(BaseModel):
     # [4] delay          - TMT D proxy (hours_to_deadline normalized)
     # [5] motivation     - TMT score: (E*V) / (1 + I*D)
     # [6] deficit_code   - dominant TMT deficit (ordinal: 0.0/0.33/0.67/1.0)
-    x: List[float]          # context vector, len == 7
-    alpha: float = 1.0      # exploration parameter
+    x: List[float]                              # context vector, len == 7
+    alpha: float = 1.0                          # exploration parameter
+    recent_actions: Optional[List[str]] = None  # actions shown recently; used to apply recency discount
 
 
 class BanditSelectResponse(BaseModel):
@@ -38,6 +39,7 @@ class MotivationLogEntry(BaseModel):
     scenario: str            # 'A' | 'B' | 'C'
     timestamp: Optional[float] = None
     context_vector: Optional[List[float]] = None
+    stale: Optional[bool] = None  # True when no sliding-window data was available (slow-only fallback)
 
 
 class UserGoal(BaseModel):
