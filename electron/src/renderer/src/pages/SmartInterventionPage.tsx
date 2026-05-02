@@ -385,7 +385,7 @@ const SmartInterventionPage: React.FC = () => {
 
             {/* Smart Intervention — LinUCB */}
             <div className="glass-card p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
-                <h3 className="text-base font-semibold text-slate-800 mb-1 tracking-tight">Smart Intervention — LinUCB</h3>
+                <h3 className="text-base font-semibold text-slate-800 mb-1 tracking-tight">Smart Intervention</h3>
                 <p className="text-sm text-slate-500 mb-4">Context is built from live behavioral and task data</p>
 
                 <button
