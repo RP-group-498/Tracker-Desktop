@@ -127,7 +127,7 @@ class MLClassifier:
         self.model_name = config.get("model_name", "facebook/bart-large-mnli")
         self.device = config.get("device", "cpu")
         self.batch_size = config.get("batch_size", 1)
-        self.confidence_threshold = config.get("confidence_threshold", 0.55)
+        self.confidence_threshold = config.get("confidence_threshold", 0.50)
 
         self._classifier = None
         self._initialized = False
@@ -136,10 +136,10 @@ class MLClassifier:
         # Category descriptions for zero-shot classification
         # These natural language descriptions define what each category means
         self.category_labels = {
-            "academic": "academic research, studying, education, learning, university courses, scientific papers",
-            "productivity": "work, coding, software development, documentation, professional tools, project management",
-            "neutral": "email, communication, general web browsing, utilities, system tools",
-            "non_academic": "entertainment, social media, gaming, shopping, leisure, streaming videos",
+            "academic": "scientific research, academic papers, university coursework, scholarly articles, learning educational material, student portal, bibliography, library resources, JSTOR, arXiv, Google Scholar, citation management, thesis, dissertation, LaTeX, software development, coding IDE, terminal command line",
+            "productivity": "professional work, technical documentation, project management tools, slack teams communication, spreadsheets, presentations, business administration, GitHub, Jira, Trello, StackOverflow, debug, deployment",
+            "neutral": "utility tools, system settings, email management, calendar scheduling, file explorer, general information search, weather, dictionary, maps, login pages, authentication",
+            "non_academic": "social media browsing, entertainment streaming, online gaming, leisure shopping, personal blogs, gossip news, sports, netflix, youtube, facebook, instagram, twitter, reddit, twitch, movies, music, viral videos",
         }
 
         logging.info(f"[MLClassifier] Initialized with model: {self.model_name}")

@@ -88,6 +88,12 @@ async def receive_activity_batch(
             if event_data.social_context:
                 context_data["social"] = event_data.social_context.model_dump()
 
+            # Calculate active_time if it's 0 but we have start/end times
+            active_time = event_data.active_time
+            if not active_time and event_data.start_time and event_data.end_time:
+                delta = event_data.end_time - event_data.start_time
+                active_time = int(delta.total_seconds() * 1000)
+
             # Create activity event Pydantic model
             event = ActivityEvent(
                 event_id=event_data.event_id,
@@ -105,7 +111,7 @@ async def receive_activity_batch(
                 app_name=event_data.app_name,
                 app_path=event_data.app_path,
                 window_title=event_data.window_title,
-                active_time=event_data.active_time,
+                active_time=active_time,
                 idle_time=event_data.idle_time,
                 tab_id=event_data.tab_id,
                 window_id=event_data.window_id,
