@@ -136,10 +136,10 @@ class MLClassifier:
         # Category descriptions for zero-shot classification
         # These natural language descriptions define what each category means
         self.category_labels = {
-            "academic": "scientific research, academic papers, university coursework, scholarly articles, learning educational material, student portal, bibliography, library resources, JSTOR, arXiv, Google Scholar, citation management, thesis, dissertation, LaTeX, software development, coding IDE, terminal command line",
-            "productivity": "professional work, technical documentation, project management tools, slack teams communication, spreadsheets, presentations, business administration, GitHub, Jira, Trello, StackOverflow, debug, deployment",
-            "neutral": "utility tools, system settings, email management, calendar scheduling, file explorer, general information search, weather, dictionary, maps, login pages, authentication",
-            "non_academic": "social media browsing, entertainment streaming, online gaming, leisure shopping, personal blogs, gossip news, sports, netflix, youtube, facebook, instagram, twitter, reddit, twitch, movies, music, viral videos",
+            "academic": "scientific research, academic papers, university coursework, scholarly articles, learning educational material, student portal, bibliography, library resources, JSTOR, arXiv, Google Scholar, citation management, thesis, dissertation, LaTeX, software development, coding IDE, terminal command line, AI, Coding, GitHub, StackOverflow, programming, debugging, software engineering, computer science, technical tutorials, web development, react, javascript, css, html, database, system architecture",
+            "productivity": "professional business administration, project management tools, office suites, business presentations, corporate communication, spreadsheets, finance, management, Jira, Trello, Asana, workspace organization, business email, task tracking",
+            "neutral": "general utility tools, system settings, file management, basic information search, weather, maps, login pages, authentication, browser homepage, email inbox, calendar, simple calculators",
+            "non_academic": "entertainment, social media, gaming, online shopping, leisure browsing, news, sports, netflix, youtube entertainment, movies, trailers, facebook, instagram, twitter, reddit, twitch, music, celebrity gossip, viral videos",
         }
 
         logging.info(f"[MLClassifier] Initialized with model: {self.model_name}")

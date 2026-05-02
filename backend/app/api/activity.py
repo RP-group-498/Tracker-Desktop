@@ -65,9 +65,9 @@ async def receive_activity_batch(
                         "app_name": event_data.app_name,
                         "app_path": event_data.app_path,
                         "window_title": event_data.window_title,
-                        "youtube_context": event_data.youtube_context.model_dump() if event_data.youtube_context else None,
-                        "google_context": event_data.google_context.model_dump() if event_data.google_context else None,
-                        "social_context": event_data.social_context.model_dump() if event_data.social_context else None,
+                        "youtube_context": event_data.youtube_context.model_dump(by_alias=True) if event_data.youtube_context else None,
+                        "google_context": event_data.google_context.model_dump(by_alias=True) if event_data.google_context else None,
+                        "social_context": event_data.social_context.model_dump(by_alias=True) if event_data.social_context else None,
                     })
 
                     classification_data = Classification(
@@ -82,11 +82,11 @@ async def receive_activity_batch(
             # Build context_data JSON
             context_data = {}
             if event_data.youtube_context:
-                context_data["youtube"] = event_data.youtube_context.model_dump()
+                context_data["youtube"] = event_data.youtube_context.model_dump(by_alias=True)
             if event_data.google_context:
-                context_data["google"] = event_data.google_context.model_dump()
+                context_data["google"] = event_data.google_context.model_dump(by_alias=True)
             if event_data.social_context:
-                context_data["social"] = event_data.social_context.model_dump()
+                context_data["social"] = event_data.social_context.model_dump(by_alias=True)
 
             # Calculate active_time if it's 0 but we have start/end times
             active_time = event_data.active_time

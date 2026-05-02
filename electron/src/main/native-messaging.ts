@@ -224,7 +224,7 @@ export class NativeMessagingServer extends EventEmitter {
     /**
      * Handle heartbeat - acknowledge and mark extension as connected
      */
-    private async handleHeartbeat(_message: ExtensionMessage): Promise<unknown> {
+    private async handleHeartbeat(message: ExtensionMessage): Promise<unknown> {
         this._lastHeartbeat = Date.now();
 
         // A heartbeat arriving means the extension is alive —
@@ -233,6 +233,11 @@ export class NativeMessagingServer extends EventEmitter {
             this.extensionConnected = true;
             this.emit('extensionConnected');
             console.log('[NativeMessaging] Extension re-connected via heartbeat');
+        }
+
+        // Handle current activity if present
+        if (message.currentActivity) {
+            this.emit('activityUpdate', message.currentActivity);
         }
 
         return {

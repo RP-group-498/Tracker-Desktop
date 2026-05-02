@@ -75,7 +75,7 @@ function forwardToElectronOnce(message) {
                 'Content-Type': 'application/json',
                 'Content-Length': Buffer.byteLength(postData),
             },
-            timeout: 5000,
+            timeout: 60000,
         };
 
         const req = http.request(options, (res) => {

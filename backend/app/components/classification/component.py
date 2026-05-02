@@ -7,10 +7,10 @@ Provides three-layer classification architecture:
 3. Fallback to neutral (low confidence)
 
 Classification Categories:
-- academic: Related to studies, research, learning
-- productivity: Work tools, coding, documentation
-- neutral: Email, communication, general utilities
-- non_academic: Entertainment, social media, gaming
+- academic: Related to studies, research, learning, coding, and web development
+- productivity: Professional work tools, office suites, and project management
+- neutral: Email, communication, general utilities, and system tools
+- non_academic: Entertainment, social media, and gaming
 """
 
 from typing import Any, Dict, List, Optional
@@ -45,26 +45,24 @@ ACADEMIC_DOMAINS = {
     "canvas", "blackboard", "moodle",
     # Research Tools
     "zotero.org", "mendeley.com", "overleaf.com",
+    # Development (Academic/Learning focus)
+    "github.com", "gitlab.com", "bitbucket.org",
+    "stackoverflow.com", "stackexchange.com",
+    "dev.to", "medium.com", "hashnode.dev", "hashnode.com",
+    "developer.mozilla.org", "css-tricks.com",
+    "replit.com", "codepen.io", "codesandbox.io", "stackblitz.com",
+    "vercel.com", "netlify.com", "heroku.com",
+    "npmjs.com", "pypi.org", "packagist.org",
 }
 
 PRODUCTIVITY_DOMAINS = {
-    # Development
-    "github.com", "gitlab.com", "bitbucket.org",
-    "stackoverflow.com", "stackexchange.com",
-    # Developer Communities & Blogs
-    "dev.to", "medium.com", "hashnode.dev", "hashnode.com",
-    "developer.mozilla.org", "css-tricks.com", "linkedin.com",
     # Documentation
     "docs.google.com", "notion.so", "confluence",
     "readthedocs.io", "readthedocs.org",
     # Cloud/Office
     "drive.google.com", "office.com", "dropbox.com",
-    # IDEs online
-    "replit.com", "codepen.io", "codesandbox.io", "stackblitz.com",
-    # Hosting/Deployment
-    "vercel.com", "netlify.com", "heroku.com",
-    # Package Managers
-    "npmjs.com", "pypi.org", "packagist.org",
+    # Business/Networking
+    "linkedin.com", "wellfound.com", "glassdoor.com",
 }
 
 NON_ACADEMIC_DOMAINS = {
@@ -85,11 +83,6 @@ NON_ACADEMIC_DOMAINS = {
 
 # Desktop application classification rules
 DESKTOP_PRODUCTIVITY_APPS = {
-    # IDEs and Code Editors
-    "code", "vscode", "visual studio code",
-    "pycharm", "intellij", "webstorm", "phpstorm", "clion", "rider",
-    "sublime text", "sublime_text", "atom", "brackets", "vim", "neovim", "emacs",
-    "android studio", "xcode", "eclipse", "netbeans",
     # Office Applications
     "word", "winword", "excel", "powerpnt", "powerpoint", "onenote", "outlook",
     "libreoffice", "openoffice", "wps office",
@@ -98,9 +91,6 @@ DESKTOP_PRODUCTIVITY_APPS = {
     # Design Tools
     "figma", "sketch", "adobe", "photoshop", "illustrator", "indesign", "xd",
     "canva", "gimp", "inkscape", "blender",
-    # Development Tools
-    "terminal", "cmd", "powershell", "windowsterminal", "iterm",
-    "docker", "postman", "insomnia", "dbeaver", "datagrip",
     # Productivity
     "slack", "teams", "zoom", "webex",
     "trello", "asana", "jira", "linear",
@@ -108,6 +98,14 @@ DESKTOP_PRODUCTIVITY_APPS = {
 }
 
 DESKTOP_ACADEMIC_APPS = {
+    # IDEs and Code Editors
+    "code", "vscode", "visual studio code",
+    "pycharm", "intellij", "webstorm", "phpstorm", "clion", "rider",
+    "sublime text", "sublime_text", "atom", "brackets", "vim", "neovim", "emacs",
+    "android studio", "xcode", "eclipse", "netbeans",
+    # Development Tools
+    "terminal", "cmd", "powershell", "windowsterminal", "iterm",
+    "docker", "postman", "insomnia", "dbeaver", "datagrip",
     # Reference Managers
     "zotero", "mendeley", "endnote", "jabref",
     # LaTeX Editors
@@ -182,8 +180,8 @@ class ClassificationComponent(ComponentBase):
 
     Provides three-layer classification:
     1. Rule-based (domain/app matching) - high confidence (≥0.80)
-    2. ML model (zero-shot) - medium confidence (≥0.55)
-    3. Fallback (neutral) - low confidence (0.50)
+    2. ML model (zero-shot) - medium confidence (≥0.45)
+    3. Fallback (neutral/pending_ai) - low confidence (<0.45)
 
     The ML layer uses facebook/bart-large-mnli for zero-shot classification,
     requiring no training data - a valid research approach for establishing
@@ -301,8 +299,8 @@ class ClassificationComponent(ComponentBase):
         Classify a browsing or desktop activity using three-layer approach.
 
         Layer 1: Rule-based classification (fast, high confidence ≥0.80)
-        Layer 2: ML classification (medium confidence ≥0.55, for uncertain cases)
-        Layer 3: Fallback to neutral (low confidence = 0.50)
+        Layer 2: ML classification (medium confidence ≥0.45, for uncertain cases)
+        Layer 3: Fallback to neutral (low confidence <0.45)
 
         Args:
             data: Activity data dictionary
@@ -358,7 +356,7 @@ class ClassificationComponent(ComponentBase):
                 domain=data.get("domain", "")
             )
 
-            if ml_result and ml_result["confidence"] >= 0.55:
+            if ml_result and ml_result["confidence"] >= 0.45:
                 # ML provided good classification
                 category = ml_result["category"]
                 confidence = ml_result["confidence"]
@@ -509,9 +507,16 @@ class ClassificationComponent(ComponentBase):
             return "academic", 0.90, "educational_tld"
 
         # Title-based heuristics
-        academic_keywords = ["lecture", "course", "study", "research", "thesis", "paper"]
+        academic_keywords = [
+            "lecture", "course", "study", "research", "thesis", "paper",
+            "tutorial", "learn", "how to", "documentation", "api", "reference",
+            "code", "programming", "developer", "development", "github", "stackoverflow",
+            "debug", "error", "exception", "compile", "build", "deploy", "scientific",
+            "react", "javascript", "python", "css", "html", "coding", "software engineering",
+            "frontend", "backend", "fullstack", "database", "sql", "nosql"
+        ]
         if any(kw in title for kw in academic_keywords):
-            return "academic", 0.65, "title_keywords"
+            return "academic", 0.82, "title_keywords"
 
         # Default to neutral for unknown domains
         return "neutral", 0.50, None
@@ -553,21 +558,24 @@ class ClassificationComponent(ComponentBase):
             # Analyze search query for academic/productivity keywords
             query = context.get("query", "").lower()
 
-            # Academic keywords
+            # Academic/Learning keywords (now including coding)
             academic_keywords = [
                 "research", "paper", "study", "learn", "learning", "course", "tutorial",
                 "education", "university", "scholar", "academic", "thesis", "journal",
                 "lecture", "homework", "assignment", "exam", "textbook", "chapter",
                 "definition", "explain", "theory", "formula", "equation", "solve",
-                "science", "math", "physics", "chemistry", "biology", "history"
-            ]
-
-            # Productivity/work keywords
-            productivity_keywords = [
+                "science", "math", "physics", "chemistry", "biology", "history",
                 "code", "coding", "programming", "developer", "development",
                 "documentation", "api", "github", "stackoverflow", "debug",
                 "error", "function", "class", "method", "algorithm", "data structure",
                 "software", "framework", "library", "package", "install", "deploy"
+            ]
+
+            # Productivity/work keywords (strictly professional/business)
+            productivity_keywords = [
+                "business", "management", "corporate", "office", "finance",
+                "meeting", "presentation", "spreadsheet", "admin", "hr",
+                "project management", "task list", "jira", "trello", "asana"
             ]
 
             # Check for academic keywords
