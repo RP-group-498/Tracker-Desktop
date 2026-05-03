@@ -37,6 +37,8 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
     print(f"[Backend] Starting {settings.app_name} v{settings.app_version}")
+    client_id = settings.google_client_id
+    print(f"[Backend] Google OAuth client_id loaded: {'OK (' + client_id[:20] + '...)' if client_id else 'MISSING - check GOOGLE_CLIENT_ID env var'}")
     await init_db()
     load_all_components(settings.component_config)
 

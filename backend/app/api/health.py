@@ -36,6 +36,10 @@ async def health_check():
         "app": settings.app_name,
         "version": settings.app_version,
         "user_id": user_id,
+        "oauth": {
+            "google_client_id_set": bool(settings.google_client_id),
+            "google_client_secret_set": bool(settings.google_client_secret),
+        },
         "mongodb": mongodb_status,
         "components": {
             name: {
