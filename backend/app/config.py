@@ -1,7 +1,17 @@
 """Application configuration settings."""
 
 from dotenv import load_dotenv
-load_dotenv()  # Ensure .env is in os.environ before pydantic reads it
+import os
+from pathlib import Path
+
+# Resolve the backend directory (one level up from app/)
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+env_path = BACKEND_DIR / ".env"
+
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+else:
+    load_dotenv() # Fallback to default behavior
 
 from pydantic_settings import BaseSettings
 from pathlib import Path
@@ -19,9 +29,9 @@ class Settings(BaseSettings):
     # Database (MongoDB configuration only)
 
     # MongoDB (for research team sync)
-    mongodb_uri: str = ""  # e.g. "mongodb+srv://user:pass@cluster.mongodb.net/"
-    mongodb_database: str = "focus_app_research_v2"
-    mongodb_sync_enabled: bool = False  # Enable when URI is configured
+    mongodb_uri: str = ""
+    mongodb_database: str = "focus_app_research"
+    mongodb_sync_enabled: bool = True  # Enable when URI is configured
 
     # User identification (Placeholder for migration/fallback)
     user_id: str = ""  
@@ -58,12 +68,12 @@ class Settings(BaseSettings):
 
     # APDIS MongoDB (active time predictions)
     apdis_mongodb_uri: str = ""
-    apdis_database_name: str = ""
-    apdis_collection_active_time: str = ""
+    apdis_database_name: str = "focus_app_research"
+    apdis_collection_active_time: str = "predicted_active_time"
 
     # Scheduler (active_time_sync — runs in background on startup)
     api_base_url: str = "http://localhost:8000/api/tasks"
-    scheduler_time: str = "21:09"
+    scheduler_time: str = "10:58"
     scheduler_users: str = ""
     allocation_users: str = ""
 
@@ -98,7 +108,7 @@ class Settings(BaseSettings):
     outputs_dir: Path = Path("./data/outputs")
 
     class Config:
-        env_file = ".env"
+        env_file = str(env_path) if env_path.exists() else ".env"
         env_file_encoding = "utf-8"
 
 
