@@ -239,4 +239,11 @@ export function setupIpcHandlers(
         }
     });
 
+    // Synchronous handler so legacy standalone HTML pages (pdf-analysis.html, time-estimator.html)
+    // can retrieve the baked-in backend URL without import.meta.env support.
+    ipcMain.on('get-backend-url', (event) => {
+        const raw = import.meta.env?.VITE_BACKEND_URL ?? 'http://127.0.0.1:8001';
+        event.returnValue = raw.startsWith('http') ? raw : `https://${raw}`;
+    });
+
 }
