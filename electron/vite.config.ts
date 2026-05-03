@@ -8,6 +8,7 @@ import { resolve } from 'path';
 const electronRoot = __dirname;
 
 export default defineConfig({
+  envDir: electronRoot, // Load .env / .env.production / .env.development from electron/ root
   plugins: [
     react(),
     electron([
