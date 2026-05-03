@@ -1,8 +1,7 @@
 const { ipcRenderer } = require('electron');
 const path = require('path');
 
-// Configuration — API calls for time predictions go to FastAPI backend
-const API_BASE_URL = 'http://localhost:8001/api/tasks';
+const API_BASE_URL = `${ipcRenderer.sendSync('get-backend-url')}/api/tasks`;
 let USER_ID = '';
 
 // DOM Elements

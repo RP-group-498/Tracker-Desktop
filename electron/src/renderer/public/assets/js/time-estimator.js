@@ -1,7 +1,6 @@
 const { ipcRenderer } = require('electron');
 
-// Configuration — updated to point at FastAPI backend on port 8000
-const API_BASE_URL = 'http://localhost:8001/api/tasks';
+const API_BASE_URL = `${ipcRenderer.sendSync('get-backend-url')}/api/tasks`;
 let USER_ID = '';
 
 // State

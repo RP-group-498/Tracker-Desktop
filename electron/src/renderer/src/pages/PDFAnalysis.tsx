@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import '../styles/pages.css'
 import '../styles/pdf-analysis.css'
 
-const API_BASE_URL = 'http://localhost:8000/api/tasks'
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8000'}/api/tasks`
 
 function formatTime(minutes: number): string {
   if (minutes === 0 || !minutes) return '0 minutes'
