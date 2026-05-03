@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 /**
  * Python Backend Bridge
  *
@@ -7,13 +8,24 @@
 import { spawn, ChildProcess, execFile } from 'child_process';
 import path from 'path';
 import { EventEmitter } from 'events';
-import http from 'http';
 import net from 'net';
 
 const PYTHON_PORT = 8001;
 const HEALTH_CHECK_INTERVAL = 10000; // 10 seconds
 const STARTUP_TIMEOUT = 30000; // 30 seconds
 const MAX_RESTART_ATTEMPTS = 3;
+
+// In production, VITE_BACKEND_URL is baked in at build time by Vite.
+// In development it reads from .env.development (http://127.0.0.1:8001).
+const BACKEND_BASE_URL: string = (() => {
+    const raw = import.meta.env?.VITE_BACKEND_URL ?? `http://127.0.0.1:${PYTHON_PORT}`;
+    // Ensure the URL always has a scheme
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    return `https://${raw}`;
+})();
+
+// When the URL points to a remote host, skip spawning a local process entirely
+const IS_REMOTE = !BACKEND_BASE_URL.includes('127.0.0.1') && !BACKEND_BASE_URL.includes('localhost');
 
 interface ApiResponse<T = unknown> {
     success: boolean;
@@ -49,6 +61,22 @@ export class PythonBridge extends EventEmitter {
     async start(): Promise<void> {
         if (this.isRunning) {
             console.log('[PythonBridge] Already running');
+            return;
+        }
+
+        if (IS_REMOTE) {
+            console.log(`[PythonBridge] Remote backend mode — connecting to ${BACKEND_BASE_URL}`);
+            try {
+                await this.waitForReady();
+                this.startHealthCheck();
+                this.isRunning = true;
+                this.restartAttempts = 0;
+                this.emit('started');
+            } catch (error) {
+                console.error('[PythonBridge] Remote backend unreachable:', error);
+                this.emit('error', error);
+                throw error;
+            }
             return;
         }
 
@@ -298,23 +326,15 @@ export class PythonBridge extends EventEmitter {
     /**
      * Perform a health check
      */
-    private healthCheck(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const req = http.get(`http://127.0.0.1:${PYTHON_PORT}/api/health`, (res) => {
-                if (res.statusCode === 200) {
-                    resolve();
-                } else {
-                    reject(new Error(`Health check failed: ${res.statusCode}`));
-                }
-                res.resume(); // Consume response
-            });
-
-            req.on('error', reject);
-            req.setTimeout(5000, () => {
-                req.destroy();
-                reject(new Error('Health check timeout'));
-            });
-        });
+    private async healthCheck(): Promise<void> {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5000);
+        try {
+            const res = await fetch(`${BACKEND_BASE_URL}/api/health`, { signal: controller.signal });
+            if (!res.ok) throw new Error(`Health check failed: ${res.status}`);
+        } finally {
+            clearTimeout(timer);
+        }
     }
 
     /**
@@ -345,61 +365,32 @@ export class PythonBridge extends EventEmitter {
      * Make an API request to the backend
      */
     async request<T>(method: string, path: string, body?: unknown, timeout: number = 10000): Promise<ApiResponse<T>> {
-        return new Promise((resolve) => {
-            const postData = body ? JSON.stringify(body) : '';
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeout);
 
-            const headers: http.OutgoingHttpHeaders = {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData),
-            };
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (this.authToken) headers['Authorization'] = `Bearer ${this.authToken}`;
 
-            if (this.authToken) {
-                headers['Authorization'] = `Bearer ${this.authToken}`;
-            }
-
-            const options: http.RequestOptions = {
-                hostname: '127.0.0.1',
-                port: PYTHON_PORT,
-                path: `/api${path}`,
+        try {
+            const res = await fetch(`${BACKEND_BASE_URL}/api${path}`, {
                 method,
                 headers,
-                timeout,
-            };
-
-            const req = http.request(options, (res) => {
-                let data = '';
-                res.on('data', (chunk) => {
-                    data += chunk;
-                });
-                res.on('end', () => {
-                    try {
-                        const parsed = JSON.parse(data);
-                        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                            resolve({ success: true, data: parsed });
-                        } else {
-                            const detail = (parsed as any)?.detail ?? (parsed as any)?.error ?? JSON.stringify(parsed);
-                            resolve({ success: false, error: `HTTP ${res.statusCode}: ${detail}` });
-                        }
-                    } catch {
-                        resolve({ success: false, error: 'Invalid JSON response' });
-                    }
-                });
+                body: body ? JSON.stringify(body) : undefined,
+                signal: controller.signal,
             });
 
-            req.on('error', (error) => {
-                resolve({ success: false, error: error.message });
-            });
-
-            req.on('timeout', () => {
-                req.destroy();
-                resolve({ success: false, error: 'Request timeout' });
-            });
-
-            if (postData) {
-                req.write(postData);
+            const parsed = await res.json();
+            if (res.ok) {
+                return { success: true, data: parsed as T };
             }
-            req.end();
-        });
+            const detail = (parsed as any)?.detail ?? (parsed as any)?.error ?? JSON.stringify(parsed);
+            return { success: false, error: `HTTP ${res.status}: ${detail}` };
+        } catch (err: any) {
+            if (err?.name === 'AbortError') return { success: false, error: 'Request timeout' };
+            return { success: false, error: err?.message ?? 'Unknown error' };
+        } finally {
+            clearTimeout(timer);
+        }
     }
 
     /**

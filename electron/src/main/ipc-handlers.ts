@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 /**
  * IPC Handlers
  *
@@ -151,8 +152,8 @@ export function setupIpcHandlers(
     const TOKEN_FILE = path.join(app.getPath('userData'), 'auth_token.json');
 
     ipcMain.handle('start-oauth-login', async (event) => {
-        const BACKEND_PORT = 8000;
-        const BACKEND_URL = `http://localhost:${BACKEND_PORT}`;
+        const rawUrl = import.meta.env?.VITE_BACKEND_URL ?? 'http://127.0.0.1:8001';
+        const BACKEND_URL = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
 
         const { BrowserWindow: AuthBrowserWindow } = require('electron');
         const authWindow = new AuthBrowserWindow({

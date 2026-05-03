@@ -39,6 +39,11 @@
   "build": {
     "appId": "com.research.focusapp",
     "productName": "Focus App",
+    "files": [
+      "dist/**",
+      "assets/**",
+      "package.json"
+    ],
     "mac": {
       "target": "dmg",
       "icon": "assets/icon.icns"
