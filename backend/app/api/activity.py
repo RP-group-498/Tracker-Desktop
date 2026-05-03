@@ -388,8 +388,8 @@ async def submit_idle_activity(
             app_name=None,
             app_path=None,
             window_title=activity_title,
-            active_time=0,
-            idle_time=data.idle_duration_ms,
+            active_time=data.idle_duration_ms,
+            idle_time=0,
             classification=classification_data
         )
 
