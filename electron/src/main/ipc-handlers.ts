@@ -151,67 +151,13 @@ export function setupIpcHandlers(
 
     const TOKEN_FILE = path.join(app.getPath('userData'), 'auth_token.json');
 
-    ipcMain.handle('start-oauth-login', async (event) => {
+    ipcMain.handle('start-oauth-login', async () => {
         const rawUrl = import.meta.env?.VITE_BACKEND_URL ?? 'http://127.0.0.1:8001';
         const BACKEND_URL = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
-
-        const { BrowserWindow: AuthBrowserWindow } = require('electron');
-        const authWindow = new AuthBrowserWindow({
-            width: 800,
-            height: 600,
-            webPreferences: {
-                nodeIntegration: false,
-                contextIsolation: true,
-            },
-        });
-
-        authWindow.loadURL(`${BACKEND_URL}/api/auth/login`);
-
-        // The backend callback returns JSON: { access_token, token_type, user }
-        // did-finish-load fires when the page is done — use executeJavaScript to read body text
-        authWindow.webContents.on('did-finish-load', async () => {
-            const url = authWindow.webContents.getURL();
-            console.log('[Auth] did-finish-load URL:', url);
-
-            if (url.includes('/api/auth/callback')) {
-                try {
-                    // Give the browser a tick to render the JSON body
-                    await new Promise(resolve => setTimeout(resolve, 200));
-
-                    const bodyText = await authWindow.webContents.executeJavaScript(
-                        'document.body ? document.body.innerText : ""'
-                    );
-                    console.log('[Auth] Callback body:', bodyText.substring(0, 200));
-
-                    const data = JSON.parse(bodyText);
-
-                    if (data.access_token) {
-                        // Persist token to disk
-                        fs.writeFileSync(TOKEN_FILE, JSON.stringify(data));
-                        // Set on pythonBridge so all subsequent requests are authenticated
-                        pythonBridge.setAuthToken(data.access_token);
-
-                        console.log('[Auth] Token saved and set on PythonBridge');
-
-                        // Notify renderer
-                        event.sender.send('auth-success', {
-                            token: data.access_token,
-                            user: data.user,
-                        });
-
-                        authWindow.close();
-                    } else {
-                        console.error('[Auth] No access_token in response:', data);
-                    }
-                } catch (err) {
-                    console.error('[Auth] Failed to parse auth callback body:', err);
-                }
-            }
-        });
-
-        authWindow.on('closed', () => {
-            console.log('[Auth] Auth window closed');
-        });
+        const { shell } = require('electron');
+        // Opens in the system browser — Google allows this, blocks embedded webviews.
+        // After auth the backend redirects to focusapp://auth?token=... which index.ts handles.
+        await shell.openExternal(`${BACKEND_URL}/api/auth/login`);
     });
 
     ipcMain.handle('get-auth-token', async () => {

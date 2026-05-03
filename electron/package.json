@@ -55,6 +55,12 @@
     "linux": {
       "icon": "assets/icon.png"
     },
+    "protocols": [
+      {
+        "name": "Focus App",
+        "schemes": ["focusapp"]
+      }
+    ],
     "extraResources": [
       {
         "from": "../native-host",

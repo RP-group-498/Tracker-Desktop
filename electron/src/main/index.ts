@@ -19,6 +19,13 @@ import { registerProcrastinationHandlers } from './ipc-procrastination';
 import { registerInterventionHandlers } from './ipc-intervention';
 import { registerNativeHost } from './native-host-registrar';
 
+// Register custom protocol for OAuth callback (focusapp://auth?token=...)
+if (process.env.NODE_ENV === 'development') {
+    app.setAsDefaultProtocolClient('focusapp', process.execPath, [path.resolve(process.argv[1])]);
+} else {
+    app.setAsDefaultProtocolClient('focusapp');
+}
+
 // Prevent multiple instances
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -302,6 +309,32 @@ async function cleanup(): Promise<void> {
     trayManager?.destroy();
 }
 
+function handleAuthCallback(url: string): void {
+    try {
+        const parsed = new URL(url);
+        const token = parsed.searchParams.get('token');
+        const userStr = parsed.searchParams.get('user');
+        if (!token) return;
+
+        const user = userStr ? JSON.parse(decodeURIComponent(userStr)) : null;
+        const TOKEN_FILE = path.join(app.getPath('userData'), 'auth_token.json');
+        fs.writeFileSync(TOKEN_FILE, JSON.stringify({ access_token: token, user }));
+        pythonBridge?.setAuthToken(token);
+        mainWindow?.webContents.send('auth-success', { token, user });
+        mainWindow?.show();
+        mainWindow?.focus();
+        console.log('[Auth] Token received via protocol handler');
+    } catch (e) {
+        console.error('[Auth] Failed to handle focusapp:// callback:', e);
+    }
+}
+
+// macOS: app already running, receives focusapp:// URL via open-url event
+app.on('open-url', (event, url) => {
+    event.preventDefault();
+    if (url.startsWith('focusapp://')) handleAuthCallback(url);
+});
+
 // App lifecycle events
 app.on('ready', async () => {
     // Initialize services first (creates pythonBridge and nativeMessagingServer)
@@ -351,8 +384,11 @@ app.on('ready', async () => {
     await initializeServices();
 });
 
-app.on('second-instance', () => {
-    // Focus the window if user tries to open another instance
+app.on('second-instance', (_event, argv) => {
+    // Windows/Linux: protocol URL is passed as a command-line argument
+    const protocolUrl = argv.find(arg => arg.startsWith('focusapp://'));
+    if (protocolUrl) handleAuthCallback(protocolUrl);
+
     if (mainWindow) {
         if (mainWindow.isMinimized()) mainWindow.restore();
         mainWindow.show();

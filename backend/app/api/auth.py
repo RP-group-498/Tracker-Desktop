@@ -1,7 +1,9 @@
 """
 API Router for Authentication handling Google OAuth.
 """
-from fastapi import APIRouter, Depends, HTTPException, Request
+import json
+import urllib.parse
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from app.config import settings
@@ -48,21 +50,17 @@ async def auth_callback(request: Request):
             data={"sub": user_id, "email": user_info.get("email"), "name": user_info.get("name")}
         )
         
-        # In a desktop app, we often redirect to a custom protocol scheme or 
-        # return a simple page that sends the token to the parent Desktop Window via IPC/postMessage.
-        # Since this is Electron, we can return a simple HTML page that calls window.close() 
-        # and lets Electron's main process intercept the navigation/URL or we can return JSON.
-        # Returning JSON is easier if the frontend handles the popup properly.
-        return {
-            "access_token": jwt_token,
-            "token_type": "bearer",
-            "user": {
-                "id": user_id,
-                "email": user_info.get("email"),
-                "name": user_info.get("name"),
-                "picture": user_info.get("picture")
-            }
+        user_data = {
+            "id": user_id,
+            "email": user_info.get("email"),
+            "name": user_info.get("name"),
+            "picture": user_info.get("picture"),
         }
+        params = urllib.parse.urlencode({
+            "token": jwt_token,
+            "user": json.dumps(user_data),
+        })
+        return RedirectResponse(url=f"focusapp://auth?{params}")
     except Exception as e:
         print(f"[Auth Error] Callback failed: {e}")
         raise HTTPException(status_code=400, detail="Authentication failed")
