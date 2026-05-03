@@ -89,12 +89,12 @@ DESKTOP_PRODUCTIVITY_APPS = {
     # Documentation/Notes
     "notion", "obsidian", "evernote", "typora", "marktext",
     # Design Tools
-    "figma", "sketch", "adobe", "photoshop", "illustrator", "indesign", "xd",
+    "figma", "sketch", "adobe", "photoshop", "illustrator", "indesign", "adobe xd",
     "canva", "gimp", "inkscape", "blender",
     # Productivity
     "slack", "teams", "zoom", "webex",
     "trello", "asana", "jira", "linear",
-    "calculator", "notepad",
+    "calculator", "notepad", "electron", "focus",
 }
 
 DESKTOP_ACADEMIC_APPS = {
@@ -111,7 +111,7 @@ DESKTOP_ACADEMIC_APPS = {
     # LaTeX Editors
     "texstudio", "texmaker", "overleaf", "lyx",
     # STEM Tools
-    "matlab", "mathematica", "maple", "spss", "stata", "rstudio", "r",
+    "matlab", "mathematica", "maple", "spss", "stata", "rstudio", "rgui", "rterm",
     "jupyter", "anaconda", "spyder",
     # CAD/Science
     "autocad", "solidworks", "fusion", "chemsketch",
@@ -423,13 +423,13 @@ class ClassificationComponent(ComponentBase):
                 return "neutral", 0.70, f"desktop_neutral_app:{pattern}"
 
         # Window title-based heuristics for unknown apps
+        productivity_keywords = ["document", "spreadsheet", "presentation", "project", "work", "meeting", "electron", "focus"]
+        if any(kw in window_title for kw in productivity_keywords):
+            return "productivity", 0.60, "desktop_title_productivity"
+
         academic_keywords = ["lecture", "course", "study", "research", "thesis", "paper", "assignment"]
         if any(kw in window_title for kw in academic_keywords):
             return "academic", 0.65, "desktop_title_academic"
-
-        productivity_keywords = ["document", "spreadsheet", "presentation", "project", "work", "meeting"]
-        if any(kw in window_title for kw in productivity_keywords):
-            return "productivity", 0.60, "desktop_title_productivity"
 
         entertainment_keywords = ["game", "play", "video", "movie", "music", "stream"]
         if any(kw in window_title for kw in entertainment_keywords):
@@ -507,11 +507,17 @@ class ClassificationComponent(ComponentBase):
             return "academic", 0.90, "educational_tld"
 
         # Title-based heuristics
+        productivity_keywords = [
+            "electron", "focus"
+        ]
+        if any(kw in title for kw in productivity_keywords):
+            return "productivity", 0.82, "title_keywords_productivity"
+
         academic_keywords = [
-            "lecture", "course", "study", "research", "thesis", "paper",
+            "lecture", "course", "study", "research", "thesis", "paper", "scientific",
             "tutorial", "learn", "how to", "documentation", "api", "reference",
             "code", "programming", "developer", "development", "github", "stackoverflow",
-            "debug", "error", "exception", "compile", "build", "deploy", "scientific",
+            "debug", "error", "exception", "compile", "build", "deploy",
             "react", "javascript", "python", "css", "html", "coding", "software engineering",
             "frontend", "backend", "fullstack", "database", "sql", "nosql"
         ]

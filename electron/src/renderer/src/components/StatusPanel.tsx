@@ -130,11 +130,7 @@ const StatusPanel: React.FC<Props> = ({
         <div className="lg:col-span-5 space-y-4">
           <div className="glass-card p-6 rounded-xl border border-slate-200/60 bg-white/80 shadow-sm flex flex-col relative overflow-hidden">
             <div className="flex justify-between items-start mb-6">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Current Session</div>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-50 border border-red-100">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[10px] font-bold text-red-600 uppercase tracking-tight">Live</span>
-              </div>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Recent Session</div>
             </div>
 
             {currentActivity ? (
@@ -149,7 +145,7 @@ const StatusPanel: React.FC<Props> = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Started</div>
-                    <div className="text-sm font-bold text-slate-800 font-mono tracking-tight">{formatTime(currentActivity.timestamp)}</div>
+                    <div className="text-sm font-bold text-slate-800 font-mono tracking-tight">{formatTimeOffset(currentActivity.timestamp)}</div>
                   </div>
                   <div>
                     <div className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Duration</div>
@@ -160,7 +156,7 @@ const StatusPanel: React.FC<Props> = ({
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Current Category</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Recent Category</span>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getCategoryColor(currentActivity.classification?.category)}`}>
                     {formatCategory(currentActivity.classification?.category)}
                   </span>
@@ -176,27 +172,27 @@ const StatusPanel: React.FC<Props> = ({
 
           {/* 2x2 Category Totals Grid */}
           <div className="grid grid-cols-2 gap-4">
-            <CategorySummaryCard 
-              title="Academic" 
-              amount={formatDuration(getCategoryTotal('academic'))} 
+            <CategorySummaryCard
+              title="Academic"
+              amount={formatDuration(getCategoryTotal('academic'))}
               colorClass="bg-green-100 text-green-700 border-green-200"
               icon={BookOpen}
             />
-            <CategorySummaryCard 
-              title="Productivity" 
-              amount={formatDuration(getCategoryTotal('productivity'))} 
+            <CategorySummaryCard
+              title="Productivity"
+              amount={formatDuration(getCategoryTotal('productivity'))}
               colorClass="bg-blue-100 text-blue-700 border-blue-200"
               icon={Briefcase}
             />
-            <CategorySummaryCard 
-              title="Neutral" 
-              amount={formatDuration(getCategoryTotal('neutral'))} 
+            <CategorySummaryCard
+              title="Neutral"
+              amount={formatDuration(getCategoryTotal('neutral'))}
               colorClass="bg-slate-100 text-slate-700 border-slate-200"
               icon={MinusCircle}
             />
-            <CategorySummaryCard 
-              title="Non-Academic" 
-              amount={formatDuration(getCategoryTotal('non_academic'))} 
+            <CategorySummaryCard
+              title="Non-Academic"
+              amount={formatDuration(getCategoryTotal('non_academic'))}
               colorClass="bg-orange-100 text-orange-700 border-orange-200"
               icon={Coffee}
             />
