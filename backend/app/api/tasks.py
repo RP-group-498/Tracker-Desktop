@@ -57,6 +57,7 @@ def _get_estimator():
 
 class AnalyzeRequest(BaseModel):
     pdf_path: Optional[str] = None
+    pdf_base64: Optional[str] = None
     text_content: Optional[str] = None
     deadline: str
     credits: int
@@ -127,7 +128,12 @@ def analyze_task(req: AnalyzeRequest, current_user: Dict[str, Any] = Depends(get
         "weight": req.weight,
         "user_id": user_id,
     }
-    if req.pdf_path:
+    if req.pdf_base64:
+        # Electron sends the PDF as base64 because the backend is remote (Railway)
+        # and cannot access local file paths on the user's machine.
+        import base64
+        data["pdf_bytes"] = base64.b64decode(req.pdf_base64)
+    elif req.pdf_path:
         data["pdf_path"] = req.pdf_path
     if req.text_content:
         data["text_content"] = req.text_content

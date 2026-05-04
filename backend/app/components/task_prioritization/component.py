@@ -105,10 +105,12 @@ class TaskPrioritizationComponent(ComponentBase):
 
         if data.get("text_content"):
             raw_json = self._extractor.analyze_text_content(data["text_content"], prompt)
+        elif data.get("pdf_bytes"):
+            raw_json = self._extractor.extract_from_bytes(data["pdf_bytes"], prompt)
         elif data.get("pdf_path"):
             raw_json = self._extractor.extract_text_from_pdf(data["pdf_path"], prompt)
         else:
-            raise ValueError("Either pdf_path or text_content must be provided.")
+            raise ValueError("Either pdf_bytes, pdf_path, or text_content must be provided.")
 
         # Parse Gemini response
         cleaned = raw_json.strip()

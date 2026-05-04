@@ -63,6 +63,35 @@ class GeminiPDFExtractor:
 
         return response.text
 
+    def extract_from_bytes(self, pdf_bytes: bytes, extraction_prompt: str) -> str:
+        """
+        Analyze a PDF provided as raw bytes (no file path needed).
+        Used when the backend is remote (e.g., Railway) and cannot access
+        the user's local filesystem.
+
+        Args:
+            pdf_bytes: Raw PDF file bytes
+            extraction_prompt: Prompt for text extraction
+
+        Returns:
+            Extracted text from Gemini API
+        """
+        print(f"Sending in-memory PDF ({len(pdf_bytes)} bytes) to {GEMINI_MODEL}...")
+
+        pdf_part = Part.from_bytes(
+            data=pdf_bytes,
+            mime_type='application/pdf'
+        )
+
+        contents = [pdf_part, extraction_prompt]
+
+        response = self.client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=contents
+        )
+
+        return response.text
+
     def analyze_text_content(self, text_content: str, extraction_prompt: str) -> str:
         """
         Analyze raw text content using Gemini API.

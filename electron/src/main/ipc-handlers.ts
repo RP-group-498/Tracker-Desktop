@@ -138,7 +138,15 @@ export function setupIpcHandlers(
             credits: data.credits,
             weight: data.weight,
         };
-        if (data.pdfPath) payload.pdf_path = data.pdfPath;
+
+        if (data.pdfPath) {
+            // The backend is hosted on Railway (remote server) and cannot access
+            // local Windows file paths. Read the PDF bytes here in the main process
+            // and send them as base64 so the backend can decode in-memory.
+            const pdfBytes = fs.readFileSync(data.pdfPath);
+            payload.pdf_base64 = pdfBytes.toString('base64');
+        }
+
         if (data.textContent) payload.text_content = data.textContent;
         if (data.userId) payload.user_id = data.userId;
 
