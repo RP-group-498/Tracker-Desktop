@@ -143,8 +143,22 @@ export function setupIpcHandlers(
         if (data.userId) payload.user_id = data.userId;
 
         // Use a longer timeout (120s) — Gemini PDF analysis can take 15-30+ seconds
-        const result = await pythonBridge.request('POST', '/tasks/analyze', payload, 120000);
-        return result.data;
+        const result = await pythonBridge.request<{ tasks?: unknown[] }>(
+            'POST',
+            '/tasks/analyze',
+            payload,
+            120000
+        );
+        if (!result.success) {
+            throw new Error(result.error ?? 'Analysis request failed');
+        }
+        const body = result.data;
+        if (!body?.tasks?.length) {
+            throw new Error(
+                'No results returned from analysis. If you used a PDF, ensure the file is on this computer and try Browse Files (not a cloud-only placeholder).'
+            );
+        }
+        return body;
     });
 
     // --- Authentication ---

@@ -149,6 +149,17 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
       return
     }
 
+    if (inputMode === 'pdf' && selectedFile) {
+      const pdfPath = (selectedFile as File & { path?: string }).path?.trim()
+      if (!pdfPath) {
+        showNotification(
+          'Could not read the PDF file path. Use Browse Files to pick a file stored on this computer (cloud-only or download placeholders often do not work).',
+          'error'
+        )
+        return
+      }
+    }
+
     setIsLoading(true)
     setTaskData(null)
     setHasBeenSaved(false)
@@ -181,7 +192,12 @@ const PDFAnalysis: React.FC<PDFAnalysisProps> = ({ embedded = false }) => {
     } catch (error) {
       console.error('Analysis error:', error)
       const source = inputMode === 'pdf' ? 'PDF' : 'text content'
-      showNotification(`Failed to analyze ${source}. Please try again.`, 'error')
+      const detail = error instanceof Error ? error.message : String(error)
+      const message =
+        detail && detail !== 'Error' && !detail.startsWith('Failed to analyze')
+          ? `Failed to analyze ${source}: ${detail}`
+          : `Failed to analyze ${source}. Please try again.`
+      showNotification(message.length > 400 ? `${message.slice(0, 397)}…` : message, 'error')
     } finally {
       setIsLoading(false)
     }

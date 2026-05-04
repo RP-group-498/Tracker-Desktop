@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from bson.objectid import ObjectId
 from typing import Dict, Any
 from app.api.deps import get_current_user
@@ -61,6 +61,17 @@ class AnalyzeRequest(BaseModel):
     deadline: str
     credits: int
     weight: int
+
+    @model_validator(mode="after")
+    def require_pdf_or_text(self) -> "AnalyzeRequest":
+        has_pdf = bool(self.pdf_path and str(self.pdf_path).strip())
+        has_text = bool(self.text_content and str(self.text_content).strip())
+        if not has_pdf and not has_text:
+            raise ValueError(
+                "Either pdf_path or text_content is required. "
+                "For PDF upload from the desktop app, the file must have a local path."
+            )
+        return self
 
 
 class PredictRequest(BaseModel):
